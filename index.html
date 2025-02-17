@@ -2,115 +2,117 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dad & Alex Workout</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="manifest" href="manifest.json">
     <style>
+        :root {
+            --safe-area-inset-top: env(safe-area-inset-top);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom);
+        }
+        
         body {
             -webkit-text-size-adjust: 100%;
             touch-action: manipulation;
             overflow-x: hidden;
             background-color: #f3f4f6;
+            padding-top: var(--safe-area-inset-top);
+            padding-bottom: var(--safe-area-inset-bottom);
+            max-height: 100vh;
         }
+
         .chart-container {
-            height: 120px !important;
-            margin-bottom: 10px;
+            height: 100px !important; /* Reduced height */
         }
-        input[type="number"] {
-            -webkit-appearance: none;
-            margin: 0;
-            padding: 4px;
-            width: 60px !important;
+
+        .compact-card {
+            padding: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
         }
+
+        .compact-text {
+            font-size: 0.8rem !important;
+        }
+
         .touch-target {
             min-height: 32px;
         }
-        .compact-text {
-            font-size: 0.85rem;
-        }
-        .workout-card {
-            transition: transform 0.1s;
-        }
-        .workout-card:active {
-            transform: scale(0.98);
-        }
     </style>
 </head>
-<body>
-    <div class="max-w-md mx-auto px-2 py-1">
+<body class="px-2 py-1">
+    <div class="max-w-[390px] mx-auto">
         <!-- User Switch -->
-        <div class="flex gap-1 mb-2">
-            <button id="dadButton" class="flex-1 py-2 bg-blue-500 text-white rounded-lg shadow touch-target">Dad</button>
-            <button id="alexButton" class="flex-1 py-2 bg-gray-200 rounded-lg shadow touch-target">Alex</button>
+        <div class="flex gap-1 mb-1">
+            <button id="dadButton" class="flex-1 py-1.5 bg-blue-500 text-white rounded-lg shadow touch-target text-sm">Dad</button>
+            <button id="alexButton" class="flex-1 py-1.5 bg-gray-200 rounded-lg shadow touch-target text-sm">Alex</button>
         </div>
 
         <!-- Today's Workout -->
-        <div class="bg-white rounded-lg shadow-sm p-3 mb-2">
-            <div class="flex justify-between items-center mb-1">
-                <h2 class="font-bold">Today's Workout</h2>
-                <span id="currentDate" class="text-sm text-gray-500"></span>
+        <div class="bg-white rounded-lg shadow-sm p-2 mb-1">
+            <div class="flex justify-between items-center">
+                <h2 class="font-bold text-sm">Today's Workout</h2>
+                <span id="currentDate" class="text-xs text-gray-500"></span>
             </div>
-            <div id="todayWorkout" class="compact-text mb-2"></div>
+            <div id="todayWorkout" class="text-sm mb-1"></div>
             <div id="quickStart"></div>
         </div>
 
         <!-- Quick Access -->
-        <div class="grid grid-cols-3 gap-2 mb-2">
-            <a href="monday.html" class="workout-card bg-white p-2 rounded-lg shadow-sm text-center">
-                <div class="font-bold compact-text">Monday</div>
-                <div class="text-xs text-gray-500">Chest & Tri</div>
+        <div class="grid grid-cols-3 gap-1 mb-1">
+            <a href="monday.html" class="bg-white p-2 rounded-lg shadow-sm text-center">
+                <div class="font-bold text-xs">Mon</div>
+                <div class="text-[10px] text-gray-500">Chest</div>
             </a>
-            <a href="wednesday.html" class="workout-card bg-white p-2 rounded-lg shadow-sm text-center">
-                <div class="font-bold compact-text">Wednesday</div>
-                <div class="text-xs text-gray-500">Shoulders</div>
+            <a href="wednesday.html" class="bg-white p-2 rounded-lg shadow-sm text-center">
+                <div class="font-bold text-xs">Wed</div>
+                <div class="text-[10px] text-gray-500">Shoulders</div>
             </a>
-            <a href="friday.html" class="workout-card bg-white p-2 rounded-lg shadow-sm text-center">
-                <div class="font-bold compact-text">Friday</div>
-                <div class="text-xs text-gray-500">Back & Bi</div>
+            <a href="friday.html" class="bg-white p-2 rounded-lg shadow-sm text-center">
+                <div class="font-bold text-xs">Fri</div>
+                <div class="text-[10px] text-gray-500">Back</div>
             </a>
         </div>
 
         <!-- Progress Section -->
-        <div class="bg-white rounded-lg shadow-sm p-3 mb-2">
-            <h2 class="font-bold mb-2">Progress</h2>
+        <div class="bg-white rounded-lg shadow-sm p-2 mb-1">
+            <h2 class="font-bold text-sm mb-1">Progress</h2>
             
             <!-- Progress Tabs -->
-            <div class="flex gap-1 mb-2">
-                <button class="progress-tab px-2 py-1 text-sm bg-blue-500 text-white rounded touch-target" data-day="monday">
-                    Chest & Tri
+            <div class="flex gap-1 mb-1">
+                <button class="progress-tab px-2 py-1 text-xs bg-blue-500 text-white rounded" data-day="monday">
+                    Chest
                 </button>
-                <button class="progress-tab px-2 py-1 text-sm bg-gray-200 rounded touch-target" data-day="wednesday">
+                <button class="progress-tab px-2 py-1 text-xs bg-gray-200 rounded" data-day="wednesday">
                     Shoulders
                 </button>
-                <button class="progress-tab px-2 py-1 text-sm bg-gray-200 rounded touch-target" data-day="friday">
-                    Back & Bi
+                <button class="progress-tab px-2 py-1 text-xs bg-gray-200 rounded" data-day="friday">
+                    Back
                 </button>
             </div>
 
             <!-- Charts -->
-            <div class="chart-container mb-2">
+            <div class="chart-container mb-1">
                 <canvas id="weightProgressChart"></canvas>
             </div>
 
             <!-- Stats Summary -->
-            <div class="grid grid-cols-2 gap-2">
-                <div class="bg-gray-50 p-2 rounded">
-                    <div class="text-xs font-bold mb-1">Personal Bests</div>
-                    <div id="personalBests" class="text-xs"></div>
+            <div class="grid grid-cols-2 gap-1">
+                <div class="bg-gray-50 p-1 rounded">
+                    <div class="text-[10px] font-bold">Personal Bests</div>
+                    <div id="personalBests" class="text-[10px]"></div>
                 </div>
-                <div class="bg-gray-50 p-2 rounded">
-                    <div class="text-xs font-bold mb-1">Recent Progress</div>
-                    <div id="recentProgress" class="text-xs"></div>
+                <div class="bg-gray-50 p-1 rounded">
+                    <div class="text-[10px] font-bold">Recent Progress</div>
+                    <div id="recentProgress" class="text-[10px]"></div>
                 </div>
             </div>
         </div>
 
         <!-- Recent Activity -->
-        <div class="bg-white rounded-lg shadow-sm p-3">
-            <h2 class="font-bold mb-2">Recent Activity</h2>
-            <div id="recentActivity" class="text-sm">
+        <div class="bg-white rounded-lg shadow-sm p-2">
+            <h2 class="font-bold text-sm mb-1">Recent Activity</h2>
+            <div id="recentActivity" class="text-xs">
                 <!-- Filled by JavaScript -->
             </div>
         </div>
