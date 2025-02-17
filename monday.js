@@ -50,35 +50,41 @@ const MondayWorkout = {
         container.innerHTML = this.exercises.map(exercise => this.createExerciseHTML(exercise)).join('');
     },
 
-    createExerciseHTML(exercise) {
-        return `
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="font-bold mb-2">${exercise.name}</h3>
-                <p class="text-sm text-gray-600 mb-2">${exercise.description}</p>
-                <p class="text-sm text-gray-600 mb-2">Target: ${exercise.repRange} reps</p>
-                ${Array(exercise.sets).fill().map((_, i) => `
-                    <div class="mb-2">
-                        <div class="font-medium">Set ${i + 1}</div>
-                        <div class="flex gap-4 items-center">
-                            <div class="flex gap-2 items-center">
-                                <label>Weight:</label>
-                                <button class="px-3 py-1 bg-gray-200 rounded" onclick="adjustValue('${exercise.name}_weight_${i+1}', -5)">-</button>
-                                <input type="number" id="${exercise.name}_weight_${i+1}" class="w-16 text-center border rounded" value="0">
-                                <button class="px-3 py-1 bg-gray-200 rounded" onclick="adjustValue('${exercise.name}_weight_${i+1}', 5)">+</button>
-                                <span>lbs</span>
-                            </div>
-                            <div class="flex gap-2 items-center">
-                                <label>Reps:</label>
-                                <button class="px-3 py-1 bg-gray-200 rounded" onclick="adjustValue('${exercise.name}_reps_${i+1}', -1)">-</button>
-                                <input type="number" id="${exercise.name}_reps_${i+1}" class="w-16 text-center border rounded" value="0">
-                                   <button class="px-3 py-1 bg-gray-200 rounded" onclick="adjustValue('${exercise.name}_reps_${i+1}', 1)">+</button>
-                            </div>
-                        </div>
+function createExerciseHTML(exercise) {
+    return `
+        <div class="workout-card bg-white rounded-lg shadow">
+            <h3 classass="dynamic-text font-bold mb-2">${exercise.name}</h3>
+            <p class="dynamic-text text-gray-600 mb-2">${exercise.description}</p>
+            ${Array(exercise.sets).fill().map((_, i) => `
+                <div class="exercise-grid mb-2">
+                    <span class="dynamic-text">Set ${i + 1}</span>
+                    <div class="flex items-center gap-1">
+                        <button class="adjust-button bg-gray-200 rounded touch-target" 
+                                onclick="adjustValue('${exercise.name}_weight_${i+1}', -5)">-</button>
+                        <input type="number" 
+                               id="${exercise.name}_weight_${i+1}" 
+                               class="number-input border rounded" 
+                               value="0">
+                        <button class="adjust-button bg-gray-200 rounded touch-target" 
+                                onclick="adjustValue('${exercise.name}_weight_${i+1}', 5)">+</button>
+                        <span class="dynamic-text">lb</span>
                     </div>
-                `).join('')}
-            </div>
-        `;
-    },
+                    <div class="flex items-center gap-1">
+                        <button class="adjust-button bg-gray-200 rounded touch-target" 
+                                onclick="adjustValue('${exercise.name}_reps_${i+1}', -1)">-</button>
+                        <input type="number" 
+                               id="${exercise.name}_reps_${i+1}" 
+                               class="number-input border rounded" 
+                               value="0">
+                        <button class="adjust-button bg-gray-200 rounded touch-target" 
+                                onclick="adjustValue('${exercise.name}_reps_${i+1}', 1)">+</button>
+                        <span class="dynamic-text">reps</span>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
 
     setupEventListeners() {
         document.getElementById('saveWorkout').addEventListener('click', () => this.saveWorkout());
