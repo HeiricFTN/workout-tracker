@@ -6,6 +6,7 @@
     <title>Dad & Alex Workout Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <!-- Add Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100">
@@ -21,7 +22,46 @@
             <h2 class="text-xl font-bold mb-2">Today's Workout</h2>
             <div id="todayWorkout" class="text-lg mb-4"></div>
             <div id="quickStart" class="flex gap-2">
-                <!-- Quick start button will be added by JavaScript based on day -->
+            </div>
+        </div>
+
+        <!-- Progress Overview -->
+        <div class="bg-white rounded-lg shadow p-4 mb-4">
+            <h2 class="text-xl font-bold mb-2">Progress Overview</h2>
+            
+            <!-- Progress Tabs -->
+            <div class="flex gap-2 mb-4">
+                <button class="progress-tab px-3 py-1 bg-blue-500 text-white rounded" data-day="monday">
+                    Chest & Tri
+                </button>
+                <button class="progress-tab px-3 py-1 bg-gray-200 rounded" data-day="wednesday">
+                    Shoulders
+                </button>
+                <button class="progress-tab px-3 py-1 bg-gray-200 rounded" data-day="friday">
+                    Back & Bi
+                </button>
+            </div>
+
+            <!-- Charts Container -->
+            <div class="space-y-4">
+                <div class="h-64">
+                    <canvas id="weightProgressChart"></canvas>
+                </div>
+                <div class="h-64">
+                    <canvas id="volumeProgressChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Key Stats -->
+            <div class="mt-4 grid grid-cols-2 gap-4">
+                <div class="bg-gray-50 p-3 rounded">
+                    <h3 class="text-sm font-bold mb-1">Personal Bests</h3>
+                    <div id="personalBests" class="text-sm"></div>
+                </div>
+                <div class="bg-gray-50 p-3 rounded">
+                    <h3 class="text-sm font-bold mb-1">Recent Progress</h3>
+                    <div id="recentProgress" class="text-sm"></div>
+                </div>
             </div>
         </div>
 
@@ -33,9 +73,7 @@
                     <h3 class="font-bold">Monday</h3>
                     <span class="text-sm text-gray-500">Chest & Triceps</span>
                 </div>
-                <div id="mondaySummary" class="text-sm mb-2">
-                    <!-- Last workout summary will be added here -->
-                </div>
+                <div id="mondaySummary" class="text-sm mb-2"></div>
                 <button onclick="location.href='monday.html'" 
                         class="w-full py-2 bg-blue-500 text-white rounded">
                     View Workout
@@ -48,9 +86,7 @@
                     <h3 class="font-bold">Wednesday</h3>
                     <span class="text-sm text-gray-500">Shoulders & Traps</span>
                 </div>
-                <div id="wednesdaySummary" class="text-sm mb-2">
-                    <!-- Last workout summary will be added here -->
-                </div>
+                <div id="wednesdaySummary" class="text-sm mb-2"></div>
                 <button onclick="location.href='wednesday.html'" 
                         class="w-full py-2 bg-blue-500 text-white rounded">
                     View Workout
@@ -63,106 +99,15 @@
                     <h3 class="font-bold">Friday</h3>
                     <span class="text-sm text-gray-500">Back & Biceps</span>
                 </div>
-                <div id="fridaySummary" class="text-sm mb-2">
-                    <!-- Last workout summary will be added here -->
-                </div>
+                <div id="fridaySummary" class="text-sm mb-2"></div>
                 <button onclick="location.href='friday.html'" 
                         class="w-full py-2 bg-blue-500 text-white rounded">
                     View Workout
                 </button>
             </div>
         </div>
-
-        <!-- Progress Overview -->
- <div class="flex gap-2 mb-4">
-        <button class="progress-tab px-3 py-1 bg-blue-500 text-white rounded" data-day="monday">
-            Chest & Tri
-        </button>
-        <button class="progress-tab px-3 py-1 bg-gray-200 rounded" data-day="wednesday">
-            Shoulders
-        </button>
-        <button class="progress-tab px-3 py-1 bg-gray-200 rounded" data-day="friday">
-            Back & Bi
-        </button>
-    </div>
-                <!-- Progress data will be added here -->
-            </div>
-        </div>
     </div>
 
-    <script>
-        const Dashboard = {
-            currentUser: 'Dad',
-            workoutDays: {
-                1: { name: 'monday', title: 'Chest & Triceps' },
-                3: { name: 'wednesday', title: 'Shoulders & Traps' },
-                5: { name: 'friday', title: 'Back & Biceps' }
-            },
-
-            init() {
-                this.setupEventListeners();
-                this.loadUserData();
-                this.updateTodayWorkout();
-                this.loadWorkoutSummaries();
-            },
-
-            setupEventListeners() {
-                document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
-                document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
-            },
-
-            switchUser(user) {
-                this.currentUser = user;
-                localStorage.setItem('currentUser', user);
-                document.getElementById('dadButton').classList.toggle('bg-blue-500', user === 'Dad');
-                document.getElementById('alexButton').classList.toggle('bg-blue-500', user === 'Alex');
-                this.loadWorkoutSummaries();
-            },
-
-            updateTodayWorkout() {
-                const today = new Date().getDay();
-                const todayDiv = document.getElementById('todayWorkout');
-                const quickStartDiv = document.getElementById('quickStart');
-                
-                if (this.workoutDays[today]) {
-                    const workout = this.workoutDays[today];
-                    todayDiv.textContent = workout.title;
-                    quickStartDiv.innerHTML = `
-                        <button onclick="location.href='${workout.name}.html'" 
-                                class="w-full py-2 bg-green-500 text-white rounded">
-                            Start Today's Workout
-                        </button>
-                    `;
-                } else {
-                    todayDiv.textContent = 'Rest Day';
-                    quickStartDiv.innerHTML = `
-                        <button class="w-full py-2 bg-gray-300 text-gray-700 rounded" disabled>
-                            Rest & Recover
-                        </button>
-                    `;
-                }
-            },
-
-            loadWorkoutSummaries() {
-                ['monday', 'wednesday', 'friday'].forEach(day => {
-                    const key = `${day}_${this.currentUser}`;
-                    const workouts = JSON.parse(localStorage.getItem(key) || '[]');
-                    const lastWorkout = workouts[workouts.length - 1];
-                    
-                    const summaryDiv = document.getElementById(`${day}Summary`);
-                    if (lastWorkout) {
-                        summaryDiv.innerHTML = `
-                            <p>Last: ${new Date(lastWorkout.date).toLocaleDateString()}</p>
-                            <p class="text-gray-500">Completed ${workouts.length} workouts</p>
-                        `;
-                    } else {
-                        summaryDiv.innerHTML = '<p class="text-gray-500">No workouts yet</p>';
-                    }
-                });
-            }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => Dashboard.init());
-    </script>
+    <script src="dashboard.js"></script>
 </body>
 </html>
