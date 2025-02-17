@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dad & Alex Workout</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="styles.css" rel="stylesheet">
     <style>
         :root {
             --safe-area-inset-top: env(safe-area-inset-top);
@@ -119,5 +119,21 @@
     </div>
 
     <script src="dashboard.js"></script>
+</body>
+    <div class="app-container">
+        <!-- Content here -->
+    </div>
+    
+    <script>
+        // Add this to every page
+        function updateDynamicSizing() {
+            document.documentElement.style.setProperty('--screen-height', `${window.innerHeight}px`);
+        }
+
+        window.addEventListener('resize', updateDynamicSizing);
+        window.addEventListener('orientationchange', updateDynamicSizing);
+        document.addEventListener('DOMContentLoaded', updateDynamicSizing);
+    </script>
+    <!-- Other scripts -->
 </body>
 </html>
