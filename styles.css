@@ -1,1 +1,40 @@
-/* Add any custom styles here */
+:root {
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+}
+
+.app-container {
+    width: min(100%, 430px);
+    margin: 0 auto;
+    padding: max(0.5rem, var(--safe-area-inset-top)) 0.5rem max(0.5rem, var(--safe-area-inset-bottom));
+}
+
+.exercise-input {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.number-input {
+    width: clamp(40px, 10vw, 60px);
+    text-align: center;
+    -moz-appearance: textfield;
+}
+
+.number-input::-webkit-outer-spin-button,
+.number-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+@media (max-width: 360px) {
+    .exercise-input {
+        grid-template-columns: 1fr;
+    }
+}
