@@ -50,35 +50,35 @@ const FridayWorkout = {
         container.innerHTML = this.exercises.map(exercise => this.createExerciseHTML(exercise)).join('');
     },
 
-function createExerciseHTML(exercise) {
+createExerciseHTML(exercise) {
     return `
-        <div class="workout-card bg-white rounded-lg shadow">
-            <h3 classass="dynamic-text font-bold mb-2">${exercise.name}</h3>
-            <p class="dynamic-text text-gray-600 mb-2">${exercise.description}</p>
+        <div class="workout-card bg-white rounded-lg shadow p-3 mb-3">
+            <h3 class="text-lg font-bold mb-2">${exercise.name}</h3>
+            <p class="text-sm text-gray-600 mb-2">${exercise.description}</p>
             ${Array(exercise.sets).fill().map((_, i) => `
-                <div class="exercise-grid mb-2">
-                    <span class="dynamic-text">Set ${i + 1}</span>
-                    <div class="flex items-center gap-1">
-                        <button class="adjust-button bg-gray-200 rounded touch-target" 
+                <div class="exercise-input mb-2">
+                    <span class="text-sm font-medium">Set ${i + 1}</span>
+                    <div class="flex items-center gap-2">
+                        <button class="touch-target px-3 bg-gray-200 rounded" 
                                 onclick="adjustValue('${exercise.name}_weight_${i+1}', -5)">-</button>
                         <input type="number" 
                                id="${exercise.name}_weight_${i+1}" 
-                               class="number-input border rounded" 
+                               class="number-input border rounded py-1"
                                value="0">
-                        <button class="adjust-button bg-gray-200 rounded touch-target" 
+                        <button class="touch-target px-3 bg-gray-200 rounded" 
                                 onclick="adjustValue('${exercise.name}_weight_${i+1}', 5)">+</button>
-                        <span class="dynamic-text">lb</span>
+                        <span class="text-sm">lb</span>
                     </div>
-                    <div class="flex items-center gap-1">
-                        <button class="adjust-button bg-gray-200 rounded touch-target" 
+                    <div class="flex items-center gap-2">
+                        <button class="touch-target px-3 bg-gray-200 rounded" 
                                 onclick="adjustValue('${exercise.name}_reps_${i+1}', -1)">-</button>
                         <input type="number" 
                                id="${exercise.name}_reps_${i+1}" 
-                               class="number-input border rounded" 
+                               class="number-input border rounded py-1"
                                value="0">
-                        <button class="adjust-button bg-gray-200 rounded touch-target" 
+                        <button class="touch-target px-3 bg-gray-200 rounded" 
                                 onclick="adjustValue('${exercise.name}_reps_${i+1}', 1)">+</button>
-                        <span class="dynamic-text">reps</span>
+                        <span class="text-sm">reps</span>
                     </div>
                 </div>
             `).join('')}
