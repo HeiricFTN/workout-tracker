@@ -1,43 +1,110 @@
-document.addEventListener('DOMContentLoaded', () => {
-    let currentUser = 'Dad';
-    const workoutData = {};
+// app.js
+const WorkoutTracker = {
+    currentUser: 'Dad',
+    users: ['Dad', 'Alex'],
+    
+    workoutDays: {
+        monday: {
+            name: 'Chest & Triceps',
+            exercises: [
+                {
+                    name: 'Hydrow',
+                    type: 'cardio',
+                    sets: 1,
+                    metrics: ['time', 'level']
+                },
+                {
+                    name: 'Bench Press',
+                    type: 'strength',
+                    sets: 4,
+                    repRange: '8-12',
+                    metrics: ['weight', 'reps']
+                },
+                // Add more exercises
+            ]
+        },
+        wednesday: {
+            name: 'Shoulders & Traps',
+            exercises: [
+                // Add exercises
+            ]
+        },
+        friday: {
+            name: 'Back & Biceps',
+            exercises: [
+                // Add exercises
+            ]
+        }
+    },
 
-    document.getElementById('dadButton').addEventListener('click', () => switchUser('Dad'));
-    document.getElementById('alexButton').addEventListener('click', () => switchUser('Alex'));
-    document.getElementById('saveButton').addEventListener('click', saveWorkout);
+    init() {
+        this.setupEventListeners();
+        this.loadUserData();
+        this.updateUI();
+    },
 
-    function switchUser(user) {
-        currentUser = user;
+    setupEventListeners() {
+        document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
+        document.getElementById('alexBexButton').addEventListener('click', () => this.switchUser('Alex'));
+    },
+
+    switchUser(user) {
+        this.currentUser = user;
+        this.updateUI();
+        // Update button styles
         document.getElementById('dadButton').classList.toggle('bg-blue-500', user === 'Dad');
         document.getElementById('alexButton').classList.toggle('bg-blue-500', user === 'Alex');
-        loadWorkout();
-    }
+    },
 
-    function saveWorkout() {
-        const data = {
-            date: new Date().toISOString(),
-            hydrow: {
-                time: document.getElementById('hydrowTime').value
-            },
-            benchPress: {
-                weight: document.getElementById('benchPressWeight1').value,
-                reps: document.getElementById('benchPressReps1').value
-            }
-        };
-
-        const key = `workout_${currentUser}_${new Date().toLocaleDateString()}`;
+    saveWorkout(day, data) {
+        const key = `workout_${this.currentUser}_${day}_${new Date().toLocaleDateString()}`;
         localStorage.setItem(key, JSON.stringify(data));
-        alert('Workout saved!');
-    }
+        this.updateProgress(day, data);
+    },
 
-    function loadWorkout() {
-        const key = `workout_${currentUser}_${new Date().toLocaleDateString()}`;
-        const saved = localStorage.getItem(key);
-        if (saved) {
-            const data = JSON.parse(saved);
-            document.getElementById('hydrowTime').value = data.hydrow.time;
-            document.getElementById('benchPressWeight1').value = data.benchPress.weight;
-            document.getElementById('benchPressReps1').value = data.benchPress.reps;
+    loadWorkout(day) {
+        const key = `workout_${this.currentUser}_${day}_${new Date().toLocaleDateString()}`;
+        return JSON.parse(localStorage.getItem(key) || '{}');
+    },
+
+    updateProgress(day, data) {
+        const progressKey = `progress_${this.currentUser}`;
+        let progress = JSON.parse(localStorage.getItem(progressKey) || '{}');
+        
+        if (!progress[day]) {
+            progress[day] = [];
+        }
+        
+        progress[day].push({
+            date: new Date().toISOString(),
+            data: data
+        });
+
+        localStorage.setItem(progressKey, JSON.stringify(progress));
+        this.updateUI();
+    },
+
+    getProgress() {
+        const progressKey = `progress_${this.currentUser}`;
+        return JSON.parse(localStorage.getItem(progressKey) || '{}');
+    },
+
+    updateUI() {
+        const progress = this.getProgress();
+        const progressDiv = document.getElementById('progressSummary');
+        if (progressDiv) {
+            // Show latest achievements
+            let html = '<ul class="list-disc pl-4">';
+            for (const [day, workouts] of Object.entries(progress)) {
+                const latest = workouts[workouts.length - 1];
+                if (latest) {
+                    html += `<li>${day}: Last workout ${new Date(latest.date).toLocaleDateString()}</li>`;
+                }
+            }
+            html += '</ul>';
+            progressDiv.innerHTML = html;
         }
     }
-});
+};
+
+document.addEventListener('DOMContentLoaded', () => WorkoutTracker.init());
