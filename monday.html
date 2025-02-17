@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monday - Chest & Triceps</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="max-w-md mx-auto p-4">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+            <button onclick="location.href='index.html'" class="p-2 bg-gray-200 rounded">
+                ← Back
+            </button>
+            <h1 class="text-xl font-bold">Chest & Triceps</h1>
+            <div id="userDisplay" class="font-bold text-blue-500"></div>
+        </div>
+
+        <!-- Last Workout Summary -->
+        <div class="bg-white rounded-lg shadow p-4 mb-4">
+            <h3 class="font-bold mb-2">Last Workout</h3>
+            <div id="lastWorkoutSummary" class="text-sm"></div>
+        </div>
+
+        <!-- Current Workout -->
+        <div id="workoutForm" class="space-y-4">
+            <!-- Hydrow -->
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="font-bold mb-2">Hydrow</h3>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <button class="px-3 py-1 bg-gray-200 rounded" onclick="adjustValue('hydrowTime', -1)">-</button>
+                        <input type="number" id="hydrowTime" class="w-16 text-center border rounded mx-2" value="15">
+                        <button class="px-3 py-1 bg-gray-200 rounded" onclick="adjustValue('hydrowTime', 1)">+</button>
+                        <span class="ml-2">min</span>
+                    </div>
+                    <div class="flex items-center">
+                        <button class="px-3 py-1 bg-gray-200 rounded" onclick="adjustValue('hydrowLevel', -1)">-</button>
+                        <input type="number" id="hydrowLevel" class="w-16 text-center border rounded mx-2" value="5">
+                        <button class="px-3 py-1 bg-gray-200 rounded" onclick="adjustValue('hydrowLevel', 1)">+</button>
+                        <span class="ml-2">level</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exercise Template (will be repeated for each exercise) -->
+            <div id="exerciseContainer">
+                <!-- Exercises will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <button id="saveWorkout" class="w-full py-3 bg-green-500 text-white rounded-lg mt-4">
+            Save Workout
+        </button>
+    </div>
+
+    <script src="monday.js"></script>
+</body>
+</html>
