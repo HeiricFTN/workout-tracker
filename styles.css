@@ -1,24 +1,58 @@
+/* Base variables and settings */
 :root {
+    --screen-height: 100vh;
     --safe-area-inset-top: env(safe-area-inset-top);
     --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    --primary-blue: #3b82f6;
+    --success-green: #22c55e;
+    --background-gray: #f3f4f6;
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Body and container setup */
+body {
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+    background-color: var(--background-gray);
+    min-height: var(--screen-height);
+    padding: max(0.5rem, var(--safe-area-inset-top)) 0.5rem max(0.5rem, var(--safe-area-inset-bottom));
 }
 
 .app-container {
     width: min(100%, 430px);
     margin: 0 auto;
-    padding: max(0.5rem, var(--safe-area-inset-top)) 0.5rem max(0.5rem, var(--safe-area-inset-bottom));
+    position: relative;
 }
 
-.exercise-input {
+/* Exercise cards and inputs */
+.workout-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: clamp(0.75rem, 2vw, 1rem);
+    margin-bottom: 0.75rem;
+    box-shadow: var(--card-shadow);
+}
+
+.exercise-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: auto 1fr 1fr;
     gap: 0.5rem;
     align-items: center;
 }
 
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Form inputs */
 .number-input {
-    width: clamp(40px, 10vw, 60px);
+    width: clamp(40px, 10vw, 60px) !important;
     text-align: center;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    border: 1px solid #e5e7eb;
     -moz-appearance: textfield;
 }
 
@@ -28,13 +62,118 @@
     margin: 0;
 }
 
+/* Buttons and interactive elements */
 .touch-target {
     min-height: 44px;
     min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+.adjust-button {
+    padding: clamp(2px, 1vw, 4px) clamp(6px, 2vw, 12px);
+    border-radius: 0.25rem;
+    background-color: #f3f4f6;
+    touch-action: manipulation;
+}
+
+.save-button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--success-green);
+    color: white;
+    border-radius: 0.5rem;
+    font-weight: 500;
+}
+
+/* Typography */
+.dynamic-text {
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
+}
+
+.dynamic-title {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    font-weight: bold;
+}
+
+/* Info cards */
+.info-card {
+    background-color: #fff;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.warm-up-card {
+    background-color: #fefce8;
+    border-radiusius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.form-tips-card {
+    background-color: #eff6ff;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Fixed bottom save button container */
+.save-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 1rem;
+    border-top: 1px solid #e5e7eb;
+    max-width: inherit;
+    margin: 0 auto;
+}
+
+/* Progress charts */
+.chart-container {
+    height: clamp(100px, 20vh, 150px) !important;
+    margin-bottom: 1rem;
+}
+
+/* Responsive adjustments */
 @media (max-width: 360px) {
-    .exercise-input {
-        grid-template-columns: 1fr;
+    .exercise-grid {
+        grid-template-columns: auto 1fr;
+        row-gap: 0.5rem;
     }
+    
+    .input-group {
+        flex-wrap: wrap;
+    }
+}
+
+/* Safe area adjustments for notched devices */
+@supports (padding: max(0px)) {
+    .save-container {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Transitions */
+.workout-card, 
+.adjust-button, 
+.save-button {
+    transition: all 0.1s ease-in-out;
+}
+
+.adjust-button:active {
+    transform: scale(0.95);
+}
+
+.save-button:active {
+    transform: scale(0.98);
 }
