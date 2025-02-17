@@ -3,138 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dad & Alex Workout Tracker</title>
+    <title>Dad & Alex Workout</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Mobile-specific styles */
         body {
             -webkit-text-size-adjust: 100%;
             touch-action: manipulation;
             overflow-x: hidden;
+            background-color: #f3f4f6;
         }
-
-        /* Compact spacing for mobile */
-        .mobile-compact {
-            padding: 0.5rem !important;
-        }
-
-        /* Smaller text for mobile */
-        .mobile-text {
-            font-size: 0.9rem !important;
-        }
-
-        /* Adjust chart height for mobile */
         .chart-container {
-            height: 150px !important;
+            height: 120px !important;
+            margin-bottom: 10px;
         }
-
-        /* Make inputs more touch-friendly */
         input[type="number"] {
             -webkit-appearance: none;
             margin: 0;
             padding: 4px;
             width: 60px !important;
         }
-
-        /* Larger touch targets */
-        button {
-            min-height: 44px;
-            padding: 8px 16px !important;
+        .touch-target {
+            min-height: 32px;
+        }
+        .compact-text {
+            font-size: 0.85rem;
+        }
+        .workout-card {
+            transition: transform 0.1s;
+        }
+        .workout-card:active {
+            transform: scale(0.98);
         }
     </style>
 </head>
-<body class="bg-gray-100">
-    <div id="app" class="max-w-md mx-auto p-2">
+<body>
+    <div class="max-w-md mx-auto px-2 py-1">
         <!-- User Switch -->
-        <div class="flex gap-2 mb-2">
-            <button id="dadButton" class="flex-1 py-2 px-4 bg-blue-500 text-white rounded">Dad</button>
-            <button id="alexButton" class="flex-1 py-2 px-4 bg-gray-300 rounded">Alex</button>
+        <div class="flex gap-1 mb-2">
+            <button id="dadButton" class="flex-1 py-2 bg-blue-500 text-white rounded-lg shadow touch-target">Dad</button>
+            <button id="alexButton" class="flex-1 py-2 bg-gray-200 rounded-lg shadow touch-target">Alex</button>
         </div>
 
         <!-- Today's Workout -->
-        <div class="bg-white rounded-lg shadow p-3 mb-2">
-            <h2 class="text-lg font-bold mb-1">Today's Workout</h2>
-            <div id="todayWorkout" class="text-base mb-2"></div>
-            <div id="quickStart" class="flex gap-2"></div>
+        <div class="bg-white rounded-lg shadow-sm p-3 mb-2">
+            <div class="flex justify-between items-center mb-1">
+                <h2 class="font-bold">Today's Workout</h2>
+                <span id="currentDate" class="text-sm text-gray-500"></span>
+            </div>
+            <div id="todayWorkout" class="compact-text mb-2"></div>
+            <div id="quickStart"></div>
         </div>
 
-        <!-- Progress Overview -->
-        <div class="bg-white rounded-lg shadow p-3 mb-2">
-            <h2 class="text-lg font-bold mb-1">Progress</h2>
+        <!-- Quick Access -->
+        <div class="grid grid-cols-3 gap-2 mb-2">
+            <a href="monday.html" class="workout-card bg-white p-2 rounded-lg shadow-sm text-center">
+                <div class="font-bold compact-text">Monday</div>
+                <div class="text-xs text-gray-500">Chest & Tri</div>
+            </a>
+            <a href="wednesday.html" class="workout-card bg-white p-2 rounded-lg shadow-sm text-center">
+                <div class="font-bold compact-text">Wednesday</div>
+                <div class="text-xs text-gray-500">Shoulders</div>
+            </a>
+            <a href="friday.html" class="workout-card bg-white p-2 rounded-lg shadow-sm text-center">
+                <div class="font-bold compact-text">Friday</div>
+                <div class="text-xs text-gray-500">Back & Bi</div>
+            </a>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="bg-white rounded-lg shadow-sm p-3 mb-2">
+            <h2 class="font-bold mb-2">Progress</h2>
             
             <!-- Progress Tabs -->
             <div class="flex gap-1 mb-2">
-                <button class="progress-tab px-2 py-1 text-sm bg-blue-500 text-white rounded" data-day="monday">
-                    Chest
+                <button class="progress-tab px-2 py-1 text-sm bg-blue-500 text-white rounded touch-target" data-day="monday">
+                    Chest & Tri
                 </button>
-                <button class="progress-tab px-2 py-1 text-sm bg-gray-200 rounded" data-day="wednesday">
+                <button class="progress-tab px-2 py-1 text-sm bg-gray-200 rounded touch-target" data-day="wednesday">
                     Shoulders
                 </button>
-                <button class="progress-tab px-2 py-1 text-sm bg-gray-200 rounded" data-day="friday">
-                    Back
+                <button class="progress-tab px-2 py-1 text-sm bg-gray-200 rounded touch-target" data-day="friday">
+                    Back & Bi
                 </button>
             </div>
 
-            <!-- Charts Container -->
-            <div class="space-y-2">
-                <div class="chart-container">
-                    <canvas id="weightProgressChart"></canvas>
-                </div>
-                <div class="chart-container">
-                    <canvas id="volumeProgressChart"></canvas>
-                </div>
+            <!-- Charts -->
+            <div class="chart-container mb-2">
+                <canvas id="weightProgressChart"></canvas>
             </div>
 
-            <!-- Key Stats -->
-            <div class="mt-2 grid grid-cols-2 gap-2">
+            <!-- Stats Summary -->
+            <div class="grid grid-cols-2 gap-2">
                 <div class="bg-gray-50 p-2 rounded">
-                    <h3 class="text-xs font-bold mb-1">Personal Bests</h3>
+                    <div class="text-xs font-bold mb-1">Personal Bests</div>
                     <div id="personalBests" class="text-xs"></div>
                 </div>
                 <div class="bg-gray-50 p-2 rounded">
-                    <h3 class="text-xs font-bold mb-1">Recent Progress</h3>
+                    <div class="text-xs font-bold mb-1">Recent Progress</div>
                     <div id="recentProgress" class="text-xs"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Workout Cards -->
-        <div class="grid grid-cols-3 gap-2 mb-2">
-            <!-- Monday -->
-            <div class="bg-white rounded-lg shadow p-2">
-                <div class="text-center mb-1">
-                    <h3 class="font-bold text-sm">Mon</h3>
-                    <span class="text-xs text-gray-500">Chest</span>
-                </div>
-                <button onclick="location.href='monday.html'" 
-                        class="w-full py-1 text-sm bg-blue-500 text-white rounded">
-                    Go
-                </button>
-            </div>
-
-            <!-- Wednesday -->
-            <div class="bg-white rounded-lg shadow p-2">
-                <div class="text-center mb-1">
-                    <h3 class="font-bold text-sm">Wed</h3>
-                    <span class="text-xs text-gray-500">Shoulders</span>
-                </div>
-                <button onclick="location.href='wednesday.html'" 
-                        class="w-full py-1 text-sm bg-blue-500 text-white rounded">
-                    Go
-                </button>
-            </div>
-
-            <!-- Friday -->
-            <div class="bg-white rounded-lg shadow p-2">
-                <div class="text-center mb-1">
-                    <h3 class="font-bold text-sm">Fri</h3>
-                    <span class="text-xs text-gray-500">Back</span>
-                </div>
-                <button onclick="location.href='friday.html'" 
-                        class="w-full py-1 text-sm bg-blue-500 text-white rounded">
-                    Go
-                </button>
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-lg shadow-sm p-3">
+            <h2 class="font-bold mb-2">Recent Activity</h2>
+            <div id="recentActivity" class="text-sm">
+                <!-- Filled by JavaScript -->
             </div>
         </div>
     </div>
