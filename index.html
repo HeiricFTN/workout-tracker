@@ -1,1 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="max-w-md mx-auto p-4">
+        <div class="flex gap-2 mb-4">
+            <button id="dadButton" class="flex-1 py-2 px-4 bg-blue-500 text-white rounded">Dad</button>
+            <button id="alexButton" class="flex-1 py-2 px-4 bg-gray-300 rounded">Alex</button>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 mb-4">
+            <h2 class="text-xl font-bold mb-4">Monday - Chest & Triceps</h2>
+            <div class="mb-6">
+                <h3 class="font-bold mb-2">Hydrow</h3>
+                <div class="flex gap-4 items-center">
+                    <label>Time:</label>
+                    <button class="px-3 py-1 bg-gray-200 rounded">-</button>
+                    <input type="number" id="hydrowTime" class="w-16 text-center border rounded" value="15">
+                    <button class="px-3 py-1 bg-gray-200 rounded">+</button>
+                    <span>min</span>
+                </div>
+            </div>
+            <div class="mb-6">
+                <h3 class="font-bold mb-2">Bench Press</h3>
+                <p class="text-sm text-gray-600 mb-2">Press dumbbells from chest to full extension</p>
+                <div class="mb-2">
+                    <div class="font-medium">Set 1</div>
+                    <div class="flex gap-4 items-center">
+                        <div class="flex gap-2 items-center">
+                            <label>Weight:</label>
+                            <input type="number" id="benchPressWeight1" class="w-16 text-center border rounded">
+                            <span>lbs</span>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <label>Reps:</label>
+                            <input type="number" id="benchPressReps1" class="w-16 text-center border rounded">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button id="saveButton" class="w-full py-3 bg-green-500 text-white rounded-lg">
+            Save Workout
+        </button>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
 
