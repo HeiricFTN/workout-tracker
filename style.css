@@ -1,0 +1,83 @@
+/* styles.css */
+:root {
+    --screen-height: 100vh;
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+}
+
+body {
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+    background-color: #f3f4f6;
+    min-height: var(--screen-height);
+    padding: max(0.5rem, var(--safe-area-inset-top)) 0.5rem max(0.5rem, var(--safe-area-inset-bottom));
+}
+
+.app-container {
+    width: min(100%, 430px);
+    margin: 0 auto;
+}
+
+.dynamic-text {
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
+}
+
+.dynamic-title {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+}
+
+.input-container {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.number-input {
+    width: clamp(40px, 10vw, 60px) !important;
+    padding: 0.25rem;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+
+.number-input::-webkit-outer-spin-button,
+.number-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.adjust-button {
+    padding: clamp(2px, 1vw, 4px) clamp(6px, 2vw, 12px);
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
+}
+
+.workout-card {
+    padding: clamp(0.5rem, 2vw, 1rem);
+    margin-bottom: clamp(0.5rem, 2vw, 1rem);
+}
+
+.chart-container {
+    height: clamp(100px, 20vh, 150px) !important;
+}
+
+.exercise-grid {
+    display: grid;
+    grid-template-columns: auto minmax(60px, 1fr) minmax(60px, 1fr);
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 360px) {
+    .exercise-grid {
+        grid-template-columns: auto 1fr;
+        row-gap: 0.5rem;
+    }
+}
