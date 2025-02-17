@@ -117,39 +117,59 @@ const Dashboard = {
         });
     },
 
-    createWeightChart() {
-        const ctx = document.getElementById('weightProgressChart').getContext('2d');
-        this.progressCharts.weight = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: []
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 12,
-                            padding: 8,
-                            font: { size: 10 }
+createWeightChart() {
+    const ctx = document.getElementById('weightProgressChart').getContext('2d');
+    this.progressCharts.weight = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 8,
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
                         }
                     }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { font: { size: 10 } }
-                    },
-                    x: {
-                        ticks: { font: { size: 10 } }
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    bodyFont: {
+                        size: window.innerWidth < 768 ? 10 : 12
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        },
+                        maxRotation: 45,
+                        minRotation: 45
                     }
                 }
             }
-        });
-    },
+        }
+    });
+}
+
 
     updateCharts(day) {
         const workouts = this.getWorkouts(day);
