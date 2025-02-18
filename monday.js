@@ -2,7 +2,7 @@ const MondayWorkout = {
     exercises: [
         {
             name: 'DB Bench Press',
-            description: 'Lying on flat bench, press dumbbells up from chest level. Keep wrists straight, back flat on bench, and feet planted.',
+            description: 'Lying on flat bench, press dumbbells up from chest level.',
             formCues: [
                 'Back flat on bench',
                 'Feet planted firmly',
@@ -11,11 +11,12 @@ const MondayWorkout = {
             ],
             sets: 4,
             repRange: '8-12',
-            restTime: '90 sec'
+            restTime: '90 sec',
+            isBodyweight: false
         },
         {
             name: 'Incline DB Press',
-            description: 'Press dumbbells while on incline bench (30-45°). Focus on upper chest activation.',
+            description: 'Press dumbbells while on incline bench (30-45°).',
             formCues: [
                 'Back against bench',
                 'Drive elbows under wrists',
@@ -24,11 +25,12 @@ const MondayWorkout = {
             ],
             sets: 3,
             repRange: '8-12',
-            restTime: '90 sec'
+            restTime: '90 sec',
+            isBodyweight: false
         },
         {
             name: 'TRX Push-ups',
-            description: 'Hands in TRX straps, perform push-up motion. Adjust difficulty by moving feet position.',
+            description: 'Hands in TRX straps, perform push-up motion.',
             formCues: [
                 'Core tight',
                 'Body straight line',
@@ -37,7 +39,8 @@ const MondayWorkout = {
             ],
             sets: 3,
             repRange: '10-15',
-            restTime: '60 sec'
+            restTime: '60 sec',
+            isBodyweight: true
         },
         {
             name: 'DB Flyes',
@@ -50,7 +53,8 @@ const MondayWorkout = {
             ],
             sets: 3,
             repRange: '12-15',
-            restTime: '60 sec'
+            restTime: '60 sec',
+            isBodyweight: false
         },
         {
             name: 'TRX Tricep Press',
@@ -63,7 +67,8 @@ const MondayWorkout = {
             ],
             sets: 3,
             repRange: '12-15',
-            restTime: '60 sec'
+            restTime: '60 sec',
+            isBodyweight: true
         }
     ],
 
@@ -133,28 +138,42 @@ const MondayWorkout = {
                 ${Array(exercise.sets).fill().map((_, i) => `
                     <div class="exercise-grid mb-2">
                         <span class="text-sm font-medium">Set ${i + 1}</span>
-                        <div class="flex items-center gap-1">
-                            <button class="adjust-button bg-gray-200 rounded touch-target" 
-                                    onclick="adjustValue('${exercise.name}_weight_${i+1}', -5)">-</button>
-                            <input type="number" 
-                                   id="${exercise.name}_weight_${i+1}" 
-                                   class="number-input border rounded" 
-                                   value="0">
-                            <button class="adjust-button bg-gray-200 rounded touch-target" 
-                                    onclick="adjustValue('${exercise.name}_weight_${i+1}', 5)">+</button>
-                            <span class="text-sm">lb</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <button class="adjust-button bg-gray-200 rounded touch-target" 
-                                    onclick="adjustValue('${exercise.name}_reps_${i+1}', -1)">-</button>
-                            <input type="number" 
-                                   id="${exercise.name}_reps_${i+1}" 
-                                   class="number-input border rounded" 
-                                   value="0">
-                            <button class="adjust-button bg-gray-200 rounded touch-target" 
-                                    onclick="adjustValue('${exercise.name}_reps_${i+1}', 1)">+</button>
-                            <span class="text-sm">reps</span>
-                        </div>
+                        ${exercise.isBodyweight ? `
+                            <div class="flex items-center gap-1">
+                                <button class="adjust-button bg-gray-200 rounded touch-target" 
+                                        onclick="adjustValue('${exercise.name}_reps_${i+1}', -1)">-</button>
+                                <input type="number" 
+                                       id="${exercise.name}_reps_${i+1}" 
+                                       class="number-input border rounded" 
+                                       value="0">
+                                <button class="adjust-button bg-gray-200 rounded touch-target" 
+                                        onclick="adjustValue('${exercise.name}_reps_${i+1}', 1)">+</button>
+                                <span class="text-sm">reps</span>
+                            </div>
+                        ` : `
+                            <div class="flex items-center gap-1">
+                                <button class="adjust-button bg-gray-200 rounded touch-target" 
+                                        onclick="adjustValue('${exercise.name}_weight_${i+1}', -5)">-</button>
+                                <input type="number" 
+                                       id="${exercise.name}_weight_${i+1}" 
+                                       class="number-input border rounded" 
+                                       value="0">
+                                <button class="adjust-button bg-gray-200 rounded touch-target" 
+                                        onclick="adjustValue('${exercise.name}_weight_${i+1}', 5)">+</button>
+                                <span class="text-sm">lb</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button class="adjust-button bg-gray-200 rounded touch-target" 
+                                        onclick="adjustValue('${exercise.name}_reps_${i+1}', -1)">-</button>
+                                <input type="number" 
+                                       id="${exercise.name}_reps_${i+1}" 
+                                       class="number-input border rounded" 
+                                       value="0">
+                                <button class="adjust-button bg-gray-200 rounded touch-target" 
+                                        onclick="adjustValue('${exercise.name}_reps_${i+1}', 1)">+</button>
+                                <span class="text-sm">reps</span>
+                            </div>
+                        `}
                     </div>
                 `).join('')}
 
@@ -178,13 +197,19 @@ const MondayWorkout = {
                 const previousSpan = document.getElementById(`${name}_previous`);
                 if (previousSpan) {
                     const lastSet = data.sets[data.sets.length - 1];
-                    previousSpan.textContent = `${lastSet.weight}lb × ${lastSet.reps}`;
+                    if (this.exercises.find(e => e.name === name).isBodyweight) {
+                        previousSpan.textContent = `${lastSet.reps} reps`;
+                    } else {
+                        previousSpan.textContent = `${lastSet.weight}lb × ${lastSet.reps}`;
+                    }
                 }
                 
                 data.sets.forEach((set, index) => {
-                    const weightInput = document.getElementById(`${name}_weight_${index + 1}`);
+                    if (!this.exercises.find(e => e.name === name).isBodyweight) {
+                        const weightInput = document.getElementById(`${name}_weight_${index + 1}`);
+                        if (weightInput) weightInput.value = set.weight;
+                    }
                     const repsInput = document.getElementById(`${name}_reps_${index + 1}`);
-                    if (weightInput) weightInput.value = set.weight;
                     if (repsInput) repsInput.value = set.reps;
                 });
             });
@@ -205,10 +230,18 @@ const MondayWorkout = {
 
         this.exercises.forEach(exercise => {
             workout.exercises[exercise.name] = {
-                sets: Array(exercise.sets).fill().map((_, i) => ({
-                    weight: Number(document.getElementById(`${exercise.name}_weight_${i+1}`).value),
-                    reps: Number(document.getElementById(`${exercise.name}_reps_${i+1}`).value)
-                }))
+                sets: Array(exercise.sets).fill().map((_, i) => {
+                    if (exercise.isBodyweight) {
+                        return {
+                            reps: Number(document.getElementById(`${exercise.name}_reps_${i+1}`).value)
+                        };
+                    } else {
+                        return {
+                            weight: Number(document.getElementById(`${exercise.name}_weight_${i+1}`).value),
+                            reps: Number(document.getElementById(`${exercise.name}_reps_${i+1}`).value)
+                        };
+                    }
+                })
             };
         });
 
