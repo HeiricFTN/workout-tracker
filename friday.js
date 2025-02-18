@@ -1,17 +1,18 @@
 const FridayWorkout = {
     exercises: [
         {
-            name: 'Modified Pull-ups',
-            description: 'Using the rack, perform pull-ups with knees bent for ceiling clearance.',
-            formCues: [
-                'Bend knees to avoid ceiling',
-                'Pull chest to bar',
-                'Control descent',
-                'Full arm extension at bottom'
-            ],
-            sets: 3,
-            repRange: 'Max Reps',
-            restTime: '90 sec'
+    name: 'Modified Pull-ups',
+    description: 'Using the rack, perform pull-ups with knees bent for ceiling clearance.',
+    formCues: [
+        'Bend knees to avoid ceiling',
+        'Pull chest to bar',
+        'Control descent',
+        'Full arm extension at bottom'
+    ],
+    sets: 3,
+    repRange: 'Max Reps',
+    restTime: '90 sec',
+    isBodyweight: true
         },
         {
             name: 'Standing DB Curls',
@@ -40,17 +41,18 @@ const FridayWorkout = {
             restTime: '60 sec'
         },
         {
-            name: 'TRX Rows',
-            description: 'Face TRX, lean back, pull chest to hands with elbows wide.',
-            formCues: [
-                'Body straight',
-                'Chest up',
-                'Squeeze shoulder blades',
-                'Control return'
-            ],
-            sets: 3,
-            repRange: '12-15',
-            restTime: '60 sec'
+    name: 'TRX Rows',
+    description: 'Face TRX, lean back, pull chest to hands with elbows wide.',
+    formCues: [
+        'Body straight',
+        'Chest up',
+        'Squeeze shoulder blades',
+        'Control return'
+    ],
+    sets: 3,
+    repRange: '12-15',
+    restTime: '60 sec',
+    isBodyweight: true 
         },
         {
             name: 'Concentration Curls',
