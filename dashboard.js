@@ -24,6 +24,8 @@ const Dashboard = {
         this.loadWorkoutSummaries();
         this.initCharts();
         this.updateCharts('monday');
+        this.loadWorkoutExercises();
+
     },
 
     updateCurrentDate() {
@@ -172,7 +174,12 @@ const Dashboard = {
             });
         }
     },
-
+loadWorkoutExercises() {
+    const mondayExercises = JSON.parse(localStorage.getItem('monday_exercises') || '[]');
+    const wednesdayExercises = JSON.parse(localStorage.getItem('wednesday_exercises') || '[]');
+    const fridayExercises = JSON.parse(localStorage.getItem('friday_exercises') || '[]');
+    return [...mondayExercises, ...wednesdayExercises, ...fridayExercises];
+}
     updateCharts(day) {
         const workouts = this.getWorkouts(day);
         const exercises = this.keyExercises[day];
