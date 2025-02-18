@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Progress Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="app-container">
+        <header class="bg-white shadow-sm p-4 mb-4">
+            <h1 class="text-2xl font-bold">Progress Tracker</h1>
+            <div class="flex justify-between items-center mt-2">
+                <div>
+                    <button id="dadButton" class="px-4 py-2 bg-blue-500 text-white rounded">Dad</button>
+                    <button id="alexButton" class="px-4 py-2 bg-gray-300 rounded">Alex</button>
+                </div>
+                <select id="timeRangeSelector" class="border rounded p-2">
+                    <option value="1">Last Month</option>
+                    <option value="3">Last 3 Months</option>
+                    <option value="6">Last 6 Months</option>
+                    <option value="12">Last Year</option>
+                    <option value="all">All Time</option>
+                </select>
+            </div>
+        </header>
+
+        <section id="overviewSection" class="bg-white rounded-lg shadow-sm p-4 mb-4">
+            <h2 class="text-xl font-bold mb-2">Overview</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-semibold">Workouts Completed</h3>
+                    <p id="workoutsCompleted" class="text-2xl font-bold text-blue-500">0</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold">Total Volume Lifted</h3>
+                    <p id="totalVolume" class="text-2xl font-bold text-green-500">0 lbs</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="strengthProgressSection" class="bg-white rounded-lg shadow-sm p-4 mb-4">
+            <h2 class="text-xl font-bold mb-2">Strength Progress</h2>
+            <canvas id="strengthProgressChart"></canvas>
+        </section>
+
+        <section id="volumeProgressSection" class="bg-white rounded-lg shadow-sm p-4 mb-4">
+            <h2 class="text-xl font-bold mb-2">Volume Progress</h2>
+            <canvas id="volumeProgressChart"></canvas>
+        </section>
+
+        <section id="personalBestsSection" class="bg-white rounded-lg shadow-sm p-4 mb-4">
+            <h2 class="text-xl font-bold mb-2">Personal Bests</h2>
+            <div id="personalBestsList" cl class="space-y-2"></div>
+        </section>
+
+        <section id="goalTrackingSection" class="bg-white rounded-lg shadow-sm p-4 mb-4">4">
+            <h2 class="text-xl font-bold mb-2">Goal Tracking</h2>
+            <div id="goalsList" class="space-y--y-2"></div>
+            <button id="addGoalBtn" class="mt-2 px-4 py-2 bg-green-500 text-white rounded">Add New Goal</button>
+        </section>
+
+        <section id="exerciseDetailsSection" class="bg-white rounded-lg shadow-sm p-4 mb-4">
+            <h2 class="text-xl font-bold mb-2">Exercise Details</h2>
+            <select id="exerciseSelector" class="w-full border rounded p-2 mb-2">
+                <!-- Populated dynamically -->
+            </select>
+            <div id="exerciseDetailsils"></div>
+        </section>
+    </div>
+
+    <script src="progress.js"></script>
+</body>
+</html>
