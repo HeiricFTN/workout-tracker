@@ -95,7 +95,7 @@ const MondayWorkout = {
             document.getElementById('dadButton').classList.remove('bg-gray-200');
             document.getElementById('dadButton').classList.add('bg-blue-500', 'text-white');
         } else {
-            document.getElementById('alexButton').classList.remove('bg-gray-2y-200');
+            document.getElementById('alexButton').classList.remove('bg-gray-200');
             document.getElementById('alexButton').classList.add('bg-blue-500', 'text-white');
         }
         
