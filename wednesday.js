@@ -74,6 +74,7 @@ const WednesdayWorkout = {
         this.renderExercises();
         this.loadLastWorkout();
         this.setupEventListeners();
+        localStorage.setItem('wednesday_exercises', JSON.stringify(this.exercises));
     },
 
     displayUser() {
