@@ -76,12 +76,38 @@ const WednesdayWorkout = {
     },
 
     displayUser() {
-        document.getElementById('userDisplay').textContent = this.currentUser;
+        const userDisplay = document.getElementById('userDisplay');
+        if (userDisplay) {
+            userDisplay.textContent = this.currentUser;
+        }
+    },
+
+    switchUser(user) {
+        this.currentUser = user;
+        localStorage.setItem('currentUser', user);
+        
+        document.getElementById('dadButton').classList.remove('bg-blue-500', 'text-white');
+        document.getElementById('alexButton').classList.remove('bg-blue-500', 'text-white');
+        document.getElementById('dadButton').classList.add('bg-gray-200');
+        document.getElementById('alexButton').classList.add('bg-gray-200');
+        
+        if (user === 'Dad') {
+            document.getElementById('dadButton').classList.remove('bg-gray-200');
+            document.getElementById('dadButton').classList.add('bg-blue-500', 'text-white');
+        } else {
+            document.getElementById('alexButton').classList.remove('bg-gray-200');
+            document.getElementById('alexButton').classList.add('bg-blue-500', 'text-white');
+        }
+        
+        this.displayUser();
+        this.loadLastWorkout();
     },
 
     renderExercises() {
         const container = document.getElementById('exerciseContainer');
-        container.innerHTML = this.exercises.map(exercise => this.createExerciseHTML(exercise)).join('');
+        if (container) {
+            container.innennerHTML = this.exercises.map(exercise => this.createExerciseHTML(exercise)).join('');
+        }
     },
 
     createExerciseHTML(exercise) {
@@ -96,7 +122,7 @@ const WednesdayWorkout = {
                     <p class="text-sm text-gray-600 mb-2">${exercise.description}</p>
                     <div class="bg-blue-50 p-2 rounded">
                         <p class="text-xs font-bold mb-1">Form Cues:</p>
-                        <ul class="text-xs text-gray-600">
+                        <ul class="text-xs text-gray-600"00">
                             ${exercise.formCues.map(cue => `<li>• ${cue}</li>`).join('')}
                         </ul>
                     </div>
@@ -141,6 +167,8 @@ const WednesdayWorkout = {
 
     setupEventListeners() {
         document.getElementById('saveWorkout').addEventListener('click', () => this.saveWorkout());
+        document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
+        document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
     },
 
     loadLastWorkout() {
