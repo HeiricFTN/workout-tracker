@@ -76,19 +76,45 @@ const MondayWorkout = {
     },
 
     displayUser() {
-        document.getElementById('userDisplay').textContent = this.currentUser;
+        const userDisplay = document.getElementById('userDisplay');
+        if (userDisplay) {
+            userDisplay.textContent = this.currentUser;
+        }
+    },
+
+    switchUser(user) {
+        this.currentUser = user;
+        localStorage.setItem('currentUser', user);
+        
+        document.getElementById('dadButton').classList.remove('bg-blue-500', 'text-white');
+        document.getElementById('alexButton').classList.remove('bg-blue-500', 'text-white');
+        document.getElementById('dadButton').classList.add('bg-gray-200');
+        document.getElementById('alexButton').classList.add('bg-gray-200');
+        
+        if (user === 'Dad') {
+            document.getElementById('dadButton').classList.remove('bg-gray-200');
+            document.getElementById('dadButton').classList.add('bg-blue-500', 'text-white');
+        } else {
+            document.getElementById('alexButton').classList.remove('bg-gray-2y-200');
+            document.getElementById('alexButton').classList.add('bg-blue-500', 'text-white');
+        }
+        
+        this.displayUser();
+        this.loadLastWorkout();
     },
 
     renderExercises() {
         const container = document.getElementById('exerciseContainer');
-        container.innerHTML = this.exercises.map(exercise => this.createExerciseHTML(exercise)).join('');
+        if (container) {
+            container.innerHTML = this.exercises.map(exercise => this.createExerciseHTML(exercise)).join('');
+        }
     },
 
     createExerciseHTML(exercise) {
         return `
             <div class="workout-card bg-white rounded-lg shadow p-4 mb-4">
                 <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-bold text-lg">${exercise.name}me}</h3>
+                    <h3 class="font-bold text-lg">${exercise.name}</h3>
                     <span class="text-sm text-gray-500">Rest: ${exercise.restTime}</span>
                 </div>
                 
@@ -141,6 +167,8 @@ const MondayWorkout = {
 
     setupEventListeners() {
         document.getElementById('saveWorkout').addEventListener('click', () => this.saveWorkout());
+        document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
+        document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
     },
 
     loadLastWorkout() {
