@@ -40,17 +40,18 @@ const WednesdayWorkout = {
             restTime: '60 sec'
         },
         {
-            name: 'TRX Y-Raises',
-            description: 'Face anchor point, raise arms up and out to form a Y shape.',
-            formCues: [
-                'Lean back slightly',
-                'Arms slightly bent',
-                'Squeeze shoulder blades',
-                'Control the return'
-            ],
-            sets: 3,
-            repRange: '12-15',
-            restTime: '60 sec'
+    name: 'TRX Y-Raises',
+    description: 'Face anchor point, raise arms up and out to form a Y shape.',
+    formCues: [
+        'Lean back slightly',
+        'Arms slightly bent',
+        'Squeeze shoulder blades',
+        'Control the return'
+    ],
+    sets: 3,
+    repRange: '12-15',
+    restTime: '60 sec',
+    isBodyweight: true  // Add this line
         },
         {
             name: 'DB Shrugs',
