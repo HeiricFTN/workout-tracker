@@ -1,5 +1,49 @@
 const Dashboard = {
     currentUser: 'Dad',
+    
+    init() {
+        this.setupEventListeners();
+        this.loadUserData();
+        this.updateTodayWorkout();
+        this.loadWorkoutSummaries();
+        this.initCharts();
+        this.updateCharts('monday');
+    },
+
+    setupEventListeners() {
+        document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
+        document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
+    },
+
+    switchUser(user) {
+        this.currentUser = user;
+        localStorage.setItem('currentUser', user);
+        
+        // Update button styles
+        document.getElementById('dadButton').classList.remove('bg-blue-500', 'text-white');
+        document.getElementById('alexButton').classList.remove('bg-blue-500', 'text-white');
+        document.getElementById('dadButton').classList.add('bg-gray-200');
+        document.getElementById('alexButton').classList.add('bg-gray-200');
+        
+        if (user === 'Dad') {
+            document.getElementById('dadButton').classList.remove('bg-gray-200');
+            document.getElementById('dadButton').classList.add('bg-blue-500', 'text-white');
+        } else {
+            document.getElementById('alexButton').classList.remove('bg-gray-200');
+            document.getElementById('alexButton').classList.add('bg-blue-500', 'text-white');
+        }
+
+        // Update data displays
+        this.loadWorkoutSummaries();
+        this.updateCharts('monday');
+    },
+
+    loadUserData() {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+            this.switchUser(savedUser);
+        }
+    }
     workoutDays: {
         1: { name: 'monday', title: 'Chest & Triceps' },
         3: { name: 'wednesday', title: 'Shoulders & Traps' },
