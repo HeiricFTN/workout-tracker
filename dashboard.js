@@ -1,4 +1,3 @@
-// dashboard.js
 const Dashboard = {
     currentUser: 'Dad',
     workoutDays: {
@@ -14,7 +13,7 @@ const Dashboard = {
     keyExercises: {
         monday: ['DB Bench Press', 'Incline DB Press'],
         wednesday: ['Seated DB Press', 'Lateral Raises'],
-        friday: ['Modified Pull-ups', 'Standing DB Curls']
+        friday: ['Standing DB Curls', 'Hammer Curls']
     },
 
     init() {
@@ -45,7 +44,6 @@ const Dashboard = {
         this.currentUser = user;
         localStorage.setItem('currentUser', user);
         
-        // Update button styles
         document.getElementById('dadButton').classList.remove('bg-blue-500', 'text-white');
         document.getElementById('alexButton').classList.remove('bg-blue-500', 'text-white');
         document.getElementById('dadButton').classList.add('bg-gray-200');
@@ -72,7 +70,7 @@ const Dashboard = {
 
     updateTodayWorkout() {
         const today = new Date().getDay();
-           const todayDiv = document.getElementById('todayWorkout');
+        const todayDiv = document.getElementById('todayWorkout');
         const quickStartDiv = document.getElementById('quickStart');
         
         if (this.workoutDays[today]) {
@@ -105,7 +103,7 @@ const Dashboard = {
                     const date = new Date(lastWorkout.date).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric'
-                    });
+                       });
                     summaryDiv.innerHTML = `
                         <p>Last: ${date}</p>
                         <p class="text-gray-500">Completed ${workouts.length} workouts</p>
@@ -117,7 +115,7 @@ const Dashboard = {
         });
     },
 
-    initCharts() {
+       initCharts() {
         this.createWeightChart();
     },
 
@@ -190,7 +188,7 @@ const Dashboard = {
                 data: workouts.map(w => {
                     const exerciseData = w.exercises[exercise];
                     if (!exerciseData) return null;
-                    return Math.max(...exerciseData.sets.map(s => s.weight));
+                    return Math.max(...exerciseData.sets.map(s => s.weight || 0));
                 }),
                 fill: false,
                 borderColor: this.getRandomColor(),
@@ -215,7 +213,7 @@ const Dashboard = {
 
             exercises.forEach(exercise => {
                 const maxWeight = Math.max(...workouts.flatMap(w => 
-                    w.exercises[exercise]?.sets.map(s => s.weight) || [0]
+                    w.exercises[exercise]?.sets.map(s => s.weight || 0) || [0]
                 ));
 
                 const recentWorkouts = workouts.slice(-2);
