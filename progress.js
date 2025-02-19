@@ -1,122 +1,168 @@
-const currentUser = localStorage.getItem('currentUser') || 'Dad';
-console.log('Current User:', currentUser);
-
 const ProgressTracker = {
-    currentUser: 'Dad',
-    timeRange: 1, // Default to 1 month
-    exercises: [],
+    currentUser: null,
+    charts: {},
+    selectedTimeRange: '1',
+    selectedExercise: null,
 
-    init() {
-        this.loadUserData();
-        this.setupEventListeners();
-        this.loadExercises();
-        this.updateUI();
-    },
-
-    loadUserData() {
-        const savedUser = localStorage.getItem('currentUntUser');
-        if (savedUser) {
-            this.currentUser = savedUser;
-            thishis.updateUserButtons();
+    async init() {
+        console.log('Initializing ProgressTracker...');
+        try {
+            this.currentUser = await DataManager.getCurrentUser();
+            this.setupEventListeners();
+            await this.loadInitialData();
+            this.hideLoading();
+            console.log('ProgressTracker initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize ProgressTracker:', error);
+            this.showError('Failed to load progress data');
         }
     },
 
-    setupEventListeners() {
-        document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
-        document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
-        document.getElementById('timeRangeSelector').addEventListener('change', (e) => {
-            this.timeRange = parseInt(e.target.value);
-            this.updateUI();
-        });
-        document.getElementById('exerciseSelector').addEventListener('change', (e) => {
-            this.updateExerciseDetails(e.target.value);
-        });
-        document.getElementById('addGoalBtn').addEventListener('click', () => this.addNewGoal());
+    showLoading() {
+        document.getElementById('loadingOverlay').classList.remove('hidden');
     },
 
-    switchUser(user) {
-        this.currentUser = user;
-        localStorage.setItem('currentUser', user);
-        this.updateUserButtons();
-        this.updateUI();
+    hideLoading() {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+    },
+
+    showError(message) {
+        // TODO: Implement error display
+        console.error(message);
+    },
+
+    setupEventListeners() {
+        // User switching
+        document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
+        document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
+
+        // Time range selection
+        document.getElementById('timeRange').addEventListener('change', (e) => {
+            this.selectedTimeRange = e.target.value;
+            this.updateCharts();
+        });
+
+        // Exercise selection
+        document.getElementById('exerciseSelect').addEventListener('change', (e) => {
+            this.selectedExercise = e.target.value;
+            this.updateExerciseDetail();
+        });
+
+        // Export button
+        document.getElementById('exportDataBtn').addEventListener('click', () => this.exportData());
+
+        // Handle data changes
+        window.addEventListener('dataChanged', (e) => this.handleDataChange(e.detail));
+    },
+
+    async loadInitialData() {
+        this.showLoading();
+        try {
+            await this.updateUserButtons();
+            await this.populateExerciseSelect();
+            await this.updateCharts();
+            await this.updatePersonalBests();
+            await this.updateRecentActivity();
+        } catch (error) {
+            console.error('Error loading initial data:', error);
+            this.showError('Failed to load data');
+        }
+        this.hideLoading();
+    },
+
+    async switchUser(user) {
+        console.log('Switching to user:', user);
+        this.showLoading();
+        try {
+            this.currentUser = user;
+            await DataManager.setCurrentUser(user);
+            await this.updateUserButtons();
+            await this.loadInitialData();
+        } catch (error) {
+            console.error('Error switching user:', error);
+            this.showError('Failed to switch user');
+        }
+        this.hideLoading();
     },
 
     updateUserButtons() {
-        document.getElementById('dadButton').classList.toggle('bg-blue-500', this.currentUser === 'Dad');
-        document.getElementById('dadButton').classList.toggle('text-white', this.currentUser === 'Dad');
-        document.getElementById('alexButton').classList.toggle('bg-blue-500', this.currentUser === 'Alex');
-        document.getElementById('alexButton').classList.toggle('text-white', this.currentUser === 'Alex');
+        const dadButton = document.getElementById('dadButton');
+        const alexButton = document.getElementById('alexButton');
+        
+        dadButton.classList.toggle('bg-blue-500', this.currentUser === 'Dad');
+        dadButton.classList.toggle('text-white', this.currentUser === 'Dad');
+        alexButton.classList.toggle('bg-blue-500', this.currentUser === 'Alex');
+        alexButton.classList.toggle('text-white', this.currentUser === 'Alex');
     },
 
-    loadExercises() {
-        // Combine exercises from all workout days
-        const mondayExercises = JSON.parse(localStorage.getItem('monday_exercises') || '[]');
-        const wednesdayExercises = JSON.parse(localStorage.getItem('wednesday_exercises') || '[]');
-        const fridayExercises = JSON.parse(localStorage.getItem('friday_exercises') || '[]');
-        this.exercises = [...mondayExercises, ...wednesdayExercises, ...fridayExercises];
+    async populateExerciseSelect() {
+        const select = document.getElementById('exerciseSelect');
+        const progress = await DataManager.getProgress(this.currentUser);
+        const exercises = Object.keys(progress || {});
 
-        const exerciseSelector = document.getElementById('exerciseSelector');
-        exerciseSelector.innerHTML = this.exercises.map(exercise => 
-            `<option value="${exercise.name}">${exercise.name}</option>`
+        select.in.innerHTML = exercises.map(exercise => 
+            `<option value="${exercise}">${exercise}</option>`
         ).join('');
+
+        if (exercises.length > 0) {
+            this.selectedExercise = exercises[0];
+            await this.updateExerciseDetail();
+        }
     },
 
-    updateUI() {
-        this.updateOverview();
-        this.updateStrengthProgressChart();
-        this.updateVolumeProgressChart();
-        this.updatePersonalBests();
-        this.updateGoals();
-        this.updateExerciseDetails(document.getElementById('exerciseSelector').value);
+    async updateCharts() {
+        this.showLoading();
+        try {
+            const progress = await DataManager.getProgress(this.currenrentUser);
+            this.updateStrengthChart(progress);
+        } catch (error) {
+            console.error('Error updating charts:', error);
+            this.showError('Failed to update charts');
+        }
+        this.hideLoading();
     },
 
-    updateOverview() {
-        const workouts = this.getAllWorkouts();
-        document.getElementById('workoutsCompleted').textContent = workouts.length;
+    updateStrengthChart(progress) {
+        const ctx = document.getElementById('strengthChart');
+        if (!ctx) return;
+
+        if (this.charts.strength) {
+               this.charts.strength.destroy();
+        }
+
+        const datasets = this.prepareChartData(progress);
         
-        const totalVolume = workouts.reduce((total, workout) => {
-            return total + this.calculateWorkoutVolume(workout);
-        }, 0);
-        document.getElementById('totalVolume').textContent = `${totalVolume} lbs`;
-    },
-
-    updateStrengthProgressChart() {
-        const ctx = document.getElementById('strengthProgressChart').getContext('2d');
-        const data = this.getStrengthProgressData();
-        
-        new Chart(ctx, {
+        this.charts.strength = new Chart(ctx, {
             type: 'line',
-            data: data,
+            data: {
+                labels: this.generateDateLabels(progress),
+                datasets: datasets
+            },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 8,
+                            font: { size: 10 }
+                        }
+                    }
+                },
                 scales: {
                     y: {
-                        beginAtZero: true,
+                        beginAtZero: false,
                         title: {
                             display: true,
                             text: 'Weight (lbs)'
                         }
-                    }
-                }
-            }
-        });
-    },
-
-    updateVolumeProgressChart() {
-        const ctx = document.getElementById('volumeProgressChart').getContext('2d');
-        const data = this.getVolumeProgressData();
-        
-        new Chart(ctx, {
-            type: 'bar',
-            data: data,
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Volume (lbs)'
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
                         }
                     }
                 }
@@ -124,179 +170,169 @@ const ProgressTracker = {
         });
     },
 
-    updatePersonalBests() {
-        const personalBests = this.getPersonalBests();
-        const personalBestsList = document.getElementById('personalBestsList');
-        personalBestsList.innerHTML = Object.entries(personalBests).map(([exercise, best]) => 
-            `<div>
-                <strong>${exercise}:</strong> ${best.weight} lbs x ${best.reps} reps
-                <span class="text-sm text-gray-500">(${new Date(best.date).toLocaleDateString()})</span>
-            </div>`
-        ).join('');
+    prepareChartData(progress) {
+        return Object.entries(progress)
+            .filter(([_, data]) => data.history?.length > 0)
+            .map(([exercise, data]) => ({
+                label: exercise,
+                data: this.filterDataByTimeRange(data.history).map(entry => 
+                    Math.max(...entry.sets.map(set => set.weight || 0))
+                ),
+                borderColor: this.getRandomColor(),
+                tension: 0.1,
+                fill: false
+            }));
     },
 
-    updateGoals() {
-        const goals = this.getGoals();
-        const goalsList = document.getElementById('goalsList');
-        goalsList.innerHTML = goals.map(goal => 
-            `<div class="flex justify-between items-center">
-                <span>${goal.description}</span>
-                <button class="px-2 py-1 bg-red-500 text-white rounded text-sm" 
-                        onclick="ProgressTracker.removeGoal('${goal.id}')">Remove</button>
-            </div>`
-        ).join('');
+    filterDataByTimeRange(history) {
+        if (this.selectedTimeRange === 'all') return history;
+
+        const months = parseInt(this.selectedTimeRange);
+        const cutoff = new Date();
+        cutoff.setMonth(cutoff.getMonth() - months);
+
+        return history.filter(entry => new Date(entry.date) >= cutoff);
     },
 
-    updateExerciseDetails(exerciseName) {
-        const exerciseData = this.getExerciseData(exerciseName);
-        const detailsContainer = document.getElementById('exerciseDetails');
-        
-        if (exerciseData.length === 0) {
-            detailsContainer.innerHTML = '<p>No data available for this exercise.</p>';
+    generateDateLabels(progress) {
+        const allDates = Object.values(progress)
+            .flatMap(data => data.history || [])
+            .map(entry => new Date(entry.date))
+            .sort((a, b) => a - b);
+
+        return [...new Set(allDates)].map(date => 
+            date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        );
+    },
+
+    async updatePersonalBests() {
+        const container = document.getElementById('personalBests');
+        const progress = await DataManager.getProgress(this.currentUser);
+
+        if (!progress || Object.keys(progress).length === 0) {
+            container.innerHTML = '<p class="text-gray-500">No personal bests recorded yet</p>';
             return;
         }
 
-        const lastWorkout = exerciseData[exerciseData.length - 1];
-        const bestSet = this.getBestSet(exerciseData);
+        const bests = Object.entries(progress)
+            .map(([exercise, data]) => ({
+                exercise,
+                ...data.personalBest
+            }))
+            .filter(best => best.weight > 0);
 
-        detailsContainer.innerHTML = `
-            <div class="mb-4">
-                <h3 class="font-semibold">Last Workout (${new Date(lastWorkout.date).toLocaleDateString()})</h3>
-                <p>${this.formatSets(lastWorkout.sets)}</p>
+        container.innerHTML = bests.map(best => `
+            <div class="flex justify-between items-center">
+                <span class="text-sm">${best.exercise}</span>
+                <span class="text-sm font-medium">
+                    ${best.weight}lb × ${best.reps}
+                    <span class="text-xs text-gray-500 ml-2">
+                        (${new Date(best.date).toLocaleDateString()})
+                    </span>
+                </span>
             </div>
-            <div class="mb-4">
-                <h3 class="font-semibold">Personal Best</h3>
-                <p>${bestSet.weight} lbs x ${bestSet.reps} reps (${new Date(bestSet.date).toLocaleDateString()})</p>
-            </div>
-            <div>
-                <h3 class="font-semibold">Progress Chart</h3>
-                <canvas id="exerciseProgressChart"></canvas>
+        `).join('');
+    },
+
+    async updateExerciseDetail() {
+        if (!this.selectedExercise) return;
+
+        const container = document.getElementById('exerciseDetail');
+        const progress = await DataManager.getProgress(this.currentUser);
+        const exerciseData = progress[this.selectedExercise];
+
+        if (!exerciseData || !exerciseData.history.length) {
+            container.innerHTML = '<p class="text-gray-500">No data available for this exercise</p>';
+            return;
+        }
+
+        const history = this.filterDataByTimeRange(exerciseData.history);
+        const recentWorkout = history[history.length - 1];
+        const personalBest = exerciseData.personalBest;
+
+        container.innerHTML = `
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="text-sm font-bold mb-1">Personal Best</h3>
+                        <p class="text-sm">
+                            ${personalBest.weight}lb × ${personalBest.reps}
+                            <span class="text-xs text-gray-500 block">
+                                ${new Date(personalBest.date).toLocaleDateString()}
+                            </span>
+                        </p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold mb-1">Latest</h3>
+                        <p class="text-sm">
+                            ${this.formatSets(recentWorkout.sets)}
+                            <span class="text-xs text-gray-500 block">
+                                ${new Date(recentWorkout.date).toLocaleDateString()}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                <canvas id="exerciseDetailChart"></canvas>
             </div>
         `;
 
-        this.renderExerciseProgressChart(exerciseName, exerciseData);
+        this.updateExerciseChart(history);
     },
 
-    renderExerciseProgressChart(exerciseName, data) {
-        const ctx = document.getElementById('exerciseProgressChart').getContext('2d');
+    updateExerciseChart(history) {
+        const ctx = document.getElementById('exerciseDetailChart');
+        if (!ctx) return;
+
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.map(d => new Date(d.date).toLocaleDateString()),
+                labels: history.map(entry => 
+                    new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                ),
                 datasets: [{
                     label: 'Max Weight',
-                    data: data.map(d => Math.max(...d.sets.map(set => set.weight))),
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1
+                    data: history.map(entry => Math.max(...entry.sets.map(set => set.weight || 0))),
+                    borderColor: this.getRandomColor(),
+                    fill: false
                 }]
             },
             options: {
                 responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Weight (lbs)'
-                        }
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 }
             }
         });
     },
 
-    getAllWorkouts() {
-        const mondayWorkouts = JSON.parse(localStorage.getItem(`monday_${this.currentUser}`) || '[]');
-        const wednesdayWorkouts = JSON.parse(localStorage.getItem(`wednesday_${this.currentUser}`) || '[]');
-        const fridayWorkouts = JSON.parse(localStorage.getItem(`friday_${this.currentUser}`) || '[]');
-        return [...mondayWorkouts, ...wednesdayWorkouts, ...fridayWorkouts]
-            .filter(workout => this.isWithinTimeRange(workout.date))
-            .sort((a, b) => new Date(a.date) - new Date(b.date));
-    },
+    async updateRecentActivity() {
+        const container = document.getElementById('recentActivity');
+        const workouts = await DataManager.getWorkouts(this.currentUser, { limit: 5 });
 
-    isWithinTimeRange(date) {
-        const workoutDate = new Date(date);
-        const now = new Date();
-        const monthsAgo = new Date(now.setMonth(now.getMonth() - this.timeRange));
-        return workoutDate >= monthsAgo;
-    },
-
-    calculateWorkoutVolume(workout) {
-        return Object.values(workout.exercises).reduce((total, exercise) => {
-            return total + exercise.sets.reduce((exerciseTotal, set) => {
-                return exerciseTotal + (set.weight || 0) * set.reps;
-            }, 0);
-        }, 0);
-    },
-
-    getStrengthProgressData() {
-        const workouts = this.getAllWorkouts();
-        const exercises = this.exercises.filter(e => !e.isBodyweight);
-
-        return {
-            labels: workouts.map(w => new Date(w.date).toLocaleDateString()),
-            datasets: exercises.map(exercise => ({
-                label: exercise.name,
-                data: workouts.map(workout => {
-                    const exerciseData = workout.exercises[exercise.name];
-                    return exerciseData ? Math.max(...exerciseData.sets.map(set => set.weight)) : null;
-                }),
-                borderColor: this.getRandomColor(),
-                fill: false
-            }))
-        };
-    },
-
-    getVolumeProgressData() {
-        const workouts = this.getAllWorkouts();
-        return {
-            labels: workouts.map(w => new Date(w.date).toLocaleDateString()),
-            datasets: [{
-                label: 'Workout Volume',
-                data: workouts.map(w => this.calculateWorkoutVolume(w)),
-                backgroundColor: 'rgba(75, 192, 192, 0.6)'
-            }]
-        };
-    },
-
-    getPersonalBests() {
-        const workouts = this.getAllWorkouts();
-        const personalBests = {};
-
-        workouts.forEach(workout => {
-            Object.entries(workout.exercises).forEach(([exerciseName, exerciseData]) => {
-                exerciseData.sets.forEach(set => {
-                    if (!personalBests[exerciseName] || 
-                        set.weight > personalBests[exerciseName].weight ||
-                        (set.weight === personalBests[exerciseName].weight && set.reps > personalBests[exerciseName].reps)) {
-                        personalBests[exerciseName] = { ...set, date: workout.date };
-                    }
-                });
-            });
-        });
-
-        return personalBests;
-    },
-
-    getGoals() {
-        return JSON.parse(localStorage.getItem(`goals_${this.currentUser}`) || '[]');
-    },
-
-    addNewGoal() {
-        const description = prompt("Enter new goal:");
-        if (description) {
-            const goals = this.getGoals();
-            goals.push({ id: Date.now(), description });
-            localStorage.setItem(`goals_${this.currentUser}`, JSON.stringify(goals));
-            
-            this.updateGoals();
+        if (!workouts || workouts.length === 0) {
+            container.innerHTML = '<p class="text-gray-500">No recent activity</p>';
+            return;
         }
+
+        container.innerHTML = workouts.map(workout => `
+            <div class="border-b border-gray-100 last:border-0 pb-2 last:pb-0">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium">
+                        ${new Date(workout.date).toLocaleDateString()}
+                    </span>
+                    <span class="text-xs text-gray-500">
+                        ${Object.keys(workout.exercises).length} exercises
+                    </span>
+                </div>
+            </div>
+        `).join('');
     },
 
-    removeGoal(goalId) {
-        const goals = this.getGoals().filter(goal => goal.id !== parseInt(goalId));
-        localStorage.setItem(`goals_${this.currentUser}`, JSON.stringify(goals));
-        this.updateGoals();
+    formatSets(sets) {
+        return sets.map(set => `${set.weight}×${set.reps}`).join(', ');
     },
 
     getRandomColor() {
@@ -304,11 +340,32 @@ const ProgressTracker = {
         return `hsl(${hue}, 70%, 50%)`;
     },
 
-    formatSets(sets) {
-        return sets.map((set, index) => 
-            `Set ${index + 1}: ${set.weight || ''} ${set.weight ? 'lbs x ' : ''}${set.reps} reps`
-        ).join(', ');
+    async exportData() {
+        try {
+            const data = await DataManager.getProgress(this.currentUser);
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `workout-progress-${this.currentUser}-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error exporting data:', error);
+            this.showError('Failed to export data');
+        }
+    },
+
+    handleDataChange(detail) {
+        if (detail.type === 'workouts' || detail.type === 'progress') {
+            this.loadInitialData();
+        }
     }
 };
 
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => ProgressTracker.init());
+
+export default ProgressTracker;
