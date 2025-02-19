@@ -74,7 +74,7 @@ body {
 
 /* Exercise Grid */
 .exercise-grid {
-    display: gr grid;
+    display: grid;
     grid-template-columns: auto 1fr 1fr;
     gap: 0.5rem;
     align-items: center;
@@ -87,7 +87,7 @@ body {
     }
 }
 
-/* Progress Visualization on */
+/* Progress Visualization */
 .progress-bar {
     height: 0.5rem;
     background-color: #e5e7eb;
@@ -124,7 +124,7 @@ body {
     justify-content: center;
 }
 
-/* Fixed EleElements */
+/* Fixed Elements */
 .fixed-bottom {
     position: fixed;
     bottom: 0;
@@ -181,7 +181,6 @@ body {
 
 /* Error and Success Messages */
 .error-message {
- {
     background-color: #fee2e2;
     border: 1px solid #ef4444;
     color: #991b1b;
