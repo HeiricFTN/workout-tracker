@@ -1,3 +1,6 @@
+const currentUser = localStorage.getItem('currentUser') || 'Dad';
+console.log('Current User:', currentUser);
+
 const ProgressTracker = {
     currentUser: 'Dad',
     timeRange: 1, // Default to 1 month
