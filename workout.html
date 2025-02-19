@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Workout</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100">
+    <div class="app-container">
+        <!-- Header -->
+        <header class="sticky top-0 bg-white border-b z-10">
+            <div class="flex items-center justify-between p-4">
+                <button onclick="location.href='index.html'" 
+                        class="p-2 bg-gray-200 rounded-lg">
+                    ← Back
+                </button>
+                <h1 id="workoutTitle" class="text-lg font-bold">Loading...</h1>
+                <div id="userDisplay" class="text-sm font-bold text-blue-500"></div>
+            </div>
+        </header>
+
+        <!-- Timer Display (shows when rest timer is active) -->
+        <div id="timerDisplay" class="hidden fixed top-20 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg">
+        </div>
+
+        <!-- Main Workout Area -->
+        <main class="p-4">
+            <!-- Warmup Section -->
+            <section class="mb-6">
+                <div class="bg-yellow-50 rounded-lg p-4 mb-4">
+                    <h2 class="font-bold mb-2">Warmup</h2>
+                    <div id="warmupSection">
+                        <!-- Hydrow Input -->
+                        <div class="flex items-center gap-4 mb-4">
+                            <span class="text-sm">Hydrow:</span>
+                            <div class="flex items-center gap-2">
+                                <button class="p-2 bg-gray-200 rounded" 
+                                        onclick="adjustValue('hydrowTime', -1)">-</button>
+                                <input type="number" 
+                                       id="hydrowTime" 
+                                       class="w-16 text-center border rounded" 
+                                       value="15">
+                                <button class="p-2 bg-gray-200 rounded" 
+                                        onclick="adjustValue('hydrowTime', 1)">+</button>
+                                <span class="text-sm">min</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Supersets Container -->
+            <div id="supersetsContainer" class="space-y-6">
+                <!-- Supersets will be inserted here by JavaScript -->
+            </div>
+        </main>
+
+        <!-- Footer Controls -->
+        <footer class="fixed bottom-0 left-0 right-0 bg-white border-t p-4" 
+                style="max-width: inherit; margin: 0 auto;">
+            <div class="grid grid-cols-2 gap-2">
+                <button id="restTimerBtn" 
+                        class="py-3 bg-blue-500 text-white rounded-lg">
+                    Start Rest Timer
+                </button>
+                <button id="completeWorkoutBtn" 
+                        class="py-3 bg-green-500 text-white rounded-lg">
+                    Complete Workout
+                </button>
+            </div>
+        </footer>
+
+        <!-- Spacer for fixed footer -->
+        <div class="h-24"></div>
+    </div>
+
+    <!-- Completion Modal -->
+    <div id="completionModal" 
+         class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h3 class="text-lg font-bold mb-4">Great Work!</h3>
+            <p class="mb-4">Would you like to add any notes about this workout?</p>
+            <textarea id="workoutNotes" 
+                      class="w-full border rounded p-2 mb-4" 
+                      rows="3" 
+                      placeholder="Optional workout notes..."></textarea>
+            <div class="flex justify-end gap-2">
+                <button onclick="WorkoutTracker.closeCompletionModal()" 
+                        class="px-4 py-2 bg-gray-200 rounded">
+                    Skip
+                </button>
+                <button onclick="WorkoutTracker.finalizeWorkout()" 
+                        class="px-4 py-2 bg-green-500 text-white rounded">
+                    Save & Complete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/dataManager.js"></script>
+    <script src="js/workoutLibrary.js"></script>
+    <script src="js/workoutTracker.js"></script>
+</body>
+</html>
