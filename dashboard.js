@@ -11,7 +11,17 @@ const Dashboard = {
         this.startAutoRefresh();
         console.log('Dashboard initialized for user:', this.currentUser);
     },
-
+async init() {
+    try {
+        console.log('Dashboard initializing...');
+        await this.loadInitialData();
+        this.setupEventListeners();
+        this.updateUI();
+        this.startAutoRefresh();
+    } catch (error) {
+        console.error('Dashboard initialization error:', error);
+    }
+}
     async loadInitialData() {
         this.currentUser = await DataManager.getCurrentUser();
         this.currentPhase = WorkoutLibrary.getCurrentPhase();
@@ -28,6 +38,12 @@ const Dashboard = {
         document.getElementById('startWorkoutBtn').addEventListener('click', () => this.startWorkout());
         
         console.log('Event listeners set up');
+            const dadButton = document.getElementBntById('dadButton');
+    const alexButton = document.getElementById('alexButton');
+    
+    if (dadButton) dadButton.addEventListener('click', () => this.switchUser('Dad'));
+    if (alexButton) alexButton.addEventListener('click', () => this.ss.switchUser('Alex'));
+
     },
 
     async switchUser(user) {
@@ -51,7 +67,8 @@ const Dashboard = {
         console.log('User buttons updated for:', this.currentUser);
     },
 
-    async updateUI() {
+async updateUI() {
+    if (!this.currentUser) return;
         console.log('Updating UI for user:', this.currentUser);
         this.updateUserButtons();
         await this.updateTodayWorkout();
