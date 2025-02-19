@@ -1,5 +1,7 @@
 // dataManager.js - Handles all data storage, retrieval, and synchronization
 
+const currentUser = localStorage.getItem('currentUser') || 'Dad';
+console.log('Current User:', currentUser);
 const DataManager = {
     storageKeys: {
         currentUser: 'currentUser',
