@@ -1,13 +1,9 @@
-// workoutLibrary.js - Complete workout definitions and phase management
-
-const currentUser = localStorage.getItem('currentUser') || 'Dad';
-console.log('Current User:', currentUser);
-
 const WorkoutLibrary = {
+    currentPhase: 'phase1',
     phases: {
         phase1: {
             startDate: '2025-02-18',
-            endDate: '2025-04-15',
+            endDate: '2025-05-12',
             workouts: {
                 chest_tri: {
                     id: 'chest_tri',
@@ -83,7 +79,7 @@ const WorkoutLibrary = {
                                     repRange: 'Max Reps',
                                     rest: 60,
                                     isBodyweight: true,
-                                       formCues: [
+                                    formCues: [
                                         'Body straight line',
                                         'Lower chest to hands',
                                         'Full lockout'
@@ -301,8 +297,8 @@ const WorkoutLibrary = {
         },
         // Phase 2 will be defined similarly with progressive overload
         phase2: {
-            startDate: '2025-04-16',
-            endDate: '2025-06-11',
+            startDate: '2025-05-13',
+            endDate: '2025-08-04',
             workouts: {
                 // Phase 2 workouts will go here
                 // Will include increased intensity and volume
@@ -331,6 +327,17 @@ const WorkoutLibrary = {
         };
         const currentPhase = this.getCurrentPhase();
         return this.getWorkout(currentPhase, schedule[day]);
+    },
+
+    isWorkoutDay(day) {
+        return [1, 3, 5].includes(day);
+    },
+
+    getNextWorkout(currentWorkoutId) {
+        const workoutOrder = ['chest_tri', 'shoulders', 'back_bi'];
+        const currentIndex = workoutOrder.indexOf(currentWorkoutId);
+        const nextIndex = (currentIndex + 1) % workoutOrder.length;
+        return workoutOrder[nextIndex];
     }
 };
 
