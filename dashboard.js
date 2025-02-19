@@ -10,25 +10,46 @@ const Dashboard = {
 
     loadCurrentUser() {
         this.currentUser = localStorage.getItem('currentUser') || 'Dad';
-        console.log('Current user loaded:', this.currentUser);
+        console.log('Current user:', this.currentUser);
     },
 
     setupEventListeners() {
-        console.log('Setting up event listeners');
-        document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
-        document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
-        document.getElementById('startWorkoutBtn').addEventListener('click', () => this.startWorkout());
+        // User switching
+        const dadButton = document.getElementById('dadButton');
+        const alexButton = document.getElementById('alexButton');
+        const startButton = document.getElementById('startWorkoutBtn');
+
+        if (dadButton) {
+            dadButton.addEventListener('click', () => {
+                console.log('Dad button clicked');
+                this.switchUser('Dad');
+            });
+        }
+
+        if (alexButton) {
+            alexButton.addEventListener('click', () => {
+                console.log('Alex button clicked');
+                this.switchUser('Alex');
+            });
+        }
+
+        if (startButton) {
+            startButton.addEventListener('click', () => {
+                console.log('Start button clicked');
+                this.startWorkout();
+            });
+        }
     },
+},
 
     switchUser(user) {
-        console.log('Switching to user:', user);
         this.currentUser = user;
         localStorage.setItem('currentUser', user);
+        console.log('Switched to user:', user);
         this.updateUI();
     },
 
     updateUI() {
-        console.log('Updating UI');
         this.updateUserButtons();
         this.updateTodayWorkout();
         this.updateWeeklyOverview();
@@ -38,60 +59,116 @@ const Dashboard = {
     updateUserButtons() {
         const dadButton = document.getElementById('dadButton');
         const alexButton = document.getElementById('alexButton');
-        
-        dadButton.classList.toggle('bg-blue-500', this.currentUser === 'Dad');
-        dadButton.classList.toggle('text-white', this.currentUser === 'Dad');
-        dadButton.classList.toggle('bg-gray-200', this.currentUser !== 'Dad');
-        
-        alexButton.classList.toggle('bg-blue-500', this.currentUser === 'Alex');
-        alexButton.classList.toggle('text-white', this.currentUser === 'Alex');
-        alexButton.classList.toggle('bg-gray-200', this.currentUser !== 'Alex');
+
+        if (dadButton && alexButton) {
+            // Reset both buttons
+            dadButton.className = 'flex-1 py-2 px-4 rounded-lg';
+            alexButton.className = 'flex-1 py-2 px-4 rounded-lg';
+
+            // Set active button
+            if (this.currentUser === 'Dad') {
+                dadButton.classList.add('bg-blue-500', 'text-white');
+                alexButton.classList.add('bg-gray-200');
+            } else {
+                alexButton.on.classList.add('bg-blue-500', 'text-white');
+                dadButton.classList.add('bg-gray-200');
+            }
+        }
     },
 
     updateTodayWorkout() {
         const workoutPreview = document.getElementById('workoutPreview');
+        const startButton = document.getElementById('startWorkoutBtn');
         const today = new Date().getDay();
         let workout = 'Rest Day';
-        
+
         if (today === 1) workout = 'Chest & Triceps';
         if (today === 3) workout = 'Shoulders';
         if (today === 5) workout = 'Back & Biceps';
 
-        workoutPreview.textContent = workout;
-        document.getElementById('startWorkoutBtn').disabled = workout === 'Rest Day';
+        if (workoutPreview) {
+            workoutPreview.textContent = workout;
+        }
+
+        if (startButton) {
+            if (workout === 'Rest Day') {
+                startButton.disabled = true;
+                startButton.classList.remove('bg-green-500');
+                startButton.classList.add('bg-gray-300');
+            } else {
+                startButton.disabled = false;
+                startButton.classList.remove('bg-gray-300');
+                startButton.classList.add('bg-green-500');
+            }
+        }
     },
 
     updateWeeklyOverview() {
         const dotsContainer = document.getElementById('weeklyDots');
-        const today = new Date().getDay();
-        
-        dotsContainer.innerHTML = Array(7).fill().map((_, i) => {
-            const isWorkoutDay = [1, 3, 5].includes(i + 1);
-            const isPastDay = i + 1 < today;
-            let dotClass = 'w-3 h-3 rounded-full ';
-            
-            if (!isWorkoutDay) dotClass += 'bg-gray-200';
-            else if (isPastDay) dotClass += 'bg-green-500';
-            else if (i + 1 === today) dotClass += 'bg-blue-500';
-            else dotClass += 'bg-gray-300';
+        if (!dotsContainer) return;
 
-            return `<div class="${dotClass}"></div>`;
-        }).join('');
+        const today = new Date().getDay();
+        const dots = [];
+
+        for (let i = 0; i < 7; i++) {
+            const isWorkoutDay = [1, 3, 5].includes(i);
+            const isPastDay = i < today;
+            let dotClass = 'w-3 h-3 rounded-full ';
+
+            if (!isWorkoutDay) {
+                dotClass += 'bg-gray-200';
+            } else if (isPastDay) {
+                dotClass += 'bg-green-500';
+            } else if (i === today) {
+                dotClass += 'bg-blue-500';
+            } else {
+                dotClass += 'bg-gray-300';
+            }
+
+            dots.push(`<div class="${dotClass}"></div>`);
+        }
+
+        dotsContainer.innerHTML = dots.join('');
     },
 
     updateProgressCards() {
-        // Placeholder for progress data
-        document.getElementById('keyLifts').textContent = 'Progress data coming soon';
-        document.getElementById('recentImprovements').textContent = 'Improvements data coming soon';
-        document.getElementById('nextTargets').textContent = 'Targets data coming soon';
+        const sections = ['keyLifts', 'recentImprovements', 'nextTargets'];
+        sections.forEach(section => {
+            const element = document.getElementById(section);
+            if (element) {
+                element.textContent = 'Coming soon...';
+            }
+        });
     },
 
     startWorkout() {
         const today = new Date().getDay();
-        if (today === 1) window.location.href = 'monday.html';
-        if (today === 3) window.location.href = 'wednesday.html';
-        if (today === 5) window.location.href = 'friday.html';
+        let page = '';
+
+        switch (today) {
+            case 1:
+                page = 'monday.html';
+                break;
+            case 3:
+                page = 'wednesday.html';
+                break;
+            case 5:
+                page = 'friday.html';
+                break;
+            default:
+                console.log('No workout scheduled for today');
+                return;
+        }
+
+        if (page) {
+            console.log('Navigating to:', page);
+            window.location.href = page;
+        }
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => Dashboard.init());
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Initializing dashboard...');
+    Dashboard.init();
+});
