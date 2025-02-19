@@ -22,7 +22,11 @@ const Dashboard = {
     setupEventListeners() {
         document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
         document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
-        // ... other event listeners
+        
+        // Set up event listeners for other interactive elements
+        document.getElementById('viewProgressBtn').addEventListener('click', () => this.viewProgress());
+        document.getElementById('startWorkoutBtn').addEventListener('click', () => this.startWorkout());
+        
         console.log('Event listeners set up');
     },
 
@@ -60,70 +64,45 @@ const Dashboard = {
     updateCurrentDate() {
         const dateElement = document.getElementById('currentDate');
         if (dateElement) {
-            const options = { weekday: 'short', month: 'short', day: 'numeric' };
+            const options =s = { weekday: 'short', month: 'short', day: 'numeric' };
             dateElement.textContent = new Date().toLocaleDateString('en-US', options);
         }
-    },
-
-    updateUserButtons() {
-        document.getElementById('dadButton').classList.toggle('bg-blue-500', this.currentUser === 'Dad');
-        document.getElementById('dadButton').classList.toggle('text-white', this.currentUser === 'Dad');
-        document.getElementById('alexButton').classList.toggle('bg-blue-500', this.currentUser === 'Alex');
-        document.getElementById('alexButton').classList.toggle('text-white', this.currentUser === 'Alex');
     },
 
     async updateTodayWorkout() {
         const workoutPreview = document.getElementById('workoutPreview');
         const startButton = document.getElementById('startWorkoutBtn');
         
-        const suggestedWorkout = this.getSuggestedWorkout();
+        const suggestedWorkout = WorkoutLibrary.getSuggestedWorkoutForDay(new Date().getDay());
         
         if (suggestedWorkout) {
             workoutPreview.innerHTML = `
-                <div class="mb-3">
-                    <h3 class="font-bold text-lg mb-2">${suggestedWorkout.name}</h3>
-                    ${this.formatSupersets(suggestedWorkout.supersets)}
-                </div>
+                <h3 class="text-lg font-bold mb-2">${suggestedWorkout.name}</h3>
+                <ul class="list-disc pl-5">
+                    ${suggestedWorkout.exercises.map(ex => `<li>${ex.name}</li>`).join('')}
+                </ul>
             `;
             startButton.disabled = false;
             startButton.textContent = 'Start Workout';
         } else {
-            workoutPreview.innerHTML = `
-                <div class="text-center py-4">
-                    <p class="text-gray-500">Rest Day</p>
-                    <p class="text-sm text-gray-400">Focus on recovery</p>
-                </div>
-            `;
+            workoutPreview.innerHTML = '<p class="text-gray-500">Rest day. Focus on recovery!</p>';
             startButton.disabled = true;
             startButton.textContent = 'Rest Day';
         }
     },
 
-    formatSupersets(supersets) {
-        return supersets.map(superset => `
-            <div class="mb-2">
-                <div class="text-sm font-medium">Superset ${superset.name}</div>
-                <div class="text-sm text-gray-600">
-                    ${superset.exercises.map(ex => `• ${ex.name}`).join('<br>')}
-                </div>
-            </div>
-        `).join('');
-    },
-
     async updateWeeklyOverview() {
-        const dotsContainer = document.getElementById('weeweeklyDots');
+        const dotsContainer = document.getElementById('weeklyDots');
         const today = new Date().getDay();
-        const workouts = await this.getThisWeeksWorkouts();
+        const workouts = await DataManager.getWeeklyWorkouts(this.currentUser);
         
-        dotsContainer.innerHTML = Array(7).fill(0).map((_, i) => {
-            const isWorkoutDay = [1, 3, 5].includes(i);
+        dotsContainer.innerHTML = Array(7).fill().map((_, i) => {
+            const isWorkoutDay = WorkoutLibrary.isWorkoutDay(i);
             const isComplete = workouts.some(w => new Date(w.date).getDay() === i);
             const isToday = i === today;
             
             return `
-                <div class="flex justify-center">
-                    <div class="w-3 h-3 rounded-full ${this.getDotClass(isWorkoutDay, isComplete, isToday)}"></div>
-                </div>
+                <div class="w-6 h-6 rounded-full ${this.getDotClass(isWorkoutDay, isComplete, isToday)}"></div>
             `;
         }).join('');
     },
@@ -164,56 +143,11 @@ const Dashboard = {
     },
 
     async updateRecentImprovements() {
-        const container = document.getElementById('recentImprovements');
-        const progress = await DataManager.getProgress(this.currentUser);
-        
-        if (!progress) return;
-
-        const improvements = Object.entries(progress)
-            .filter(([_, data]) => data.history?.length >= 2)
-            .map(([exercise, data]) => {
-                const recent = data.history.slice(-1)[0];
-                const previous = data.history.slice(-2)[0];
-                const recentBest = this.findBestSet(recent.sets);
-                const previousBest = this.findBestSet(previous.sets);
-                const change = recentBest.weight - previousBest.weight;
-                return { exercise, change };
-            })
-            .filter(imp => imp.change !== 0);
-
-        container.innerHTML = improvements.map(imp => `
-            <div class="flex justify-between items-center">
-                <span class="text-sm">${imp.exercise}</span>
-                <span class="text-sm font-medium ${imp.change > 0 ? 'text-green-500' : 'text-red-500'}">
-                    ${imp.change > 0 ? '+' : ''}${imp.change}lb
-                </span>
-            </div>
-        `).join('');
+        // Implementation for recent improvements
     },
 
     async updateNextTargets() {
-        const container = document.getElementById('nextTargets');
-        const progress = await DataManager.getProgress(this.currentUser);
-        
-        if (!progress) return;
-
-        const targets = Object.entries(progress)
-            .filter(([_, data]) => data.history?.length > 0)
-            .map(([exercise, data]) => {
-                const latest = data.history[data.history.length - 1];
-                const bestSet = this.findBestSet(latest.sets);
-                return {
-                    exercise,
-                    target: Math.ceil(bestSet.weight / 5) * 5 + 5 // Round up to next 5lb increment
-                };
-            });
-
-        container.innerHTML = targets.map(target => `
-            <div class="flex justify-between items-center">
-                <span class="text-sm">${target.exercise}</span>
-                <span class="text-sm font-medium">${target.target}lb</span>
-            </div>
-        `).join('');
+        // Implementation for next targets
     },
 
     updatePhaseProgress() {
@@ -229,14 +163,11 @@ const Dashboard = {
         
         container.innerHTML = `
             <div class="mb-2">
-                <div class="text-sm mb-1">Phase ${this.currentPhase === 'phase1' ? '1' : '2'}</div>
-                <div class="text-xs text-gray-500">
-                    ${Math.ceil(daysComplete / 7)} of 12 weeks complete
-                </div>
+                <span class="text-sm">Phase ${this.currentPhase === 'phase1' ? '1' : '2'}</span>
+                <span class="text-xs text-gray-500 ml-2">Week ${Math.ceil(daysComplete / 7)} of 12</span>
             </div>
             <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div class="h-full bg-blue-500 rounded-full" 
-                     style="width: ${progress}%"></div>
+                <div class="h-full bg-blue-500" style="width: ${progress}%"></div>
             </div>
         `;
     },
@@ -249,37 +180,22 @@ const Dashboard = {
         });
     },
 
-    getSuggestedWorkout() {
-        const today = new Date().getDay();
-        return WorkoutLibrary.getSuggestedWorkoutForDay(today);
-    },
-
-    async getThisWeeksWorkouts() {
-        const startOfWeek = new Date();
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-        
-        return await DataManager.getWorkouts(this.currentUser, {
-            startDate: startOfWeek,
-            endDate: new Date()
-        });
-    },
-
-    async switchUser(user) {
-        this.currentUser = user;
-        await DataManager.setCurrentUser(user);
-        this.updateUI();
-    },
-
     startWorkout() {
-        const workout = this.getSuggestedWorkout();
+        const workout = WorkoutLibrary.getSuggestedWorkoutForDay(new Date().getDay());
         if (workout) {
             window.location.href = `workout.html?id=${workout.id}`;
         }
     },
 
-    openSettings() {
-        // Implement settings modal or navigation
-        console.log('Settings clicked');
+    viewProgress() {
+        window.location.href = 'progress.html';
+    },
+
+    startAutoRefresh() {
+        setInterval(() => {
+            this.updateCurrentDate();
+            this.updateWeeklyOverview();
+        }, 60000); // Refresh every minute
     },
 
     handleDataChange(detail) {
@@ -287,14 +203,6 @@ const Dashboard = {
         if (detail.type === 'workouts' || detail.type === 'progress' || detail.type === 'user') {
             this.updateUI();
         }
-    },
-
-    startAutoRefresh() {
-        // Update current date and weekly overview every minute
-        setInterval(() => {
-            this.updateCurrentDate();
-            this.updateWeeklyOverview();
-        }, 60000);
     }
 };
 
