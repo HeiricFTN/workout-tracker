@@ -1,31 +1,44 @@
+// dashboard.js - Main dashboard functionality and UI management
+
 const Dashboard = {
-    currentUser: 'Dad',
-    workoutDays: {
-        1: { name: 'monday', title: 'Chest & Triceps' },
-        3: { name: 'wednesday', title: 'Shoulders & Traps' },
-        5: { name: 'friday', title: 'Back & Biceps' }
-    },
+    currentUser: null,
+    currentPhase: null,
+    workoutLibrary: null,
 
-    progressCharts: {
-        weight: null
-    },
-
-    keyExercises: {
-        monday: ['DB Bench Press', 'Incline DB Press'],
-        wednesday: ['Seated DB Press', 'Lateral Raises'],
-        friday: ['Standing DB Curls', 'Hammer Curls']
-    },
-
-    init() {
+    async init() {
+        await this.loadInitialData();
         this.setupEventListeners();
-        this.loadUserData();
-        this.updateTodayWorkout();
-        this.updateCurrentDate();
-        this.loadWorkoutSummaries();
-        this.initCharts();
-        this.updateCharts('monday');
-        this.loadWorkoutExercises();
+        this.updateUI();
+        this.startAutoRefresh();
+    },
 
+    async loadInitialData() {
+        this.currentUser = await DataManager.getCurrentUser();
+        this.currentPhase = WorkoutLibrary.getCurrentPhase();
+        this.updateCurrentDate();
+    },
+
+    setupEventListeners() {
+        // User switching
+        document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
+        document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
+
+        // Start workout button
+        document.getElementById('startWorkoutBtn').addEventListener('click', () => this.startWorkout());
+
+        // Settings button
+        document.getElementById('settingsBtn').addEventListener('click', () => this.openSettings());
+
+        // Listen for data changes
+        window.addEventListener('dataChanged', (e) => this.handleDataChange(e.detail));
+    },
+
+    updateUI() {
+        this.updateUserButtons();
+        this.updateTodayWorkout();
+        this.updateWeeklyOverview();
+        this.updateProgressCards();
+        this.updatePhaseProgress();
     },
 
     updateCurrentDate() {
@@ -36,216 +49,239 @@ const Dashboard = {
         }
     },
 
-    setupEventListeners() {
-        document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
-        document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
-        this.setupProgressTabs();
+    updateUserButtons() {
+        document.getElementById('dadButton').classList.toggle('bg-blue-500', this.currentUser === 'Dad');
+        document.getElementById('dadButton').classList.toggle('text-white', this.currentUser === 'Dad');
+        document.getElementById('alexButton').classList.toggle('bg-blue-500', this.currentUser === 'Alex');
+        document.getElementById('alexButton').classList.toggle('text-white', this.currentUser === 'Alex');
     },
 
-    switchUser(user) {
-        this.currentUser = user;
-        localStorage.setItem('currentUser', user);
+    async updateTodayWorkout() {
+        const workoutPreview = document.getElementById('workoutPreview');
+        const startButton = document.getElementById('startWorkoutBtn');
         
-        document.getElementById('dadButton').classList.remove('bg-blue-500', 'text-white');
-        document.getElementById('alexButton').classList.remove('bg-blue-500', 'text-white');
-        document.getElementById('dadButton').classList.add('bg-gray-200');
-        document.getElementById('alexButton').classList.add('bg-gray-200');
+        const suggestedWorkout = this.getSuggestedWorkout();
         
-        if (user === 'Dad') {
-            document.getElementById('dadButton').classList.remove('bg-gray-200');
-            document.getElementById('dadButton').classList.add('bg-blue-500', 'text-white');
+        if (suggestedWorkout) {
+            workoutPreview.innerHTML = `
+                <div class="mb-3">
+                    <h3 class="font-bold text-lg mb-2">${suggestedWorkout.name}</h3>
+                    ${this.formatSupersets(suggestedWorkout.supersets)}
+                </div>
+            `;
+            startButton.disabled = false;
+            startButton.textContent = 'Start Workout';
         } else {
-            document.getElementById('alexButton').classList.remove('bg-gray-200');
-            document.getElementById('alexButton').classList.add('bg-blue-500', 'text-white');
-        }
-
-        this.loadWorkoutSummaries();
-        this.updateCharts('monday');
-    },
-
-    loadUserData() {
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-            this.switchUser(savedUser);
+            workoutPreview.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-gray-500">Rest Day</p>
+                    <p class="text-sm text-gray-400">Focus on recovery</p>
+                </div>
+            `;
+            startButton.disabled = true;
+            startButton.textContent = 'Rest Day';
         }
     },
 
-    updateTodayWorkout() {
+    formatSupersets(supersets) {
+        return supersets.map(superset => `
+            <div class="mb-2">
+                <div class="text-sm font-medium">Superset ${superset.name}</div>
+                <div class="text-sm text-gray-600">
+                    ${superset.exercises.map(ex => `• ${ex.name}`).join('<br>')}
+                </div>
+            </div>
+        `).join('');
+    },
+
+    async updateWeeklyOverview() {
+        const dotsContainer = document.getElementById('weeweeklyDots');
         const today = new Date().getDay();
-        const todayDiv = document.getElementById('todayWorkout');
-        const quickStartDiv = document.getElementById('quickStart');
+        const workouts = await this.getThisWeeksWorkouts();
         
-        if (this.workoutDays[today]) {
-            const workout = this.workoutDays[today];
-            todayDiv.textContent = workout.title;
-            quickStartDiv.innerHTML = `
-                <button onclick="location.href='${workout.name}.html'" 
-                        class="w-full py-2 bg-green-500 text-white rounded-lg shadow touch-target">
-                    Start Workout
-                </button>
-            `;
-        } else {
-            todayDiv.textContent = 'Rest Day';
-            quickStartDiv.innerHTML = `
-                <button class="w-full py-2 bg-gray-200 text-gray-600 rounded-lg shadow touch-target" disabled>
-                    Rest & Recover
-                </button>
-            `;
-        }
-    },
-
-    loadWorkoutSummaries() {
-        ['monday', 'wednesday', 'friday'].forEach(day => {
-            const workouts = this.getWorkouts(day);
-            const lastWorkout = workouts[workouts.length - 1];
-            const summaryDiv = document.getElementById(`${day}Summary`);
+        dotsContainer.innerHTML = Array(7).fill(0).map((_, i) => {
+            const isWorkoutDay = [1, 3, 5].includes(i);
+            const isComplete = workouts.some(w => new Date(w.date).getDay() === i);
+            const isToday = i === today;
             
-            if (summaryDiv) {
-                if (lastWorkout) {
-                    const date = new Date(lastWorkout.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric'
-                       });
-                    summaryDiv.innerHTML = `
-                        <p>Last: ${date}</p>
-                        <p class="text-gray-500">Completed ${workouts.length} workouts</p>
-                    `;
-                } else {
-                    summaryDiv.innerHTML = '<p class="text-gray-500">No workouts yet</p>';
-                }
-            }
+            return `
+                <div class="flex justify-center">
+                    <div class="w-3 h-3 rounded-full ${this.getDotClass(isWorkoutDay, isComplete, isToday)}"></div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    getDotClass(isWorkoutDay, isComplete, isToday) {
+        if (!isWorkoutDay) return 'bg-gray-200';
+        if (isComplete) return 'bg-green-500';
+        if (isToday) return 'bg-blue-500';
+        return 'bg-gray-300';
+    },
+
+    async updateProgressCards() {
+        await this.updateKeyLifts();
+        await this.updateRecentImprovements();
+        await this.updateNextTargets();
+    },
+
+    async updateKeyLifts() {
+        const container = document.getElementById('keyLifts');
+        const progress = await DataManager.getProgress(this.currentUser);
+        
+        if (!progress) return;
+
+        const keyLifts = Object.entries(progress)
+            .filter(([_, data]) => data.history?.length > 0)
+            .map(([exercise, data]) => {
+                const latest = data.history[data.history.length - 1];
+                const bestSet = this.findBestSet(latest.sets);
+                return { exercise, weight: bestSet.weight, reps: bestSet.reps };
+            });
+
+        container.innerHTML = keyLifts.map(lift => `
+            <div class="flex justify-between items-center">
+                <span class="text-sm">${lift.exercise}</span>
+                <span class="text-sm font-medium">${lift.weight}lb × ${lift.reps}</span>
+            </div>
+        `).join('');
+    },
+
+    async updateRecentImprovements() {
+        const container = document.getElementById('recentImprovements');
+        const progress = await DataManager.getProgress(this.currentUser);
+        
+        if (!progress) return;
+
+        const improvements = Object.entries(progress)
+            .filter(([_, data]) => data.history?.length >= 2)
+            .map(([exercise, data]) => {
+                const recent = data.history.slice(-1)[0];
+                const previous = data.history.slice(-2)[0];
+                const recentBest = this.findBestSet(recent.sets);
+                const previousBest = this.findBestSet(previous.sets);
+                const change = recentBest.weight - previousBest.weight;
+                return { exercise, change };
+            })
+            .filter(imp => imp.change !== 0);
+
+        container.innerHTML = improvements.map(imp => `
+            <div class="flex justify-between items-center">
+                <span class="text-sm">${imp.exercise}</span>
+                <span class="text-sm font-medium ${imp.change > 0 ? 'text-green-500' : 'text-red-500'}">
+                    ${imp.change > 0 ? '+' : ''}${imp.change}lb
+                </span>
+            </div>
+        `).join('');
+    },
+
+    async updateNextTargets() {
+        const container = document.getElementById('nextTargets');
+        const progress = await DataManager.getProgress(this.currentUser);
+        
+        if (!progress) return;
+
+        const targets = Object.entries(progress)
+            .filter(([_, data]) => data.history?.length > 0)
+            .map(([exercise, data]) => {
+                const latest = data.history[data.history.length - 1];
+                const bestSet = this.findBestSet(latest.sets);
+                return {
+                    exercise,
+                    target: Math.ceil(bestSet.weight / 5) * 5 + 5 // Round up to next 5lb increment
+                };
+            });
+
+        container.innerHTML = targets.map(target => `
+            <div class="flex justify-between items-center">
+                <span class="text-sm">${target.exercise}</span>
+                <span class="text-sm font-medium">${target.target}lb</span>
+            </div>
+        `).join('');
+    },
+
+    updatePhaseProgress() {
+        const container = document.getElementById('phaseProgress');
+        const phase = WorkoutLibrary.phases[this.currentPhase];
+        const start = new Date(phase.startDate);
+        const end = new Date(phase.endDate);
+        const today = new Date();
+        
+        const totalDays = (end - start) / (1000 * 60 * 60 * 24);
+        const daysComplete = (today - start) / (1000 * 60 * 60 * 24);
+        const progress = Math.min(Math.max((daysComplete / totalDays) * 100, 0), 100);
+        
+        container.innerHTML = `
+            <div class="mb-2">
+                <div class="text-sm mb-1">Phase ${this.currentPhase === 'phase1' ? '1' : '2'}</div>
+                <div class="text-xs text-gray-500">
+                    ${Math.ceil(daysComplete / 7)} of 12 weeks complete
+                </div>
+            </div>
+            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500 rounded-full" 
+                     style="width: ${progress}%"></div>
+            </div>
+        `;
+    },
+
+    findBestSet(sets) {
+        return sets.reduce((best, current) => {
+            if (!best || current.weight > best.weight) return current;
+            if (current.weight === best.weight && current.reps > best.reps) return current;
+            return best;
         });
     },
 
-       initCharts() {
-        this.createWeightChart();
+    getSuggestedWorkout() {
+        const today = new Date().getDay();
+        return WorkoutLibrary.getSuggestedWorkoutForDay(today);
     },
 
-    setupProgressTabs() {
-        document.querySelectorAll('.progress-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.progress-tab').forEach(t => {
-                    t.classList.remove('bg-blue-500', 'text-white');
-                    t.classList.add('bg-gray-200');
-                });
-                tab.classList.remove('bg-gray-200');
-                tab.classList.add('bg-blue-500', 'text-white');
-                this.updateCharts(tab.dataset.day);
-            });
+    async getThisWeeksWorkouts() {
+        const startOfWeek = new Date();
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        
+        return await DataManager.getWorkouts(this.currentUser, {
+            startDate: startOfWeek,
+            endDate: new Date()
         });
     },
 
-    createWeightChart() {
-        const ctx = document.getElementById('weightProgressChart');
-        if (ctx) {
-            this.progressCharts.weight = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: []
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                padding: 8,
-                                font: { size: 10 }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { font: { size: 10 } }
-                        },
-                        x: {
-                            ticks: { 
-                                font: { size: 10 },
-                                maxRotation: 45,
-                                minRotation: 45
-                            }
-                        }
-                    }
-                }
-            });
-        }
+    async switchUser(user) {
+        this.currentUser = user;
+        await DataManager.setCurrentUser(user);
+        this.updateUI();
     },
-loadWorkoutExercises() {
-    const mondayExercises = JSON.parse(localStorage.getItem('monday_exercises') || '[]');
-    const wednesdayExercises = JSON.parse(localStorage.getItem('wednesday_exercises') || '[]');
-    const fridayExercises = JSON.parse(localStorage.getItem('friday_exercises') || '[]');
-    return [...mondayExercises, ...wednesdayExercises, ...fridayExercises];
-}
-    updateCharts(day) {
-        const workouts = this.getWorkouts(day);
-        const exercises = this.keyExercises[day];
-        
-        if (this.progressCharts.weight) {
-            const labels = workouts.map(w => new Date(w.date).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric'
-            }));
 
-            const datasets = exercises.map(exercise => ({
-                label: exercise,
-                data: workouts.map(w => {
-                    const exerciseData = w.exercises[exercise];
-                    if (!exerciseData) return null;
-                    return Math.max(...exerciseData.sets.map(s => s.weight || 0));
-                }),
-                fill: false,
-                borderColor: this.getRandomColor(),
-                tension: 0.1
-            }));
-
-            this.progressCharts.weight.data.labels = labels;
-            this.progressCharts.weight.data.datasets = datasets;
-            this.progressCharts.weight.update();
-
-            this.updatePersonalBests(workouts, exercises);
+    startWorkout() {
+        const workout = this.getSuggestedWorkout();
+        if (workout) {
+            window.location.href = `workout.html?id=${workout.id}`;
         }
     },
 
-    updatePersonalBests(workouts, exercises) {
-        const personalBestsDiv = document.getElementById('personalBests');
-        const recentProgressDiv = document.getElementById('recentProgress');
-        
-        if (personalBestsDiv && recentProgressDiv) {
-            let personalBestsHtml = '';
-            let recentProgressHtml = '';
+    openSettings() {
+        // Implement settings modal or navigation
+        console.log('Settings clicked');
+    },
 
-            exercises.forEach(exercise => {
-                const maxWeight = Math.max(...workouts.flatMap(w => 
-                    w.exercises[exercise]?.sets.map(s => s.weight || 0) || [0]
-                ));
-
-                const recentWorkouts = workouts.slice(-2);
-                const previousWeight = recentWorkouts[0]?.exercises[exercise]?.sets[0]?.weight || 0;
-                const currentWeight = recentWorkouts[1]?.exercises[exercise]?.sets[0]?.weight || 0;
-                const change = currentWeight - previousWeight;
-
-                personalBestsHtml += `<div>${exercise}: ${maxWeight}lb</div>`;
-                recentProgressHtml += `<div>${exercise}: ${change >= 0 ? '+' : ''}${change}lb</div>`;
-            });
-
-            personalBestsDiv.innerHTML = personalBestsHtml;
-            recentProgressDiv.innerHTML = recentProgressHtml;
+    handleDataChange(detail) {
+        if (detail.type === 'workouts' || detail.type === 'progress') {
+            this.updateUI();
         }
     },
 
-    getWorkouts(day) {
-        const key = `${day}_${this.currentUser}`;
-        return JSON.parse(localStorage.getItem(key) || '[]');
-    },
-
-    getRandomColor(alpha = 1) {
-        const hue = Math.floor(Math.random() * 360);
-        return `hsla(${hue}, 70%, 50%, ${alpha})`;
+    startAutoRefresh() {
+        // Update current date and weekly overview every minute
+        setInterval(() => {
+            this.updateCurrentDate();
+            this.updateWeeklyOverview();
+        }, 60000);
     }
 };
 
+// Initialize dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => Dashboard.init());
+
+export default Dashboard;
