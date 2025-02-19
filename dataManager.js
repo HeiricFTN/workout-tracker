@@ -44,8 +44,9 @@ const DataManager = {
     },
 
     async setCurrentUser(user) {
-        localStorage.setItem(this.storageKeys.currentUser, user);
-        this.notifyDataChange('user', user);
+    await this.setItem(this.storageKeys.currentUser, user);
+    console.log('User set in DataManager:', user);
+    this.notifyDataChange('user', user);
     },
 
     // Workout Management
