@@ -1,44 +1,60 @@
-// dashboard.js - Main dashboard functionality and UI management
-
 const Dashboard = {
     currentUser: null,
     currentPhase: null,
     workoutLibrary: null,
 
     async init() {
+        console.log('Dashboard initializing...');
         await this.loadInitialData();
         this.setupEventListeners();
         this.updateUI();
         this.startAutoRefresh();
+        console.log('Dashboard initialized for user:', this.currentUser);
     },
 
     async loadInitialData() {
         this.currentUser = await DataManager.getCurrentUser();
         this.currentPhase = WorkoutLibrary.getCurrentPhase();
         this.updateCurrentDate();
+        console.log('Initial data loaded:', { user: this.currentUser, phase: this.currentPhase });
     },
 
     setupEventListeners() {
-        // User switching
         document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
         document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
-
-        // Start workout button
-        document.getElementById('startWorkoutBtn').addEventListener('click', () => this.startWorkout());
-
-        // Settings button
-        document.getElementById('settingsBtn').addEventListener('click', () => this.openSettings());
-
-        // Listen for data changes
-        window.addEventListener('dataChanged', (e) => this.handleDataChange(e.detail));
+        // ... other event listeners
+        console.log('Event listeners set up');
     },
 
-    updateUI() {
+    async switchUser(user) {
+        console.log('Switching user to:', user);
+        this.currentUser = user;
+        await DataManager.setCurrentUser(user);
         this.updateUserButtons();
-        this.updateTodayWorkout();
-        this.updateWeeklyOverview();
-        this.updateProgressCards();
+        await this.updateUI();
+        console.log('User switched successfully');
+    },
+
+    updateUserButtons() {
+        const dadButton = document.getElementById('dadButton');
+        const alexButton = document.getElementById('alexButton');
+        
+        dadButton.classList.toggle('bg-blue-500', this.currentUser === 'Dad');
+        dadButton.classList.toggle('text-white', this.currentUser === 'Dad');
+        alexButton.classList.toggle('bg-blue-500', this.currentUser === 'Alex');
+        alexButton.classList.toggle('text-white', this.currentUser === 'Alex');
+        
+        console.log('User buttons updated for:', this.currentUser);
+    },
+
+    async updateUI() {
+        console.log('Updating UI for user:', this.currentUser);
+        this.updateUserButtons();
+        await this.updateTodayWorkout();
+        await this.updateWeeklyOverview();
+        await this.updateProgressCards();
         this.updatePhaseProgress();
+        console.log('UI update completed');
     },
 
     updateCurrentDate() {
@@ -267,7 +283,8 @@ const Dashboard = {
     },
 
     handleDataChange(detail) {
-        if (detail.type === 'workouts' || detail.type === 'progress') {
+        console.log('Data change detected:', detail);
+        if (detail.type === 'workouts' || detail.type === 'progress' || detail.type === 'user') {
             this.updateUI();
         }
     },
@@ -282,6 +299,9 @@ const Dashboard = {
 };
 
 // Initialize dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => Dashboard.init());
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing Dashboard');
+    Dashboard.init();
+});
 
 export default Dashboard;
