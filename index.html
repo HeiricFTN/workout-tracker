@@ -3,27 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <!-- PWA Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Workout Tracker">
-    <meta name="theme-color" content="#3b82f6">
-    
-    <!-- PWA Icons -->
-    <link rel="apple-touch-icon" href="icons/icon-152x152.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16x16.png">
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
-    
-    <!-- Stylesheets -->
+    <title>Dad & Alex Workout</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    
-    <!-- Page-specific title -->
-    <title>Dad & Alex Workout</title> <!-- Adjust title per page -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100">
     <div class="app-container">
@@ -36,7 +19,7 @@
         </header>
 
         <!-- Quick Start -->
-        <section id="quickStart" class="bg-white rounded-lg shadow-sm p-4 mb-4">
+        <sectiotion id="quickStart" class="bg-white rounded-lg shadow-sm p-4 mb-4">
             <div class="flex justify-between items-center mb-2">
                 <h2 class="text-lg font-bold">Today's Workout</h2>
                 <span id="currentDate" class="text-sm text-gray-500"></span>
@@ -60,7 +43,7 @@
                 <div>W</div>
                 <div>T</div>
                 <div>F</div>
-                <div>S</div>iv>
+                <div>S</div>
                 <div>S</div>
             </div>
             <div id="weeklyDots" class="grid grid-cols-7 gap-1 text-center">
@@ -88,9 +71,9 @@
 
             <!-- Next Targets -->
             <div class="bg-white rounded-lg shadow-sm p-4">
-                <h2 class="text-lg font-bold mb-2">Next Targets</h2>
+                <h2 class="text-lg font-bold mb-2">N">Next Targets</h2>
                 <div id="nextTargets" class="space-y-2">
-                    <!-- Populated by JS -->
+                       <!-- Populated by JS -->
                 </div>
             </div>
         </section>
@@ -106,16 +89,13 @@
         <!-- Quick Actions -->
         <section class="fixed bottom-0 left-0 right-0 bg-white border-t p-4" style="max-width: inherit; margin: 0 auto;">
             <div class="grid grid-cols-3 gap-2">
-                <button onclick="location.href='progress.html'" 
-                        class="py-2 px-4 bg-blue-500 text-white rounded-lg text-sm">
+                <button id="viewProgressBtn" class="py-2 px-4 bg-blue-500 text-white rounded-lg text-sm">
                     Progress
                 </button>
-                <button onclick="location.href='workout.html'" 
-                        class="py-2 px-4 bg-blue-500 text-white rounded-lg text-sm">
+                <button id="viewWorkoutsBtn" class="py-2 px-4 bg-blue-500 text-white rounded-lg text-sm">
                     Workouts
                 </button>
-                <button id="settingsBtn" 
-                        class="py-2 px-4 bg-blue-500 text-white rounded-lg text-sm">
+                <button id="settingsBtn" class="py-2 px-4 bg-blue-500 text-white rounded-lg text-sm">
                     Settings
                 </button>
             </div>
@@ -125,9 +105,8 @@
         <div class="h-20"></div>
     </div>
 
-    <script src="dataManager.js"></script>
-    <script src="progressTracker.js"></script>
-    <script src="workoutLibrary.js"></script>
-    <script src="dashboard.js"></script>
+    <script type="module" src="js/dataManager.js"></script>
+    <script type="module" src="js/workoutLibrary.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
 </body>
 </html>
