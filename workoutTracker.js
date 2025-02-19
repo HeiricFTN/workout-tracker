@@ -1,4 +1,6 @@
 // workoutTracker.js - Handles active workout tracking and management
+const currentUser = localStorage.getItem('currentUser') || 'Dad';
+console.log('Current User:', currentUser);
 
 const WorkoutTracker = {
     currentWorkout: null,
