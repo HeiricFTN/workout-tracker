@@ -8,15 +8,18 @@ const DataManager = {
         workouts: userId => `workouts_${userId}`,
         progress: userId => `progress_${userId}`,
         goals: userId => `goals_${userId}`,
-        settings: userId => `settings_${userId}`,
-        phase: 'currentPhase',
-        exercises: 'exerciseHistory'
+        settings: userId => `settings_${userId}`
     },
+
+    async init() {
+        console.log('DataManager initializing...');
+        this.validateStorage();
 
     init() {
         this.validateStorage();
         this.setupEventListesteners();
         return this.migrateDataIfNeeded();
+    console.log('DataManager initialized');
     },
 
     validateStorage() {
@@ -43,10 +46,12 @@ const DataManager = {
         return localStorage.getItem(this.storageKeys.currentUser) || 'Dad';
     },
 
+
     async setCurrentUser(user) {
-    await this.setItem(this.storageKeys.currentUser, user);
-    console.log('User set in DataManager:', user);
-    this.notifyDataChange('user', user);
+        console.log('Setting current user:', user);
+        localStorage.setItem(this.storageKeys.currentUser, user);
+        this.notifyDataChange('user', user);
+        console.log('Current user set successfully');
     },
 
     // Workout Management
@@ -279,9 +284,10 @@ const DataManager = {
     },
 
     // Event Notifications
-    notifyDataChange(type, userId) {
+    notifyDataChange(type, data) {
+        console.log('Notifying data change:', type, data);
         window.dispatchEvent(new CustomEvent('dataChanged', {
-            detail: { type, userId }
+            detail: { type, data }
         }));
     },
 
