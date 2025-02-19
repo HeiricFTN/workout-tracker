@@ -1,5 +1,8 @@
 // workoutLibrary.js - Complete workout definitions and phase management
 
+const currentUser = localStorage.getItem('currentUser') || 'Dad';
+console.log('Current User:', currentUser);
+
 const WorkoutLibrary = {
     phases: {
         phase1: {
