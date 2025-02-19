@@ -1,27 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dad & Alex Workout</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-gray-100">
     <div class="app-container">
-        <!-- User Switch -->
+           <!-- User Switch -->
         <header class="mb-4">
             <div class="flex gap-2">
-    <button id="dadButton" class="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg">Dad</button>
-    <button id="alexButton" class="flex-1 py-2 px-4 bg-gray-200 rounded-lg">Alex</button>
+                <button id="dadButton" class="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg shadow">Dad</button>
+                <button id="alexButton" class="flex-1 py-2 px-4 bg-gray-200 rounded-lg shadow">Alex</button>
             </div>
         </header>
 
         <!-- Quick Start -->
-        <sectiotion id="quickStart" class="bg-white rounded-lg shadow-sm p-4 mb-4">
+        <section id="quickStart" class="bg-white rounded-lg shadow-sm p-4 mb-4">
             <div class="flex justify-between items-center mb-2">
-                <h2 class="text-lg font-bold">Today's Workout</h2>
+                <h2 class="textext-lg font-bold">Today's Workout</h2>
                 <span id="currentDate" class="text-sm text-gray-500"></span>
             </div>
             
@@ -29,13 +28,13 @@
                 <!-- Populated by JS -->
             </div>
 
-            <button id="startWorkoutBtn" class="w-full py-3 bg-green-500 text-white rounded-lg shadow">
+            <butbutton id="startWorkoutBtn" class="w-full py-3 bg-green-500 text-white rounded-lg shadow">
                 Start Workout
             </button>
         </section>
 
         <!-- Weekly Overview -->
-        <section class="bg-white rounded-lg shadow-sm p-4 mb-4">
+        <section class="bg-white rounded-lg shadow-sm p- p-4 mb-4">
             <h2 class="text-lg font-bold mb-2">Weekly Progress</h2>
             <div class="grid grid-cols-7 gap-1 text-center mb-2">
                 <div>M</div>
@@ -47,12 +46,12 @@
                 <div>S</div>
             </div>
             <div id="weeklyDots" class="grid grid-cols-7 gap-1 text-center">
-                <!-- Populated by JS with dots showing completed workouts -->
+                <!-- Populated by JS with dots showing completed ed workouts -->
             </div>
         </section>
 
         <!-- Progress Cards -->
-        <section class="space-y-4">
+        <section id="progressSection" class="space-y-4">
             <!-- Key Lifts -->
             <div class="bg-white rounded-lg shadow-sm p-4">
                 <h2 class="text-lg font-bold mb-2">Key Lifts</h2>
@@ -60,7 +59,7 @@
                     <!-- Populated by JS -->
                 </div>
             </div>
-<section id="progressSection" class="space-y-4">
+
             <!-- Recent Improvements -->
             <div class="bg-white rounded-lg shadow-sm p-4">
                 <h2 class="text-lg font-bold mb-2">Recent Improvements</h2>
@@ -71,42 +70,14 @@
 
             <!-- Next Targets -->
             <div class="bg-white rounded-lg shadow-sm p-4">
-                <h2 class="text-lg font-bold mb-2">N">Next Targets</h2>
+                <h2 class="text-lg font-bold mb-2">Next Targets</h2>
                 <div id="nextTargets" class="space-y-2">
-                       <!-- Populated by JS -->
+                    <!-- Populated by JS -->
                 </div>
             </div>
         </section>
-
-        <!-- Phase Progress -->
-        <section class="bg-white rounded-lg shadow-sm p-4 my-4">
-            <h2 class="text-lg font-bold mb-2">Program Phase</h2>
-            <div id="phaseProgress">
-                <!-- Populated by JS -->
-            </div>
-        </section>
-
-        <!-- Quick Actions -->
-        <section class="fixed bottom-0 left-0 right-0 bg-white border-t p-4" style="max-width: inherit; margin: 0 auto;">
-            <div class="grid grid-cols-3 gap-2">
-                <button id="viewProgressBtn" class="py-2 px-4 bg-blue-500 text-white rounded-lg text-sm">
-                    Progress
-                </button>
-                <button id="viewWorkoutsBtn" class="py-2 px-4 bg-blue-500 text-white rounded-lg text-sm">
-                    Workouts
-                </button>
-                <button id="settingsBtn" class="py-2 px-4 bg-blue-500 text-white rounded-lg text-sm">
-                    Settings
-                </button>
-            </div>
-        </section>
-
-        <!-- Spacer for fixed bottom bar -->
-        <div class="h-20"></div>
     </div>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="js/dataManager.js"></script>
-        <script src="js/workoutLibrary.js"></script>
-        <script src="js/dashboard.js"></script>
+
+    <script src="dashboard.js"></script>
 </body>
 </html>
