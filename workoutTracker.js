@@ -16,6 +16,7 @@ const WorkoutTracker = {
 
     async init() {
         this.currentUser = localStorage.getItem('currentUser') || 'Dad';
+         console.log('WorkoutTracker initialized for:', this.currentUser);
         await this.loadWorkoutFromUrl();
         this.setupEventListeners();
         this.initializeUI();
