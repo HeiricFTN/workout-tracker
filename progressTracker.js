@@ -1,4 +1,6 @@
 // progressTracker.js - Handles progress tracking, analysis, and visualization
+const currentUser = localStorage.getItem('currentUser') || 'Dad';
+console.log('Current User:', currentUser);
 
 const ProgressTracker = {
     currentUser: null,
