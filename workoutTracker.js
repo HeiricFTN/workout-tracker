@@ -3,8 +3,8 @@ const currentUser = localStorage.getItem('currentUser') || 'Dad';
 console.log('Current User:', currentUser);
 
 const WorkoutTracker = {
-    currentWorkout: null,
     currentUser: null,
+    currentWorkout: null,
     startTime: null,
     supersetProgress: {},
     workoutData: {
@@ -13,7 +13,14 @@ const WorkoutTracker = {
         duration: 0,
         completed: false
     },
-
+    async init() {
+        console.log('WorkoutTracker initializing...');
+        this.currentUser = await DataManager.getCurrentUser();
+        await this.loadWorkoutFromUrl();
+        this.setupEventListeners();
+        this.initializeUI();
+        console.log('WorkoutTracker initialized for user:', this.currentUser);
+      },   
     async init() {
         this.currentUser = localStorage.getItem('currentUser') || 'Dad';
          console.log('WorkoutTracker initialized for:', this.currentUser);
@@ -43,7 +50,13 @@ const WorkoutTracker = {
         this.workoutData.date = new Date().toISOString();
         this.startTime = Date.now();
     },
-
+    async switchUser(user) {
+        console.log('Switching user in WorkoutTracker:', user);
+        this.currentUser = user;
+        await DataManager.setCurrentUser(user);
+        this.loadLastWorkout();
+        console.log('User switched in WorkoutTracker');
+    },
     setupEventListeners() {
         document.getElementById('completeWorkout')?.addEventListener('click', () => this.completeWorkout());
         
@@ -266,6 +279,9 @@ const WorkoutTracker = {
 };
 
 // Initialize tracker when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => WorkoutTracker.init());
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing WorkoutTracker');
+    WorkoutTracker.init();
+});
 
 export default WorkoutTracker;
