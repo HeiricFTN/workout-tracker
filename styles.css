@@ -1,21 +1,22 @@
-/* Base variables and settings */
+/* Base styles and variables */
 :root {
-    --screen-height: 100vh;
     --safe-area-inset-top: env(safe-area-inset-top);
     --safe-area-inset-bottom: env(safe-area-inset-bottom);
     --primary-blue: #3b82f6;
     --success-green: #22c55e;
+    --warning-yellow: #fbbf24;
+    --error-red: #ef4444;
     --background-gray: #f3f4f6;
-    --card-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* Body and container setup */
+/* Global layout */
 body {
     -webkit-text-size-adjust: 100%;
     touch-action: manipulation;
     background-color: var(--background-gray);
-    min-height: var(--screen-height);
-    padding: max(0.5rem, var(--safe-area-inset-top)) 0.5rem max(0.5rem, var(--safe-area-inset-bottom));
+    min-height: 100vh;
+    padding-top: max(0.5rem, var(--safe-area-inset-top));
+    padding-bottom: max(0.5rem, var(--safe-area-inset-bottom));
 }
 
 .app-container {
@@ -24,36 +25,14 @@ body {
     position: relative;
 }
 
-/* Exercise cards and inputs */
-.workout-card {
-    background: white;
-    border-radius: 0.5rem;
-    padding: clamp(0.75rem, 2vw, 1rem);
-    margin-bottom: 0.75rem;
-    box-shadow: var(--card-shadow);
-}
-
-.exercise-grid {
-    display: grid;
-    grid-template-columns: auto 1fr 1fr;
-    gap: 0.5rem;
-    align-items: center;
-}
-
-.input-group {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-/* Form inputs */
+/* Input styling */
 .number-input {
     width: clamp(40px, 10vw, 60px) !important;
     text-align: center;
-    padding: 0.25rem;
-    border-radius: 0.25rem;
-    border: 1px solid #e5e7eb;
     -moz-appearance: textfield;
+    padding: 0.25rem;
+    border-radius: 0.375rem;
+    border: 1px solid #e5e7eb;
 }
 
 .number-input::-webkit-outer-spin-button,
@@ -62,7 +41,7 @@ body {
     margin: 0;
 }
 
-/* Buttons and interactive elements */
+/* Button styles */
 .touch-target {
     min-height: 44px;
     min-width: 44px;
@@ -73,107 +52,183 @@ body {
 
 .adjust-button {
     padding: clamp(2px, 1vw, 4px) clamp(6px, 2vw, 12px);
-    border-radius: 0.25rem;
     background-color: #f3f4f6;
+    border-radius: 0.375rem;
     touch-action: manipulation;
 }
 
-.save-button {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: var(--success-green);
-    color: white;
-    border-radius: 0.5rem;
-    font-weight: 500;
-}
-
-/* Typography */
-.dynamic-text {
-    font-size: clamp(0.75rem, 2vw, 0.875rem);
-}
-
-.dynamic-title {
-    font-size: clamp(1rem, 2.5vw, 1.25rem);
-    font-weight: bold;
-}
-
-/* Info cards */
-.info-card {
-    background-color: #fff;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-}
-
-.warm-up-card {
-    background-color: #fefce8;
-    border-radiusius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-}
-
-.form-tips-card {
-    background-color: #eff6ff;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-}
-
-/* Fixed bottom save button container */
-.save-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+/* Card styles */
+.workout-card {
     background: white;
-    padding: 1rem;
-    border-top: 1px solid #e5e7eb;
-    max-width: inherit;
+    border-radius: 0.5rem;
+    padding: clamp(0.75rem, 2vw, 1rem);
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Progress visualization */
+.progress-bar {
+    height: 0.5rem;
+    background-color: #e5e7eb;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.progress-bar .progress {
+    height: 100%;
+    background-color: var(--primary-blue);
+    transition: width 0.3s ease;
+}
+
+/* Weekly dots */
+.progress-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
     margin: 0 auto;
 }
 
-/* Progress charts */
-.chart-container {
-    height: clamp(100px, 20vh, 150px) !important;
-    margin-bottom: 1rem;
+.dot-complete {
+    background-color: var(--success-green);
 }
 
-/* Responsive adjustments */
+.dot-today {
+    background-color: var(--primary-blue);
+}
+
+.dot-upcoming {
+    background-color: #e5e7eb;
+}
+
+/* Exercise inputs */
+.exercise-grid {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 @media (max-width: 360px) {
     .exercise-grid {
         grid-template-columns: auto 1fr;
         row-gap: 0.5rem;
     }
-    
-    .input-group {
-        flex-wrap: wrap;
-    }
 }
 
-/* Safe area adjustments for notched devices */
-@supports (padding: max(0px)) {
-    .save-container {
-        padding-bottom: max(1rem, env(safe-area-inset-bottom));
-    }
+/* Superset styling */
+.superset-container {
+    border-left: 2px solid var(--primary-blue);
+    padding-left: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Rest timer */
+.timer-display {
+    position: fixed;
+    top: 5rem;
+    right: 1rem;
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+}
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.timer-active {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Modal styles */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    max-width: 28rem;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Dashboard specific styles */
+.key-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.key-metric:last-child {
+    border-bottom: none;
+}
+
+/* Chart containers */
+.chart-container {
+    height: clamp(100px, 20vh, 150px);
+    margin-bottom: 1rem;
+}
+
+/* Form elements */
+textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* Utility classes */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* Loading states */
 .loading {
-    opacity: 0.7;
-    pointer-events: none;
+    position: relative;
+}
+
+.loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Transitions */
-.workout-card, 
-.adjust-button, 
-.save-button {
-    transition: all 0.1s ease-in-out;
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
 }
 
-.adjust-button:active {
-    transform: scale(0.95);
-}
-
-.save-button:active {
-    transform: scale(0.98);
+/* Safe area adjustments */
+@supports (padding: max(0px)) {
+    .fixed-bottom {
+        padding-bottom: max(1rem, var(--safe-area-inset-bottom));
+    }
 }
