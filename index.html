@@ -9,7 +9,7 @@
 </head>
 <body class="bg-gray-100">
     <div class="app-container">
-           <!-- User Switch -->
+        <!-- User Switch -->
         <header class="mb-4">
             <div class="flex gap-2">
                 <button id="dadButton" class="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg shadow">Dad</button>
@@ -17,69 +17,24 @@
             </div>
         </header>
 
-        <!-- Quick Start -->
-        <section id="quickStart" class="bg-white rounded-lg shadow-sm p-4 mb-4">
-            <div class="flex justify-between items-center mb-2">
-                <h2 class="textext-lg font-bold">Today's Workout</h2>
-                <span id="currentDate" class="text-sm text-gray-500"></span>
-            </div>
-            
-            <div id="workoutPreview" class="mb-4">
-                <!-- Populated by JS -->
-            </div>
-
-            <butbutton id="startWorkoutBtn" class="w-full py-3 bg-green-500 text-white rounded-lg shadow">
-                Start Workout
-            </button>
-        </section>
-
-        <!-- Weekly Overview -->
-        <section class="bg-white rounded-lg shadow-sm p- p-4 mb-4">
-            <h2 class="text-lg font-bold mb-2">Weekly Progress</h2>
-            <div class="grid grid-cols-7 gap-1 text-center mb-2">
-                <div>M</div>
-                <div>T</div>
-                <div>W</div>
-                <div>T</div>
-                <div>F</div>
-                <div>S</div>
-                <div>S</div>
-            </div>
-            <div id="weeklyDots" class="grid grid-cols-7 gap-1 text-center">
-                <!-- Populated by JS with dots showing completed ed workouts -->
-            </div>
-        </section>
-
-        <!-- Progress Cards -->
-        <section id="progressSection" class="space-y-4">
-            <!-- Key Lifts -->
-            <div class="bg-white rounded-lg shadow-sm p-4">
-                <h2 class="text-lg font-bold mb-2">Key Lifts</h2>
-                <div id="keyLifts" class="space-y-2">
-                    <!-- Populated by JS -->
-                </div>
-            </div>
-
-            <!-- Recent Improvements -->
-            <div class="bg-white rounded-lg shadow-sm p-4">
-                <h2 class="text-lg font-bold mb-2">Recent Improvements</h2>
-                <div id="recentImprovements" class="space-y-2">
-                    <!-- Populated by JS -->
-                </div>
-            </div>
-
-            <!-- Next Targets -->
-            <div class="bg-white rounded-lg shadow-sm p-4">
-                <h2 class="text-lg font-bold mb-2">Next Targets</h2>
-                <div id="nextTargets" class="space-y-2">
-                    <!-- Populated by JS -->
-                </div>
+        <!-- Workout Selection -->
+        <section id="workoutSection" class="bg-white rounded-lg shadow-sm p-4 mb-4">
+            <h2 class="text-lg font-bold mb-2">Select Workout</h2>
+            <div class="space-y-2">
+                <button id="chestTricepsBtn" class="w-full py-2 px-4 bg-gray-200 rounded-lg text-left">
+                    Chest & Triceps
+                </button>
+                <button id="shouldersBtn" class="w-full py-2 px-4 bg-gray-200 rounded-lg text-left">
+                    Shoulders
+                </button>
+                <button id="backBicepsBtn" class="w-full py-2 px-4 bg-gray-200 rounded-lg text-left">
+                    Back & Biceps
+                </button>
             </div>
         </section>
     </div>
 
-    <script src="workoutLibrary.js"></script>
     <script src="dataManager.js"></script>
-    <script src="workoutTracker.js"></script>
-    <script src="dashboard.js"></script></body>
+    <script src="dashboard.js"></script>
+</body>
 </html>
