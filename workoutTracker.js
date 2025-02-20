@@ -1,171 +1,136 @@
-// workoutLibrary.js
-const workoutLibrary = {
-    // Chest & Triceps Workout
-    chestTriceps: {
-        name: "Chest & Triceps",
-        supersets: [
-            {
-                exercises: [
-                    {
-                        name: "DB Bench Press",
-                        description: "Lying on bench, press dumbbells up",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Tricep Extension",
-                        description: "Face away from anchor, extend arms down",
-                        type: "trx"
-                    }
-                ]
-            },
-            {
-                exercises: [
-                    {
-                        name: "DB Incline Press",
-                        description: "Bench at 45°, press dumbbells up",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Chest Press",
-                        description: "Face away from anchor, perform push-up motion",
-                        type: "trx"
-                    }
-                ]
-            },
-            {
-                exercises: [
-                    {
-                        name: "DB Chest Fly",
-                        description: "Lying on bench, wide arm circles",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Y-Fly",
-                        description: "Face anchor, arms up in Y position, pull back",
-                        type: "trx"
-                    }
-                ]
-            }
-        ]
-    },
+// workoutTracker.js
+import workoutLibrary, { WorkoutLibrary } from './workoutLibrary.js';
 
-    // Shoulders Workout
-    shoulders: {
-        name: "Shoulders",
-        supersets: [
-            {
-                exercises: [
-                    {
-                        name: "DB Shoulder Press",
-                        description: "Seated, press dumbbells overhead",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Face Pull",
-                        description: "Face anchor, pull to face height, elbows high",
-                        type: "trx"
-                    }
-                ]
-            },
-            {
-                exercises: [
-                    {
-                        name: "DB Lateral Raise",
-                        description: "Standing, raise arms to sides",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Y-Raise",
-                        description: "Face anchor, raise arms to Y position",
-                        type: "trx"
-                    }
-                ]
-            },
-            {
-                exercises: [
-                    {
-                        name: "DB Front Raise",
-                        description: "Standing, raise arms to front",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Reverse Fly",
-                        description: "Face anchor, pull arms apart horizontally",
-                        type: "trx"
-                    }
-                ]
-            }
-        ]
-    },
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const elements = {
+        currentUser: document.getElementById('currentUser'),
+        workoutTitle: document.getElementById('workoutTitle'),
+        workoutContainer: document.getElementById('workoutContainer'),
+        completeWorkoutBtn: document.getElementById('completeWorkoutBtn'),
+        supersetTemplate: document.getElementById('supersetTemplate'),
+        exerciseTemplate: document.getElementById('exerciseTemplate')
+    };
 
-    // Back & Biceps Workout
-    backBiceps: {
-        name: "Back & Biceps",
-        supersets: [
-            {
-                exercises: [
-                    {
-                        name: "DB Row",
-                        description: "Bent over, pull dumbbells to ribs",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Row",
-                        description: "Face anchor, pull chest to hands",
-                        type: "trx"
-                    }
-                ]
-            },
-            {
-                exercises: [
-                    {
-                        name: "DB Bicep Curl",
-                        description: "Standing, curl dumbbells to shoulders",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Bicep Curl",
-                        description: "Face anchor, curl body up, keeping elbows high",
-                        type: "trx"
-                    }
-                ]
-            },
-            {
-                exercises: [
-                    {
-                        name: "DB Hammer Curl",
-                        description: "Standing, curl with palms facing each other",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Power Pull",
-                        description: "Side to anchor, single-arm row with rotation",
-                        type: "trx"
-                    }
-                ]
-            }
-        ]
+    // State
+    const state = {
+        currentUser: '',
+        currentWorkout: null
+    };
+
+    // Initialize
+    function init() {
+        loadWorkoutFromURL();
+        setupEventListeners();
+        renderWorkout();
     }
-};
 
-// Utility functions
-const WorkoutLibrary = {
-    getWorkout(type) {
-        return workoutLibrary[type] || null;
-    },
+    // Load workout based on URL parameters
+    function loadWorkoutFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        state.currentUser = urlParams.get('user') || 'Dad';
+        const workoutType = urlParams.get('type');
+        state.currentWorkout = WorkoutLibrary.getWorkout(workoutType);
 
-    getExerciseType(exercise) {
-        return exercise.type || 'dumbbell';
-    },
+        if (!state.currentWorkout) {
+            console.error('Invalid workout type:', workoutType);
+            window.location.href = 'index.html';
+        }
 
-    needsWeight(exercise) {
-        return exercise.type === 'dumbbell';
+        elements.currentUser.textContent = state.currentUser;
+        elements.workoutTitle.textContent = state.currentWorkout.name;
     }
-};
 
-// Prevent modifications
-Object.freeze(workoutLibrary);
-Object.freeze(WorkoutLibrary);
+    // Set up event listeners
+    function setupEventListeners() {
+        elements.completeWorkoutBtn.addEventListener('click', completeWorkout);
+    }
 
-// Export
-export { workoutLibrary as default, WorkoutLibrary };
+    // Render workout
+    function renderWorkout() {
+        elements.workoutContainer.innerHTML = '';
+        state.currentWorkout.supersets.forEach((superset, index) => {
+            const supersetElement = renderSuperset(superset, index);
+            elements.workoutContainer.appendChild(supersetElement);
+        });
+    }
+
+    // Render superset
+    function renderSuperset(superset, index) {
+        const template = elements.supersetTemplate.content.cloneNode(true);
+        const supersetElement = template.querySelector('.superset');
+        
+        supersetElement.querySelector('h3').textContent = `Superset ${index + 1}`;
+        const exerciseContainer = supersetElement.querySelector('.exercise-container');
+
+        superset.exercises.forEach(exercise => {
+            const exerciseElement = renderExercise(exercise);
+            exerciseContainer.appendChild(exerciseElement);
+        });
+
+        return supersetElement;
+    }
+
+    // Render exercise
+    function renderExercise(exercise) {
+        const template = elements.exerciseTemplate.content.cloneNode(true);
+        const exerciseElement = template.querySelector('.exercise');
+
+        exerciseElement.querySelector('h4').textContent = exercise.name;
+        exerciseElement.querySelector('p').textContent = exercise.description;
+
+        const weightInput = exerciseElement.querySelector('.weight-input-container');
+        if (exercise.type === 'trx') {
+            weightInput.classList.add('hidden');
+        }
+
+        return exerciseElement;
+    }
+
+    // Complete workout
+    function completeWorkout() {
+        const workoutData = {
+            user: state.currentUser,
+            workoutName: state.currentWorkout.name,
+            date: new Date().toISOString(),
+            supersets: []
+        };
+
+        elements.workoutContainer.querySelectorAll('.superset').forEach((supersetElement, supersetIndex) => {
+            const supersetData = {
+                exercises: []
+            };
+
+            supersetElement.querySelectorAll('.exercise').forEach((exerciseElement, exerciseIndex) => {
+                const exercise = state.currentWorkout.supersets[supersetIndex].exercises[exerciseIndex];
+                const exerciseData = {
+                    name: exercise.name,
+                    type: exercise.type,
+                    reps: exerciseElement.querySelector('.reps-input').value
+                };
+
+                if (exercise.type === 'dumbbell') {
+                    exerciseData.weight = exerciseElement.querySelector('.weight-input').value;
+                }
+
+                supersetData.exercises.push(exerciseData);
+            });
+
+            workoutData.supersets.push(supersetData);
+        });
+
+        saveWorkout(workoutData);
+        alert('Workout completed and saved!');
+        window.location.href = 'index.html';
+    }
+
+    // Save workout data
+    function saveWorkout(workoutData) {
+        let workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+        workouts.push(workoutData);
+        localStorage.setItem('workouts', JSON.stringify(workouts));
+    }
+
+    // Initialize the tracker
+    init();
+});
