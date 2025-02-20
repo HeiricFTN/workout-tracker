@@ -1,4 +1,5 @@
 // progressTracker.js
+import dataManager from './dataManager.js';
 export class ProgressTracker {
     constructor() {
         this.storageKey = 'workoutProgress';
