@@ -1,9 +1,5 @@
 // dashboard.js
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize managers
-    const dataManager = new DataManager();
-    const workoutTracker = new WorkoutTracker(dataManager);
-
+document.addEventListener('DOMContentLoaded', async function() {
     // Cache DOM elements
     const elements = {
         dadButton: document.getElementById('dadButton'),
@@ -19,17 +15,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Dashboard state
     const state = {
-        currentUser: dataManager.getCurrentUser() || 'Dad',
-        currentWorkout: null
+        currentUser: await DataManager.getCurrentUser()
     };
 
     // Initialize dashboard
-    function initializeDashboard() {
+    async function initializeDashboard() {
         updateCurrentDate();
-        updateUserButtons();
+        await updateUserButtons();
         loadTodaysWorkout();
-        updateWeeklyProgress();
-        updateProgressSection();
+        await updateWeeklyProgress();
+        await updateProgressSection();
         setupEventListeners();
     }
 
@@ -38,6 +33,18 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.dadButton.addEventListener('click', () => switchUser('Dad'));
         elements.alexButton.addEventListener('click', () => switchUser('Alex'));
         elements.startWorkoutBtn.addEventListener('click', startWorkout);
+
+        // Listen for data changes
+        window.addEventListener('dataChanged', async (event) => {
+            const { type, data } = event.detail;
+            if (type === 'user') {
+                state.currentUser = data;
+                await updateDashboard();
+            } else if (type === 'workouts') {
+                await updateWeeklyProgress();
+                await updateProgressSection();
+            }
+        });
     }
 
     // Update current date
@@ -51,21 +58,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // User switching
-    function switchUser(user) {
-        state.currentUser = user;
-        dataManager.switchUser(user);
-        updateUserButtons();
-        loadTodaysWorkout();
-        updateProgressSection();
+    async function switchUser(user) {
+        await Dt DataManager.setCurrentUser(user);
+        // DataManager will trigger dataChanged event, which will update the UI
     }
 
     // Update user button states
-    function updateUserButtons() {
-        elements.dadButton.className = state.currentUser === 'Dad' 
+    async function updateUserButtons() {
+        const currentUser = await DataManager.getCurrentUser();
+        elements.dadButton.className = currentUser === 'Dad' 
             ? 'flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg shadow'
             : 'flex-1 py-2 px-4 bg-gray-200 rounded-lg shadow';
         
-        elements.alexButton.className = state.currentUser === 'Alex'
+        elements.alexButton.className = currentUser === 'Alex'
             ? 'flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg shadow'
             : 'flex-1 py-2 px-4 bg-gray-200 rounded-lg shadow';
     }
@@ -75,7 +80,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const day = new Date().getDay();
         let workoutType = '';
         
-        // Suggested workout based on day
         switch(day) {
             case 1: // Monday
                 workoutType = 'Chest & Triceps';
@@ -90,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 workoutType = 'Rest Day';
         }
 
-        elements.workoutPreview.innerHTML =L = `
+        elements.workoutPreview.innerHTML = `
             <div class="text-center py-2">
                 <h3 class="font-semibold">${workoutType}</h3>
                 ${workoutType !== 'Rest Day' 
@@ -102,25 +106,39 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update weekly progress dots
-    function updateWeeklyProgress() {
-        const workouts = dataManager.getWeeklyWorkouts(state.currentUser);
-        elements.weeklyDots.innerHTML = Array(7).fill(0).map((_, i) => `
+    async function updateWeeklyProgress() {
+        const workouts = await DataManager.getWeeklyWorkouts(state.currentUser);
+        const days = new Array(7).fill(false);
+        
+        workouts.forEach(workout => {
+            const date = new Date(workout.timestamp);
+            days[date.getDay()] = true;
+        });
+
+        elements.weeklyDots.innerHTML = days.map(hasWorkout => `
             <div class="h-3 w-3 rounded-full mx-auto ${
-                workouts.includes(i) ? 'bg-green-500' : 'bg-gray-200'
+                hasWorkout ? 'bg-green-500' : 'bg-gray-200'
             }"></div>
         `).join('');
     }
 
     // Update progress section
-    function updateProgressSection() {
-        updateKeyLifts();
-        updateRecentImprovements();
-        updateNextTargets();
+    async function updateProgressSection() {
+        const progress = await DataManager.getProgress(state.currentUser);
+        updateKeyLifts(progress);
+        updateRecentImprovements(progress);
+        updateNextTargets(progress);
     }
 
     // Update key lifts section
-    function updateKeyLifts() {
-        const keyLifts = dataManager.getKeyLifts(state.currentUser);
+    function updateKeyLifts(progress) {
+        const keyLifts = Object.entries(progress)
+            .map(([exercise, data]) => ({
+                name: exercise,
+                ...data.personalBest
+            }))
+            .slice(0, 3); // Show top 3 lifts
+
         elements.keyLifts.innerHTML = keyLifts.map(lift => `
             <div class="flex justify-between items-center">
                 <span>${lift.name}</span>
@@ -130,8 +148,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update recent improvements
-    function updateRecentImprovements() {
-        const improvements = dataManager.getRecentImprovements(state.currentUser);
+    function updateRecentImprovements(progress) {
+        const improvements = Object.entries(progress)
+            .map(([exercise, data]) => {
+                const history = data.history;
+                if (history.length < 2) return null;
+                
+                const latest = history[history.length - 1];
+                const previous = history[history.length - 2];
+                const increase = Math.max(...latest.sets.map(s => s.weight)) - 
+                               Math.max(...previous.sets.map(s => s.weight));
+                
+                return increase > 0 ? { exercise, increase } : null;
+            })
+            .filter(Boolean)
+            .slice(0, 3); // Show top 3 improvements
+
         elements.recentImprovements.innerHTML = improvements.map(imp => `
             <div class="flex justify-between items-center">
                 <span>${imp.exercise}</span>
@@ -141,8 +173,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update next targets
-    function updateNextTargets() {
-        const targets = dataManager.getNextTargets(state.currentUser);
+    function updateNextTargets(progress) {
+        const targets = Object.entries(progress)
+            .map(([exercise, data]) => ({
+                exercise,
+                weight: Math.ceil(data.personalBest.weight * 1.05) // 5% increase as target
+            }))
+            .slice(0, 3); // Show top 3 targets
+
         elements.nextTargets.innerHTML = targets.map(target => `
             <div class="flex justify-between items-center">
                 <span>${target.exercise}</span>
@@ -153,10 +191,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Start workout function
     function startWorkout() {
-        // Redirect to workout page or show workout interface
         window.location.href = 'workout.html';
     }
 
+    // Update entire dashboard
+    async function updateDashboard() {
+        await updateUserButtons();
+        loadTodaysWorkout();
+        await updateWeeklyProgress();
+        await updateProgressSection();
+    }
+
     // Initialize the dashboard
-    initializeDashboard();
+    initializeDashboard().catch(error => {
+        console.error('Failed to initialize dashboard:', error);
+    });
 });
