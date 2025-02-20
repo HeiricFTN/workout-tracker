@@ -1,4 +1,5 @@
 // workoutTracker.js
+import dataManager from './dataManager.js';
 import workoutLibrary, { WorkoutLibrary } from './workoutLibrary.js';
 
 document.addEventListener('DOMContentLoaded', function() {
