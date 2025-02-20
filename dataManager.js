@@ -1,5 +1,5 @@
 // dataManager.js
-export class DataManager {
+class DataManager {
     constructor() {
         this.storageKeys = {
             currentUser: 'currentUser',
@@ -110,6 +110,5 @@ export class DataManager {
     }
 }
 
-// Create and export a default instance
+// Create a global instance
 const dataManager = new DataManager();
-export default dataManager;
