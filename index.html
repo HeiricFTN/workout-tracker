@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dad & Alex Workout</title>
+    <title>Dad & Alex Workout Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -17,8 +17,45 @@
             </div>
         </header>
 
-        <!-- Workout Selection -->
-        <section id="workoutSection" class="bg-white rounded-lg shadow-sm p-4 mb-4">
+        <!-- Current Week Overview -->
+        <section class="workout-card mb-4">
+            <h2 class="text-lg font-bold mb-2">Program Status</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-gray-600">Current Week</p>
+                    <p id="currentWeek" class="text-xl font-bold"></p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600">Program Phase</p>
+                    <p id="programPhase" class="text-xl font-bold"></p>
+                </div>
+            </div>
+            <div class="mt-2">
+                <p class="text-sm text-gray-600">Next Workout</p>
+                <p id="nextWorkout" class="font-medium"></p>
+            </div>
+        </section>
+
+        <!-- This Week's Progress -->
+        <section class="workout-card mb-4">
+            <h2 class="text-lg font-bold mb-2">This Week's Progress</h2>
+            <div id="weeklyDots" class="flex justify-between mb-2">
+                <!-- Dots will be inserted here by JavaScript -->
+            </div>
+            <p id="workoutsComplete" class="text-center"></p>
+        </section>
+
+        <!-- Quick Start Workout -->
+        <section class="workout-card mb-4">
+            <h2 class="text-lg font-bold mb-2">Today's Workout</h2>
+            <p id="todayWorkout" class="mb-2"></p>
+            <button id="startWorkoutBtn" class="w-full py-2 px-4 bg-green-500 text-white rounded-lg shadow">
+                Start Workout
+            </button>
+        </section>
+
+        <!-- All Workouts -->
+        <section class="workout-card mb-4">
             <h2 class="text-lg font-bold mb-2">Select Workout</h2>
             <div class="space-y-2">
                 <button id="chestTricepsBtn" class="w-full py-2 px-4 bg-gray-200 rounded-lg text-left">
@@ -31,6 +68,17 @@
                     Back & Biceps
                 </button>
             </div>
+        </section>
+
+        <!-- Progress Overview -->
+        <section class="workout-card mb-4">
+            <h2 class="text-lg font-bold mb-2">Recent Progress</h2>
+            <ul id="recentProgress" class="list-disc pl-5 mb-2">
+                <!-- Recent progress items will be inserted here by JavaScript -->
+            </ul>
+            <a href="progress.html" class="block w-full py-2 px-4 bg-blue-500 text-white text-center rounded-lg shadow">
+                View Full Progress
+            </a>
         </section>
     </div>
 
