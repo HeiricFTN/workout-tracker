@@ -1,5 +1,4 @@
 // dashboard.js
-import dataManager from './dataManager.js';
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize
     const dataManager = new DataManager();
