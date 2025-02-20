@@ -1,5 +1,5 @@
 // dataManager.js
-class DataManager {
+export class DataManager {
     constructor() {
         this.storageKeys = {
             currentUser: 'currentUser',
@@ -79,7 +79,8 @@ class DataManager {
                         exercise,
                         type: 'dumbbell',
                         previousWeight: previous.weight,
-                        currentWeight: current.weight
+                        currentWeight: current.weight,
+                        date: current.date
                     });
                 }
             } else {
@@ -89,7 +90,8 @@ class DataManager {
                         exercise,
                         type: 'trx',
                         previousReps: previous.reps,
-                        currentReps: current.reps
+                        currentReps: current.reps,
+                        date: current.date
                     });
                 }
             }
@@ -108,6 +110,6 @@ class DataManager {
     }
 }
 
-// Create and export a single instance
+// Create and export a default instance
 const dataManager = new DataManager();
 export default dataManager;
