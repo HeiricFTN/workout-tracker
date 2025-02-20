@@ -1,276 +1,250 @@
-const WorkoutTracker = {
-    currentUser: null,
-    currentWorkout: null,
-    startTime: null,
-    supersetProgress: {},
-    restTimer: null,
-    workoutData: {
-        date: null,
-        exercises: {},
-        duration: 0,
-        notes: '',
-        completed: false
-    },
+// workoutTracker.js
+document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize core elements
+    const elements = {
+        workoutContainer: document.getElementById('workoutContainer'),
+        currentUser: document.getElementById('currentUser'),
+        completeWorkoutBtn: document.getElementById('completeWorkoutBtn'),
+        timerModal: document.getElementById('timerModal'),
+        timerDisplay: document.getElementById('timerDisplay'),
+        startTimer: document.getElementById('startTimer'),
+        cancelTimer: document.getElementById('cancelTimer')
+    };
 
-    async init() {
-        console.log('Initializing WorkoutTracker...');
+    // Initialize state
+    const state = {
+        currentWorkout: null,
+        currentUser: null,
+        timer: null,
+        isRestTimerActive: false
+    };
+
+    // Initialize data manager
+    const dataManager = new DataManager();
+
+    // Load current user
+    async function loadCurrentUser() {
         try {
-            this.showLoading();
-            this.currentUser = await DataManager.getCurrentUser();
-            await this.loadWorkoutFromUrl();
-            this.setupEventListeners();
-            this.initializeUI();
-            this.hideLoading();
-            console.log('WorkoutTracker initialized');
+            state.currentUser = await dataManager.getCurrentUser();
+            if (elements.currentUser) {
+                elements.currentUser.textContent = state.currentUser;
+            }
         } catch (error) {
-            console.error('Failed to initialize WorkoutTracker:', error);
-            this.showError('Failed to load workout');
+            console.error('Error loading current user:', error);
         }
-    },
+    }
 
-    showLoading() {
-        document.getElementById('loadingOverlay').classList.remove('hidden');
-    },
-
-    hideLoading() {
-        document.getElementById('loadingOverlay').classList.add('hidden');
-    },
-
-    showError(message) {
-        const errorDiv = document.getElementById('errorMessage');
-        errorDiv.textContent = message;
-        errorDiv.classList.remove('hidden');
-        setTimeout(() => errorDiv.classList.add('hidden'), 3000);
-    },
-
-    async loadWorkoutFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const workoutId = urlParams.get('id');
-        
-        if (!workoutId) {
-            throw new Error('No workoutout ID provided');
+    // Start workout
+    function startWorkout(workoutType) {
+        const workout = workoutLibrary[workoutType];
+        if (!workout) {
+            console.error('Workout not found:', workoutType);
+            return;
         }
+        state.currentWorkout = workout;
+        renderWorkout();
+    }
 
-        const phase = WorkoutLibrary.getCurrentPhase();
-        this.currentWorkout = WorkoutLibrary.getWorkout(phase, workoutId);
-        
-        if (!this.currentWorkout) {
-            throw new Error('Workout not found');
-        }
+    // Render workout
+    function renderWorkout() {
+        if (!state.currentWorkout) return;
 
-        this.workoutData.date = new Date().toISOString();
-        this.startTime = Date.now();
-        console.log('Workout loaded:', this.currentWorkout.name);
-    },
+        let html = `
+            <div class="workout-card">
+                <h2 class="text-xl font-bold mb-4">${state.currentWorkout.name}</h2>
+        `;
 
-    setupEventListeners() {
-        // User switching
-        document.getElementById('dadButton').addEventListener('click', () => this.switchUser('Dad'));
-        document.getElementById('alexButton').addEventListener('click', () => this.switchUser('Alex'));
-        
-        // Workout controls
-        document.getElementById('restTimerBtn').addEventListener('click', () => this.startRestTimer());
-        document.getElementById('completeWorkoutBtn').addEventListener('click', () => this.showCompletionModal());
-
-        // Modal buttons
-        document.getElementById('skipNotesBtn')?.addEventListener('click', () => this.skipNotes());
-        document.getElementById('saveWorkoutBtn')?.addEventListener('click', () => this.finalizeWorkout());
-
-        console.log('Event listeners set up');
-    },
-
-    async switchUser(user) {
-        console.log('Switching to user:', user);
-        this.currentUser = user;
-        await DataManager.setCurrentUser(user);
-        this.updateUserButtons();
-        this.loadLastWorkout();
-    },
-
-    updateUserButtons() {
-        const dadButton = document.getElementById('dadButton');
-        const alexButton = document.getElementById('alexButton');
-        
-        dadButton.classList.toggle('bg-blue-500', this.currentUser === 'Dad');
-        dadButton.classList.toggle('text-white', this.currentUser === 'Dad');
-        alexButton.classList.toggle('bg-blue-500', this.currentUser === 'Alex');
-        alexButtonton.classList.toggle('text-white', this.currentUser === 'Alex');
-    },
-
-    initializeUI() {
-        if (!this.currentWorkout) return;
-
-        // Update workout title
-        document.getElementById('workoutTitle').textContent = this.currentWorkout.name;
-        
-        // Render supersets
-        const container = document.getElementById('supersetsContainer');
-        container.innerHTML = this.currentWorkout.supersets
-            .map(superset => this.renderSuperset(superset))
-            .join('');
-
-        // Initialize progress tracking
-        this.currentWorkout.supersets.forEach(superset => {
-            this.supersetProgress[superset.name] = {
-                completed: false,
-                exercises: {}
-            };
-        });
-
-        this.updateUserButtons();
-    },
-
-    renderSuperset(superset) {
-        return `
-            <div class="workout-card" id="superset-${superset.name}">
-                <h3 class="text-lg font-bold mb-4">Superset ${superset.name}</h3>
-                ${superset.exercises.map(exercise => this.renderExercise(exercise, superset.name)).join('')}
-                <div class="mt-4">
-                    <button class="rest-timer-btn bg-blue-500 text-white px-4 py-2 rounded"
-                            onclick="WorkoutTracker.startRestTimer(${exercise.rest || 60})">
-                        Rest Timer (${Math.floor((exercise.rest || 60) / 60)}:${(exercise.rest || 60) % 60})
+        state.currentWorkout.supersets.forEach((superset, supersetIndex) => {
+            html += `
+                <div class="superset mb-6" data-superset="${supersetIndex}">
+                    <h3 class="font-semibold mb-2">Superset ${supersetIndex + 1}</h3>
+                    <div class="space-y-3">
+                        ${superset.exercises.map((exercise, exerciseIndex) => `
+                            <div class="exercise-grid" data-exercise="${exerciseIndex}">
+                                <span class="exercise-name">${exercise}</span>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" 
+                                           class="number-input weight-input" 
+                                           placeholder="Weight"
+                                           min="0"
+                                           max="999">
+                                    <span>lbs</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" 
+                                           class="number-input reps-input" 
+                                           placeholder="Reps"
+                                           min="0"
+                                           max="999">
+                                    <span>reps</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="start-rest py-2 px-4 bg-blue-500 text-white rounded-lg mt-2"
+                            onclick="startRestTimer(${supersetIndex})">
+                        Start Rest Timer
                     </button>
                 </div>
-            </div>
-        `;
-    },
-
-    renderExercise(exercise, supersetName) {
-        return `
-            <div class="mb-6" id="exercise-${exercise.name.replace(/\s+/g, '-')}">
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <h4 class="font-bold">${exercise.name}</h4>
-                        <p class="text-sm text-gray-600">${exercise.description}</p>
-                    </div>
-                    <span class="text-sm text-gray-500">${exercise.repRange} reps</span>
-                </div>
-
-                <div class="bg-blue-50 p-2 rounded mb-4">
-                    <p class="text-xs font-bold mb-1">Form Cues:</p>
-                    <ul class="text-xs text-gray-600">
-                        ${exercise.formCues.map(cue => `<li>• ${cue}</li>`).join('')}
-                    </ul>
-                </div>
-
-                ${Array(exercise.sets).fill().map((_, i) => this.renderSet(exercise, i)).join('')}
-            </div>
-        `;
-    },
-
-    renderSet(exercise, setIndex) {
-        const isBodyweight = exercise.isBodyweight;
-        return `
-            <div class="flex items-center gap-4 mb-2">
-                <span class="text-sm">Set ${setIndex + 1}:</span>
-                ${!isBodyweight ? `
-                    <div class="flex items-center gap-2">
-                        <button class="adjust-button" onclick="WorkoutTracker.adjustValue('${exercise.name}_weight_${setIndex}', -5)">-</button>
-                        <input type="number" id="${exercise.name}_weight_${setIndex}" class="number-input" value="0">
-                        <button class="adjust-button" onclick="WorkoutTracker.adjustValue('${exercise.name}_weight_${setIndex}', 5)">+</button>
-                        <span class="text-sm">lb</span>
-                    </div>
-                ` : ''}
-                <div class="flex items-center gap-2">
-                    <button class="adjust-button" onclick="WorkoutTracker.adjustValue('${exercise.name}_reps_${setIndex}', -1)">-</button>
-                    <input type="number" id="${exercise.name}_reps_${setIndex}" class="number-input" value="0">
-                    <button class="adjust-button" onclick="WorkoutTracker.adjustValue('${exercise.name}_reps_${setIndex}', 1)">+</button>
-                    <span class="text-sm">reps</span>
-                </div>
-            </div>
-        `;
-    },
-
-    adjustValue(id, amount) {
-        const input = document.getElementById(id);
-        if (input) {
-            const newValue = Math.max(0, Number(input.value) + amount);
-            input.value = newValue;
-            this.updateProgress(id);
-        }
-    },
-
-    updateProgress(inputId) {
-        // Implementation for tracking progress during workout
-    },
-
-    startRestTimer(seconds = 60) {
-        if (this.restTimer) {
-            clearInterval(this.restTimer);
-        }
-
-        const timerDisplay = document.getElementById('timerDisplay');
-        timerDisplay.classList.remove('hidden');
-        
-        let timeLeft = seconds;
-        this.updateTimerDisplay(timeLeft);
-
-        this.restTimer = setInterval(() => {
-            timeLeft--;
-            this.updateTimerDisplay(timeLeft);
-            
-            if (timeLeft <= 0) {
-                clearInterval(this.restTimer);
-                timerDisplay.classList.add('hidden');
-                // Vibrate if supported
-                if ('vibrate' in navigator) {
-                    navigator.vibrate(200);
-                }
-            }
-        }, 1000);
-    },
-
-    updateTimerDisplay(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-        document.getElementById('timerDisplay').textContent = 
-            `Rest: ${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    },
-
-    showCompletionModal() {
-        document.getElementById('completionModal').classList.remove('hidden');
-    },
-
-    hideCompletionModal() {
-        document.getElementById('completionModal').classList.add('hidden');
-    },
-
-    skipNotes() {
-        this.finalizeWorkout();
-    },
-
-    async finalizeWorkout() {
-        this.workoutData.duration = Math.floor((Date.now() - this.startTime) / 1000);
-        this.workoutData.notes = document.getElementById('workoutNotes').value;
-        this.workoutData.completed = true;
-
-        try {
-            await this.saveWorkoutData();
-            window.location.href = 'index.html';
-        } catch (error) {
-            console.error('Error saving workout:', error);
-            this.showError('Failed to save workout');
-        }
-    },
-
-    async saveWorkoutData() {
-        // Gather all exercise data
-        this.currentWorkout.supersets.forEach(superset => {
-            superset.exercises.forEach(exercise => {
-                const sets = Array(exercise.sets).fill().map((_, i) => ({
-                    weight: exercise.isBodyweight ? null : 
-                        Number(document.getElementById(`${exercise.name}_weight_${i}`).value),
-                    reps: Number(document.getElementById(`${exercise.name}_reps_${i}`).value)
-                }));
-                this.workoutData.exercises[exercise.name] = { sets };
-            });
+            `;
         });
 
-        await DataManager.saveWorkout(this.currentUser, this.workoutData);
+        html += '</div>';
+        elements.workoutContainer.innerHTML = html;
+        addInputEventListeners();
     }
-};
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => WorkoutTracker.init());
+    // Add input event listeners
+    function addInputEventListeners() {
+        const inputs = elements.workoutContainer.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('change', validateInput);
+            input.addEventListener('input', validateInput);
+        });
+    }
 
-export default WorkoutTracker;
+    // Validate input
+    function validateInput(event) {
+        const input = event.target;
+        let value = parseInt(input.value);
+        
+        // Remove non-numeric characters
+        input.value = input.value.replace(/[^\d]/g, '');
+        
+        // Enforce min/max values
+        if (value < 0) input.value = 0;
+        if (value > 999) input.value = 999;
+    }
+
+    // Complete workout
+    async function completeWorkout() {
+        if (!state.currentWorkout) return;
+
+        const workoutData = {
+            name: state.currentWorkout.name,
+            date: new Date().toISOString(),
+            user: state.currentUser,
+            supersets: []
+        };
+
+        // Gather data from all supersets
+        const supersets = elements.workoutContainer.querySelectorAll('.superset');
+        supersets.forEach((superset, supersetIndex) => {
+            const exercises = [];
+            const exerciseElements = superset.querySelectorAll('.exercise-grid');
+            
+            exerciseElements.forEach((exercise, exerciseIndex) => {
+                const weight = exercise.querySelector('.weight-input').value;
+                const reps = exercise.querySelector('.reps-input').value;
+                
+                if (weight || reps) {
+                    exercises.push({
+                        name: state.currentWorkout.supersets[supersetIndex].exercises[exerciseIndex],
+                        weight: parseInt(weight) || 0,
+                        reps: parseInt(reps) || 0
+                    });
+                }
+            });
+
+            if (exercises.length > 0) {
+                workoutData.supersets.push({ exercises });
+            }
+        });
+
+        try {
+            await dataManager.saveWorkout(workoutData);
+            showSuccessMessage('Workout completed and saved!');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+        } catch (error) {
+            console.error('Error saving workout:', error);
+            showErrorMessage('Failed to save workout');
+        }
+    }
+
+    // Timer functions
+    function startRestTimer(supersetIndex) {
+        if (state.isRestTimerActive) return;
+        
+        state.isRestTimerActive = true;
+        let timeLeft = 90; // 90 seconds rest
+        
+        elements.timerModal.classList.remove('hidden');
+        elements.timerDisplay.textContent = formatTime(timeLeft);
+        
+        state.timer = setInterval(() => {
+            timeLeft--;
+            elements.timerDisplay.textContent = formatTime(timeLeft);
+            
+            if (timeLeft <= 0) {
+                clearInterval(state.timer);
+                state.isRestTimerActive = false;
+                elements.timerModal.classList.add('hidden');
+            }
+        }, 1000);
+    }
+
+    function cancelRestTimer() {
+        if (state.timer) {
+            clearInterval(state.timer);
+            state.isRestTimerActive = false;
+            elements.timerModal.classList.add('hidden');
+        }
+    }
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Message display functions
+    function showSuccessMessage(message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'success-message';
+        messageElement.textContent = message;
+        elements.workoutContainer.prepend(messageElement);
+    }
+
+    function showErrorMessage(message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'error-message';
+        messageElement.textContent = message;
+        elements.workoutContainer.prepend(messageElement);
+    }
+
+    // Event listeners
+    function setupEventListeners() {
+        elements.completeWorkoutBtn?.addEventListener('click', completeWorkout);
+        elements.startTimer?.addEventListener('click', () => startRestTimer(0));
+        elements.cancelTimer?.addEventListener('click', cancelRestTimer);
+    }
+
+    // Initialize
+    async function initialize() {
+        await loadCurrentUser();
+        setupEventListeners();
+        
+        // Check for workout type in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const workoutType = urlParams.get('type');
+        
+        if (workoutType) {
+            startWorkout(workoutType);
+        } else {
+            elements.workoutContainer.innerHTML = `
+                <div class="workout-card">
+                    <h2 class="text-xl font-bold">No Workout Selected</h2>
+                    <p class="text-gray-600">Please select a workout from the dashboard.</p>
+                </div>
+            `;
+        }
+    }
+
+    // Start initialization
+    initialize().catch(error => {
+        console.error('Failed to initialize workout tracker:', error);
+        showErrorMessage('Failed to initialize workout tracker');
+    });
+});
