@@ -1,7 +1,4 @@
 // workoutTracker.js
-import dataManager from './dataManager.js';
-import workoutLibrary, { WorkoutLibrary } from './workoutLibrary.js';
-
 document.addEventListener('DOMContentLoaded', function() {
     // DOM Elements
     const elements = {
@@ -31,11 +28,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         state.currentUser = urlParams.get('user') || 'Dad';
         const workoutType = urlParams.get('type');
-        state.currentWorkout = WorkoutLibrary.getWorkout(workoutType);
+        state.currentWorkout = workoutLibrary[workoutType];
 
         if (!state.currentWorkout) {
             console.error('Invalid workout type:', workoutType);
             window.location.href = 'index.html';
+            return;
         }
 
         elements.currentUser.textContent = state.currentUser;
@@ -78,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const exerciseElement = template.querySelector('.exercise');
 
         exerciseElement.querySelector('h4').textContent = exercise.name;
-        exerciseElement.querySelector('p').textContent = exercise.description;
+           exerciseElement.querySelector('p').textContent = exercise.description;
 
         const weightInput = exerciseElement.querySelector('.weight-input-container');
         if (exercise.type === 'trx') {
@@ -94,14 +92,10 @@ document.addEventListener('DOMContentLoaded', function() {
             user: state.currentUser,
             workoutName: state.currentWorkout.name,
             date: new Date().toISOString(),
-            supersets: []
+            exercises: []
         };
 
         elements.workoutContainer.querySelectorAll('.superset').forEach((supersetElement, supersetIndex) => {
-            const supersetData = {
-                exercises: []
-            };
-
             supersetElement.querySelectorAll('.exercise').forEach((exerciseElement, exerciseIndex) => {
                 const exercise = state.currentWorkout.supersets[supersetIndex].exercises[exerciseIndex];
                 const exerciseData = {
@@ -114,24 +108,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     exerciseData.weight = exerciseElement.querySelector('.weight-input').value;
                 }
 
-                supersetData.exercises.push(exerciseData);
+                workoutData.exercises.push(exerciseData);
             });
-
-            workoutData.supersets.push(supersetData);
         });
 
-        saveWorkout(workoutData);
-        alert('Workout completed and saved!');
-        window.location.href = 'index.html';
+        try {
+            dataManager.saveWorkout(state.currentUser, workoutData);
+            alert('Workout completed and saved!');
+            window.location.href = 'index.html';
+        } catch (error) {
+            console.error('Error saving workout:', error);
+            alert('Failed to save workout. Please try again.');
+        }
     }
 
-    // Save workout data
-    function saveWorkout(workoutData) {
-        let workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
-        workouts.push(workoutData);
-        localStorage.setItem('workouts', JSON.stringify(workouts));
-    }
-
-    // Initialize the tracker
+    // Start initialization
     init();
 });
