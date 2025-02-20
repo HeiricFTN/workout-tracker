@@ -1,224 +1,162 @@
 // dashboard.js
-
-// Wait for DOM to load before running any code
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize core objects
+    // Initialize managers
     const dataManager = new DataManager();
     const workoutTracker = new WorkoutTracker(dataManager);
-    const progressTracker = new ProgressTracker(dataManager);
 
     // Cache DOM elements
     const elements = {
-        userPanel: document.getElementById('userPanel'),
-        workoutPanel: document.getElementById('workoutPanel'),
-        progressPanel: document.getElementById('progressPanel'),
-        dadButton: document.getElementById('userDad'),
-        alexButton: document.getElementById('userAlex'),
-        workoutButtons: {
-            chestTriceps: document.getElementById('chestTriceps'),
-            shoulders: document.getElementById('shoulders'),
-            backBiceps: document.getElementById('backBiceps')
-        },
-        activeWorkout: document.getElementById('activeWorkout'),
-        workoutHistory: document.getElementById('workoutHistory')
+        dadButton: document.getElementById('dadButton'),
+        alexButton: document.getElementById('alexButton'),
+        startWorkoutBtn: document.getElementById('startWorkoutBtn'),
+        workoutPreview: document.getElementById('workoutPreview'),
+        currentDate: document.getElementById('currentDate'),
+        weeklyDots: document.getElementById('weeklyDots'),
+        keyLifts: document.getElementById('keyLifts'),
+        recentImprovements: document.getElementById('recentImprovements'),
+        nextTargets: document.getElementById('nextTargets')
     };
 
-    // Initialize dashboard state
-    const dashboardState = {
-        currentUser: dataManager.getCurrentUser(),
-        currentWorkout: null,
-        isWorkoutActive: false
+    // Dashboard state
+    const state = {
+        currentUser: dataManager.getCurrentUser() || 'Dad',
+        currentWorkout: null
     };
 
-    // Set up event listeners
-    function initializeEventListeners() {
-        // User switching
+    // Initialize dashboard
+    function initializeDashboard() {
+        updateCurrentDate();
+        updateUserButtons();
+        loadTodaysWorkout();
+        updateWeeklyProgress();
+        updateProgressSection();
+        setupEventListeners();
+    }
+
+    // Event Listeners
+    function setupEventListeners() {
         elements.dadButton.addEventListener('click', () => switchUser('Dad'));
         elements.alexButton.addEventListener('click', () => switchUser('Alex'));
+        elements.startWorkoutBtn.addEventListener('click', startWorkout);
+    }
 
-        // Workout selection
-        Object.entries(elements.workoutButtons).forEach(([type, button]) => {
-            button.addEventListener('click', () => startWorkout(type));
+    // Update current date
+    function updateCurrentDate() {
+        const date = new Date();
+        elements.currentDate.textContent = date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric'
         });
     }
 
-    // User switching functionality
+    // User switching
     function switchUser(user) {
-        dashboardState.currentUser = user;
+        state.currentUser = user;
         dataManager.switchUser(user);
-        updateUIForUser(user);
-        loadUserHistory(user);
-        console.log(`Switched to user: ${user}`);
+        updateUserButtons();
+        loadTodaysWorkout();
+        updateProgressSection();
     }
 
-    // Update UI for selected user
-    function updateUIForUser(user) {
-        // Update button states
-        elements.dadButton.classList.toggle('active', user === 'Dad');
-        elements.alexButton.classList.toggle('active', user === 'Alex');
-
-        // Update welcome message
-        const welcomeMessage = document.getElementById('welcomeMessage');
-        if (welcomeMessage) {
-            welcomeMessage.textContent = `Welcome, ${user}!`;
-        }
-
-        // Clear active workout if exists
-        if (!dashboardState.isWorkoutActive) {
-            elements.activeWorkout.innerHTML = '';
-        }
+    // Update user button states
+    function updateUserButtons() {
+        elements.dadButton.className = state.currentUser === 'Dad' 
+            ? 'flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg shadow'
+            : 'flex-1 py-2 px-4 bg-gray-200 rounded-lg shadow';
+        
+        elements.alexButton.className = state.currentUser === 'Alex'
+            ? 'flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg shadow'
+            : 'flex-1 py-2 px-4 bg-gray-200 rounded-lg shadow';
     }
 
-    // Start new workout
-    function startWorkout(workoutType) {
-        if (dashboardState.isWorkoutActive) {
-            if (!confirm('Do you want to abandon current workout and start new one?')) {
-                return;
-            }
+    // Load today's suggested workout
+    function loadTodaysWorkout() {
+        const day = new Date().getDay();
+        let workoutType = '';
+        
+        // Suggested workout based on day
+        switch(day) {
+            case 1: // Monday
+                workoutType = 'Chest & Triceps';
+                break;
+            case 3: // Wednesday
+                workoutType = 'Shoulders';
+                break;
+            case 5: // Friday
+                workoutType = 'Back & Biceps';
+                break;
+            default:
+                workoutType = 'Rest Day';
         }
 
-        const workout = workoutLibrary[workoutType];
-        if (!workout) {
-            console.error(`Workout type ${workoutType} not found`);
-            return;
-        }
-
-        dashboardState.currentWorkout = workout;
-        dashboardState.isWorkoutActive = true;
-
-        displayActiveWorkout(workout);
-        console.log(`Starting ${workoutType} workout`);
-    }
-
-    // Display active workout
-    function displayActiveWorkout(workout) {
-        elements.activeWorkout.innerHTML = `
-            <div class="workout-header">
-                <h2>${workout.name}</h2>
-                <button onclick="completeWorkout()" class="complete-button">Complete Workout</button>
-            </div>
-            <div class="supersets">
-                ${generateSupersetHTML(workout.supersets)}
+        elements.workoutPreview.innerHTML =L = `
+            <div class="text-center py-2">
+                <h3 class="font-semibold">${workoutType}</h3>
+                ${workoutType !== 'Rest Day' 
+                    ? '<p class="text-sm text-gray-600">Tap Start Workout to begin</p>'
+                    : '<p class="text-sm text-gray-600">Take it easy today!</p>'
+                }
             </div>
         `;
-
-        // Add input event listeners
-        addInputEventListeners();
     }
 
-    // Generate HTML for supersets
-    function generateSupersetHTML(supersets) {
-        return supersets.map((superset, index) => `
-            <div class="superset" data-superset="${index}">
-                <h3>Superset ${index + 1}</h3>
-                <div class="exercises">
-                    ${superset.exercises.map((exercise, exIndex) => `
-                        <div class="exercise">
-                            <label>${exercise}</label>
-                            <input type="number" 
-                                   class="weight-input" 
-                                   placeholder="Weight (lbs)"
-                                   data-exercise="${exIndex}">
-                            <input type="number" 
-                                   class="reps-input" 
-                                   placeholder="Reps"
-                                   data-exercise="${exIndex}">
-                        </div>
-                    `).join('')}
-                </div>
+    // Update weekly progress dots
+    function updateWeeklyProgress() {
+        const workouts = dataManager.getWeeklyWorkouts(state.currentUser);
+        elements.weeklyDots.innerHTML = Array(7).fill(0).map((_, i) => `
+            <div class="h-3 w-3 rounded-full mx-auto ${
+                workouts.includes(i) ? 'bg-green-500' : 'bg-gray-200'
+            }"></div>
+        `).join('');
+    }
+
+    // Update progress section
+    function updateProgressSection() {
+        updateKeyLifts();
+        updateRecentImprovements();
+        updateNextTargets();
+    }
+
+    // Update key lifts section
+    function updateKeyLifts() {
+        const keyLifts = dataManager.getKeyLifts(state.currentUser);
+        elements.keyLifts.innerHTML = keyLifts.map(lift => `
+            <div class="flex justify-between items-center">
+                <span>${lift.name}</span>
+                <span class="font-bold">${lift.weight}lbs</span>
             </div>
         `).join('');
     }
 
-    // Add input event listeners for workout tracking
-    function addInputEventListeners() {
-        const inputs = elements.activeWorkout.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.addEventListener('change', function(e) {
-                const supersetElement = e.target.closest('.superset');
-                const supersetIndex = supersetElement.dataset.superset;
-                const exerciseIndex = e.target.dataset.exercise;
-                const isWeight = e.target.classList.contains('weight-input');
-                
-                updateWorkoutProgress(supersetIndex, exerciseIndex, isWeight, e.target.value);
-            });
-        });
-    }
-
-    // Update workout progress
-    function updateWorkoutProgress(supersetIndex, exerciseIndex, isWeight, value) {
-        if (!dashboardState.currentWorkout.progress) {
-            dashboardState.currentWorkout.progress = {};
-        }
-
-        const progressKey = `${supersetIndex}-${exerciseIndex}`;
-        if (!dashboardState.currentWorkout.progress[progressKey]) {
-            dashboardState.currentWorkout.progress[progressKey] = {};
-        }
-
-        if (isWeight) {
-            dashboardState.currentWorkout.progress[progressKey].weight = value;
-        } else {
-            dashboardState.currentWorkout.progress[progressKey].reps = value;
-        }
-    }
-
-    // Complete workout
-    window.completeWorkout = function() {
-        if (!dashboardState.currentWorkout) return;
-
-        const workoutData = {
-            type: dashboardState.currentWorkout.name,
-            date: new Date().toISOString(),
-            progress: dashboardState.currentWorkout.progress
-        };
-
-        dataManager.saveWorkout(workoutData);
-        dashboardState.isWorkoutActive = false;
-        dashboardState.currentWorkout = null;
-
-        elements.activeWorkout.innerHTML = '<div class="success-message">Workout completed!</div>';
-        loadUserHistory(dashboardState.currentUser);
-        
-        console.log('Workout completed and saved');
-    };
-
-    // Load user's workout history
-    function loadUserHistory(user) {
-        const history = dataManager.getWorkoutHistory(user);
-        displayWorkoutHistory(history);
-    }
-
-    // Display workout history
-    function displayWorkoutHistory(history) {
-        if (!elements.workoutHistory) return;
-
-        if (!history || history.length === 0) {
-            elements.workoutHistory.innerHTML = '<p>No workout history available</p>';
-            return;
-        }
-
-        elements.workoutHistory.innerHTML = `
-            <h3>Recent Workouts</h3>
-            <div class="history-list">
-                ${history.map(workout => `
-                    <div class="history-item">
-                        <span class="workout-type">${workout.type}</span>
-                        <span class="workout-date">${new Date(workout.date).toLocaleDateString()}</span>
-                    </div>
-                `).join('')}
+    // Update recent improvements
+    function updateRecentImprovements() {
+        const improvements = dataManager.getRecentImprovements(state.currentUser);
+        elements.recentImprovements.innerHTML = improvements.map(imp => `
+            <div class="flex justify-between items-center">
+                <span>${imp.exercise}</span>
+                <span class="text-green-500">+${imp.increase}lbs</span>
             </div>
-        `;
+        `).join('');
     }
 
-    // Initialize dashboard
-    function initializeDashboard() {
-        initializeEventListeners();
-        updateUIForUser(dashboardState.currentUser);
-        loadUserHistory(dashboardState.currentUser);
-        console.log('Dashboard initialized');
+    // Update next targets
+    function updateNextTargets() {
+        const targets = dataManager.getNextTargets(state.currentUser);
+        elements.nextTargets.innerHTML = targets.map(target => `
+            <div class="flex justify-between items-center">
+                <span>${target.exercise}</span>
+                <span class="font-bold">${target.weight}lbs</span>
+            </div>
+        `).join('');
     }
 
-    // Start the dashboard
+    // Start workout function
+    function startWorkout() {
+        // Redirect to workout page or show workout interface
+        window.location.href = 'workout.html';
+    }
+
+    // Initialize the dashboard
     initializeDashboard();
 });
