@@ -162,10 +162,3 @@ const WorkoutLibrary = {
         return exercise.type === 'dumbbell';
     }
 };
-
-// Prevent modifications
-Object.freeze(workoutLibrary);
-Object.freeze(WorkoutLibrary);
-
-// Export
-export { workoutLibrary as default, WorkoutLibrary };
