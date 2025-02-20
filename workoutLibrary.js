@@ -6,26 +6,44 @@ const workoutLibrary = {
         supersets: [
             {
                 exercises: [
-                    "Bench Press",
-                    "Tricep Pushdown"
+                    {
+                        name: "DB Bench Press",
+                        description: "Lying on bench, press dumbbells up",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Tricep Extension",
+                        description: "Face away from anchor, extend arms down",
+                        type: "trx"
+                    }
                 ]
             },
             {
                 exercises: [
-                    "Incline Dumbbell Press",
-                    "Overhead Tricep Extension"
+                    {
+                        name: "DB Incline Press",
+                        description: "Bench at 45°, press dumbbells up",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Chest Press",
+                        description: "Face away from anchor, perform push-up motion",
+                        type: "trx"
+                    }
                 ]
             },
             {
                 exercises: [
-                    "Machine Chest Fly",
-                    "Rope Tricep Extension"
-                ]
-            },
-            {
-                exercises: [
-                    "Decline Push-Ups",
-                    "Diamond Push-Ups"
+                    {
+                        name: "DB Chest Fly",
+                        description: "Lying on bench, wide arm circles",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Y-Fly",
+                        description: "Face anchor, arms up in Y position, pull back",
+                        type: "trx"
+                    }
                 ]
             }
         ]
@@ -37,26 +55,44 @@ const workoutLibrary = {
         supersets: [
             {
                 exercises: [
-                    "Seated Dumbbell Press",
-                    "Lateral Raises"
+                    {
+                        name: "DB Shoulder Press",
+                        description: "Seated, press dumbbells overhead",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Face Pull",
+                        description: "Face anchor, pull to face height, elbows high",
+                        type: "trx"
+                    }
                 ]
             },
             {
                 exercises: [
-                    "Front Raises",
-                    "Rear Delt Fly"
+                    {
+                        name: "DB Lateral Raise",
+                        description: "Standing, raise arms to sides",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Y-Raise",
+                        description: "Face anchor, raise arms to Y position",
+                        type: "trx"
+                    }
                 ]
             },
             {
                 exercises: [
-                    "Military Press",
-                    "Upright Row"
-                ]
-            },
-            {
-                exercises: [
-                    "Face Pulls",
-                    "Shrugs"
+                    {
+                        name: "DB Front Raise",
+                        description: "Standing, raise arms to front",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Reverse Fly",
+                        description: "Face anchor, pull arms apart horizontally",
+                        type: "trx"
+                    }
                 ]
             }
         ]
@@ -68,74 +104,68 @@ const workoutLibrary = {
         supersets: [
             {
                 exercises: [
-                    "Lat Pulldown",
-                    "Barbell Curl"
+                    {
+                        name: "DB Row",
+                        description: "Bent over, pull dumbbells to ribs",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Row",
+                        description: "Face anchor, pull chest to hands",
+                        type: "trx"
+                    }
                 ]
             },
             {
                 exercises: [
-                    "Seated Cable Row",
-                    "Hammer Curl"
+                    {
+                        name: "DB Bicep Curl",
+                        description: "Standing, curl dumbbells to shoulders",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Bicep Curl",
+                        description: "Face anchor, curl body up, keeping elbows high",
+                        type: "trx"
+                    }
                 ]
             },
             {
                 exercises: [
-                    "One-Arm Dumbbell Row",
-                    "Incline Dumbbell Curl"
-                ]
-            },
-            {
-                exercises: [
-                    "Face Pulls",
-                    "Cable Curl"
+                    {
+                        name: "DB Hammer Curl",
+                        description: "Standing, curl with palms facing each other",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Power Pull",
+                        description: "Side to anchor, single-arm row with rotation",
+                        type: "trx"
+                    }
                 ]
             }
         ]
     }
 };
 
-// Utility functions for workout library
+// Utility functions
 const WorkoutLibrary = {
-    // Get workout by type
     getWorkout(type) {
         return workoutLibrary[type] || null;
     },
 
-    // Get all workout types
-    getWorkoutTypes() {
-        return Object.keys(workoutLibrary);
+    getExerciseType(exercise) {
+        return exercise.type || 'dumbbell';
     },
 
-    // Get workout names
-    getWorkoutNames() {
-        return Object.values(workoutLibrary).map(workout => workout.name);
-    },
-
-    // Get exercises for a specific workout
-    getExercises(workoutType) {
-        const workout = workoutLibrary[workoutType];
-        if (!workout) return [];
-        
-        return workout.supersets.reduce((exercises, superset) => {
-            return exercises.concat(superset.exercises);
-        }, []);
-    },
-
-    // Validate workout structure
-    validateWorkout(workout) {
-        if (!workout || typeof workout !== 'object') return false;
-        if (!workout.name || !Array.isArray(workout.supersets)) return false;
-        
-        return workout.supersets.every(superset => 
-            Array.isArray(superset.exercises) && 
-            superset.exercises.every(exercise => typeof exercise === 'string')
-        );
+    needsWeight(exercise) {
+        return exercise.type === 'dumbbell';
     }
 };
 
-// Freeze the objects to prevent modifications
+// Prevent modifications
 Object.freeze(workoutLibrary);
 Object.freeze(WorkoutLibrary);
 
-// Export both the library and utility functions
+// Export
 export { workoutLibrary as default, WorkoutLibrary };
