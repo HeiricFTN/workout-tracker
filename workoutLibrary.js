@@ -3,6 +3,11 @@ const workoutLibrary = {
     // Chest & Triceps Workout
     chestTriceps: {
         name: "Chest & Triceps",
+        rowing: {
+            name: "Hydrow Rowing",
+            description: "Complete before strength training",
+            types: ["Breathe", "Sweat", "Drive"]
+        },
         supersets: [
             {
                 exercises: [
@@ -52,6 +57,11 @@ const workoutLibrary = {
     // Shoulders Workout
     shoulders: {
         name: "Shoulders",
+        rowing: {
+            name: "Hydrow Rowing",
+            description: "Complete before strength training",
+            types: ["Breathe", "Sweat", "Drive"]
+        },
         supersets: [
             {
                 exercises: [
@@ -101,6 +111,11 @@ const workoutLibrary = {
     // Back & Biceps Workout
     backBiceps: {
         name: "Back & Biceps",
+        rowing: {
+            name: "Hydrow Rowing",
+            description: "Complete before strength training",
+            types: ["Breathe", "Sweat", "Drive"]
+        },
         supersets: [
             {
                 exercises: [
@@ -160,5 +175,15 @@ const WorkoutLibrary = {
 
     needsWeight(exercise) {
         return exercise.type === 'dumbbell';
+    },
+
+    // New rowing utility functions
+    getRowingTypes() {
+        return ["Breathe", "Sweat", "Drive"];
+    },
+
+    calculateRowingPace(meters, minutes) {
+        if (!minutes || minutes === 0) return 0;
+        return Math.round(meters / minutes);
     }
 };
