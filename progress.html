@@ -47,9 +47,17 @@
             </div>
         </div>
 
-        <!-- Progress Container -->
+        <!-- Rowing Progress -->
+        <div class="workout-card mb-6">
+            <h2 class="text-lg font-bold mb-2">Rowing Progress</h2>
+            <div id="rowingProgress" class="space-y-4">
+                <!-- Rowing progress will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Strength Progress -->
         <div id="progressContainer" class="space-y-6">
-            <!-- Progress cards will be inserted here by JavaScript -->
+            <!-- Strength progress cards will be inserted here by JavaScript -->
         </div>
 
         <!-- Personal Bests Section -->
@@ -99,8 +107,25 @@
         </div>
     </template>
 
+    <!-- Rowing Progress Template -->
+    <template id="rowingProgressTemplate">
+        <div class="rowing-progress p-4 bg-white rounded-lg shadow-sm">
+            <h3 class="font-medium mb-2">{rowingType}</h3>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-600">Best Pace</p>
+                    <p class="font-bold">{bestPace} m/min</p>
+                </div>
+                <div>
+                    <p class="text-gray-600">Recent Average</p>
+                    <p class="font-bold">{recentAverage} m/min</p>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- Scripts -->
-<script src="dataManager.js"></script>
-<script src="progress.js"></script>
+    <script src="dataManager.js"></script>
+    <script src="progress.js"></script>
 </body>
 </html>
