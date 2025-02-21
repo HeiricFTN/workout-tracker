@@ -1,186 +1,163 @@
 // progressTracker.js
-import dataManager from './dataManager.js';
-export class ProgressTracker {
+class ProgressTracker {
     constructor() {
-        this.storageKey = 'workoutProgress';
-        this.startDate = new Date('2025-02-18'); // Program start date
+        this.dataManager = dataManager; // Use existing global dataManager instance
     }
 
-    // Get workout data from storage
-    getStoredData() {
-        const data = localStorage.getItem(this.storageKey);
-        return data ? JSON.parse(data) : {
-            Dad: { workouts: [], personalBests: {} },
-            Alex: { workouts: [], personalBests: {} }
-        };
-    }
-
-    // Save workout data to storage
-    saveData(data) {
-        localStorage.setItem(this.storageKey, JSON.stringify(data));
-    }
-
-    // Add a completed workout
-    addWorkout(workoutData) {
-        const data = this.getStoredData();
-        const user = workoutData.user;
-        
-        if (!data[user]) {
-            data[user] = { workouts: [], personalBests: {} };
-        }
-
-        data[user].workouts.push({
-            ...workoutData,
-            week: this.getCurrentWeek()
-        });
-
-        // Update personal bests
-        workoutData.supersets.forEach(superset => {
-            superset.exercises.forEach(exercise => {
-                this.updatePersonalBest(data[user].personalBests, exercise);
-            });
-        });
-
-        this.saveData(data);
-    }
-
-    // Update personal best for an exercise
-    updatePersonalBest(personalBests, exercise) {
-        if (!personalBests[exercise.name]) {
-            personalBests[exercise.name] = {
-                weight: exercise.type === 'dumbbell' ? exercise.weight : null,
-                reps: exercise.reps,
-                date: new Date().toISOString()
-            };
-            return;
-        }
-
-        const current = personalBests[exercise.name];
-        if (exercise.type === 'dumbbell') {
-            // For dumbbell exercises, compare weight and reps
-            if (exercise.weight > current.weight || 
-                (exercise.weight === current.weight && exercise.reps > current.reps)) {
-                personalBests[exercise.name] = {
-                    weight: exercise.weight,
-                    reps: exercise.reps,
-                    date: new Date().toISOString()
-                };
-            }
-        } else {
-            // For TRX exercises, compare only reps
-            if (exercise.reps > current.reps) {
-                personalBests[exercise.name] = {
-                    reps: exercise.reps,
-                    date: new Date().toISOString()
-                };
-            }
-        }
-    }
-
-    // Get progress data for a specific week
-    getProgressForWeek(user, week) {
-        const data = this.getStoredData();
-        const userData = data[user] || { workouts: [], personalBests: {} };
-        
-        // Filter workouts for the specified week
-        const weekWorkouts = userData.workouts.filter(w => w.week === week);
-        const lastWeekWorkouts = userData.workouts.filter(w => w.week === week - 1);
-
-        const progress = {};
-
-        // Organize by workout type
-        weekWorkouts.forEach(workout => {
-            if (!progress[workout.workoutName]) {
-                progress[workout.workoutName] = [];
-            }
-
-            workout.supersets.forEach(superset => {
-                superset.exercises.forEach(exercise => {
-                    progress[workout.workoutName].push({
-                        name: exercise.name,
-                        type: exercise.type,
-                        bestSet: this.getBestSet(userData.personalBests[exercise.name]),
-                        lastWeek: this.getLastWeekPerformance(exercise.name, lastWeekWorkouts),
-                        suggestion: this.getSuggestion(exercise, userData.personalBests[exercise.name])
-                    });
-                });
-            });
-        });
-
-        return progress;
-    }
-
-    // Get best set for an exercise
-    getBestSet(personalBest) {
-        if (!personalBest) return { reps: 0 };
+    // Program Tracking
+    getCurrentProgram() {
+           const currentWeek = this.dataManager.getCurrentWeek();
         return {
-            weight: personalBest.weight,
-            reps: personalBest.reps
+            week: currentWeek,
+            phase: currentWeek <= 6 ? 1 : 2,
+            daysCompleted: this.getCompletedDays()
         };
     }
 
-    // Get last week's performance
-    getLastWeekPerformance(exerciseName, lastWeekWorkouts) {
-        let bestPerformance = { reps: 0 };
+    getCompletedDays() {
+        const user = this.dataManager.getCurrentUser();
+        return this.dataManager.getWeeklyWorkouts(user);
+    }
 
-        lastWeekWorkouts.forEach(workout => {
-            workout.supersets.forEach(superset => {
-                superset.exercises.forEach(exercise => {
-                    if (exercise.name === exerciseName) {
-                        if (exercise.type === 'dumbbell') {
-                            if (!bestPerformance.weight || exercise.weight > bestPerformance.weight) {
-                                bestPerformance = {
-                                    weight: exercise.weight,
-                                    reps: exercise.reps
-                                };
-                            }
-                        } else if (exercise.reps > bestPerformance.reps) {
-                            bestPerformance = { reps: exercise.reps };
-                        }
-                    }
-                });
-            });
+    // Progress Analysis
+    analyzeProgress(user, exerciseType = 'all') {
+        const progress = this.dataManager.getProgress(user);
+        const analysis = {};
+
+        Object.entries(progress).forEach(([name, data]) => {
+            // Filter by exercise type if specified
+            if (exerciseType !== 'all') {
+                if (exerciseType === 'rowing' && !name.startsWith('rowing_')) return;
+                if (exerciseType === 'strength' && name.startsWith('rowing_')) return;
+            }
+
+            if (data.history.length >= 2) {
+                const recent = data.history.slice(-2);
+                analysis[name] = this.calculateProgressMetrics(name, recent, data.personalBest);
+            }
         });
 
-        return bestPerformance;
+        return analysis;
     }
 
-    // Get suggestion for improvement
-    getSuggestion(exercise, personalBest) {
-        if (!personalBest) return "First time performing this exercise";
+    calculateProgressMetrics(name, recent, personalBest) {
+        const [previous, current] = recent;
+        const isRowing = name.startsWith('rowing_');
 
-        if (exercise.type === 'dumbbell') {
-            if (exercise.weight >= personalBest.weight) {
-                if (exercise.reps >= personalBest.reps) {
-                    return "Try increasing weight next time";
-                }
-                return "Try to increase reps at current weight";
-            }
-        } else {
-            if (exercise.reps >= personalBest.reps) {
-                return "Great job! Try to increase reps next time";
-            }
+        if (isRowing) {
+            return {
+                type: 'rowing',
+                trend: current.pace > previous.pace ? 'improving' : 'declining',
+                changePercent: ((current.pace - previous.pace) / previous.pace) * 100,
+                currentPace: Math.round(current.pace),
+                bestPace: Math.round(personalBest.pace),
+                isPersonalBest: current.pace >= personalBest.pace
+            };
         }
 
-        return null;
+        // Strength exercise
+        const isDumbbell = personalBest.weight !== undefined;
+        if (isDumbbell) {
+            return {
+                type: 'dumbbell',
+                trend: this.getStrengthTrend(current, previous),
+                changePercent: ((current.weight - previous.weight) / previous.weight) * 100,
+                current: `${current.weight}lbs × ${current.reps}`,
+                best: `${personalBest.weight}lbs × ${personalBest.reps}`,
+                isPersonalBest: current.weight >= personalBest.weight && current.reps >= personalBest.reps
+            };
+        }
+
+        return {
+            type: 'trx',
+            trend: current.reps > previous.reps ? 'improving' : 'declining',
+            changePercent: ((current.reps - previous.reps) / previous.reps) * 100,
+            current: `${current.reps} reps`,
+            best: `${personalBest.reps} reps`,
+            isPersonalBest: current.reps >= personalBest.reps
+        };
     }
 
-    // Get current week of the program
-    getCurrentWeek() {
-        const today = new Date();
-        const weeksPassed = Math.floor((today - this.startDate) / (7 * 24 * 60 * 60 * 1000));
-        return Math.min(Math.max(weeksPassed + 1, 1), 12); // Ensure it's between 1 and 12
+    getStrengthTrend(current, previous) {
+        if (current.weight > previous.weight) return 'improving';
+        if (current.weight < previous.weight) return 'declining';
+        if (current.reps > previous.reps) return 'improving';
+        if (current.reps < previous.reps) return 'declining';
+        return 'steady';
     }
 
-    // Get personal bests for a user
-    getPersonalBests(user) {
-        const data = this.getStoredData();
-        return data[user]?.personalBests || {};
+    // Target Calculations
+    getNextTargets(user) {
+        const progress = this.dataManager.getProgress(user);
+        const targets = {};
+
+        Object.entries(progress).forEach(([name, data]) => {
+            if (data.history.length > 0) {
+                const current = data.history[data.history.length - 1];
+                targets[name] = this.calculateTarget(name, current);
+            }
+        });
+
+        return targets;
     }
 
-    // Get all workouts for a user
-    getUserWorkouts(user) {
-        const data = this.getStoredData();
-        return data[user]?.workouts || [];
+    calculateTarget(name, current) {
+        if (name.startsWith('rowing_')) {
+            return {
+                type: 'rowing',
+                targetPace: Math.round(current.pace * 1.05), // 5% increase
+                suggestedMinutes: current.minutes
+            };
+        }
+
+        if (current.weight !== undefined) {
+            return {
+                type: 'dumbbell',
+                targetWeight: Math.ceil(current.weight * 1.05), // 5% increase
+                targetReps: current.reps
+            };
+        }
+
+        return {
+            type: 'trx',
+            targetReps: current.reps + 2 // 2 more reps
+        };
+    }
+
+    // Rowing Specific Methods
+    getRowingStats(user) {
+        const progress = this.dataManager.getProgress(user);
+        const stats = {};
+
+        ['Breathe', 'Sweat', 'Drive'].forEach(type => {
+            const key = `rowing_${type}`;
+            if (progress[key]) {
+                stats[type] = {
+                    bestPace: Math.round(progress[key].personalBest.pace),
+                    recentAverage: this.calculateRecentAverage(progress[key].history),
+                    totalMeters: this.calculateTotalMeters(progress[key].history),
+                    totalMinutes: this.calculateTotalMinutes(progress[key].history)
+                };
+            }
+        });
+
+        return stats;
+    }
+
+    calculateRecentAverage(history, entries = 5) {
+        if (!history.length) return 0;
+        const recent = history.slice(-entries);
+        return Math.round(recent.reduce((sum, entry) => sum + entry.pace, 0) / recent.length);
+    }
+
+    calculateTotalMeters(history) {
+        return history.reduce((sum, entry) => sum + entry.meters, 0);
+    }
+
+    calculateTotalMinutes(history) {
+        return history.reduce((sum, entry) => sum + entry.minutes, 0);
     }
 }
+
+// Create global instance
+const progressTracker = new ProgressTracker();
