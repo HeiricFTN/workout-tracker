@@ -1,8 +1,8 @@
 // workoutLibrary.js
 const workoutLibrary = {
-    // Push Day (Chest & Shoulders)
+    // Chest & Triceps Workout
     chestTriceps: {
-        name: "Push Day",
+        name: "Chest & Triceps",
         rowing: {
             name: "Hydrow Rowing",
             description: "Complete before strength training",
@@ -26,8 +26,8 @@ const workoutLibrary = {
             {
                 exercises: [
                     {
-                        name: "DB Shoulder Press",
-                        description: "Seated or standing, press dumbbells overhead",
+                        name: "DB Incline Press",
+                        description: "Bench at 30°, press dumbbells up",
                         type: "dumbbell"
                     },
                     {
@@ -40,8 +40,34 @@ const workoutLibrary = {
             {
                 exercises: [
                     {
-                        name: "DB Incline Press",
-                        description: "Bench at 30°, press dumbbells up",
+                        name: "DB Chest Fly",
+                        description: "Lying on bench, wide arm circles",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Power Pull",
+                        description: "Side to anchor, single-arm row with rotation",
+                        type: "trx"
+                    }
+                ]
+            }
+        ]
+    },
+
+    // Shoulders Workout
+    shoulders: {
+        name: "Shoulders",
+        rowing: {
+            name: "Hydrow Rowing",
+            description: "Complete before strength training",
+            types: ["Breathe", "Sweat", "Drive"]
+        },
+        supersets: [
+            {
+                exercises: [
+                    {
+                        name: "DB Shoulder Press",
+                        description: "Seated or standing, press dumbbells overhead",
                         type: "dumbbell"
                     },
                     {
@@ -50,13 +76,41 @@ const workoutLibrary = {
                         type: "trx"
                     }
                 ]
+            },
+            {
+                exercises: [
+                    {
+                        name: "DB Lateral Raise",
+                        description: "Standing, raise arms to sides",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Row",
+                        description: "Face anchor, pull chest to hands, elbows wide",
+                        type: "trx"
+                    }
+                ]
+            },
+            {
+                exercises: [
+                    {
+                        name: "DB Front Raise",
+                        description: "Standing, raise arms to front",
+                        type: "dumbbell"
+                    },
+                    {
+                        name: "TRX Reverse Fly",
+                        description: "Face anchor, pull arms apart horizontally",
+                        type: "trx"
+                    }
+                ]
             }
         ]
     },
 
-    // Pull Day (Back & Shoulders)
-    shoulders: {
-        name: "Pull Day",
+    // Back & Biceps Workout
+    backBiceps: {
+        name: "Back & Biceps",
         rowing: {
             name: "Hydrow Rowing",
             description: "Complete before strength training",
@@ -67,61 +121,7 @@ const workoutLibrary = {
                 exercises: [
                     {
                         name: "DB Row",
-                        description: "Bent over, pull dumbbells to ribs, squeeze lats",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Push-Up",
-                        description: "Face away from anchor, perform push-up with handles",
-                        type: "trx"
-                    }
-                ]
-            },
-            {
-                exercises: [
-                    {
-                        name: "DB Rear Delt Raise",
-                        description: "Bent over, raise dumbbells to sides, focus on rear delts",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Chest Press",
-                        description: "Face away from anchor, lean forward, press body up",
-                        type: "trx"
-                    }
-                ]
-            },
-            {
-                exercises: [
-                    {
-                        name: "DB Shrug",
-                        description: "Standing, shrug shoulders up, hold briefly",
-                        type: "dumbbell"
-                    },
-                    {
-                        name: "TRX Pike",
-                        description: "Face down, feet in straps, pike hips up",
-                        type: "trx"
-                    }
-                ]
-            }
-        ]
-    },
-
-    // Arms & Core
-    backBiceps: {
-        name: "Arms & Core",
-        rowing: {
-            name: "Hydrow Rowing",
-            description: "Complete before strength training",
-            types: ["Breathe", "Sweat", "Drive"]
-        },
-        supersets: [
-            {
-                exercises: [
-                    {
-                        name: "DB Bicep Curl",
-                        description: "Standing, curl dumbbells, keep elbows still",
+                        description: "Bent over, pull dumbbells to ribs",
                         type: "dumbbell"
                     },
                     {
@@ -134,13 +134,13 @@ const workoutLibrary = {
             {
                 exercises: [
                     {
-                        name: "DB Hammer Curl",
-                        description: "Standing, curl with palms facing each other",
+                        name: "DB Bicep Curl",
+                        description: "Standing, curl dumbbells to shoulders",
                         type: "dumbbell"
                     },
                     {
-                        name: "TRX Fallout",
-                        description: "Face down, extend arms forward, maintain plank",
+                        name: "TRX Push-Up",
+                        description: "Face away from anchor, perform push-up with handles",
                         type: "trx"
                     }
                 ]
@@ -148,13 +148,13 @@ const workoutLibrary = {
             {
                 exercises: [
                     {
-                        name: "DB Concentration Curl",
-                        description: "Seated, one arm at a time, elbow on inner thigh",
+                        name: "DB Hammer Curl",
+                        description: "Standing, curl with palms facing each other",
                         type: "dumbbell"
                     },
                     {
-                        name: "TRX Power Pull",
-                        description: "Side to anchor, single-arm row with rotation",
+                        name: "TRX Chest Press",
+                        description: "Face away from anchor, lean forward, press body up",
                         type: "trx"
                     }
                 ]
@@ -163,7 +163,7 @@ const workoutLibrary = {
     }
 };
 
-// Utility functions (unchanged)
+// Utility functions
 const WorkoutLibrary = {
     getWorkout(type) {
         return workoutLibrary[type] || null;
@@ -177,6 +177,7 @@ const WorkoutLibrary = {
         return exercise.type === 'dumbbell';
     },
 
+    // New rowing utility functions
     getRowingTypes() {
         return ["Breathe", "Sweat", "Drive"];
     },
