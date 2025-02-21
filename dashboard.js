@@ -14,6 +14,11 @@ document.addEventListener('DOMContentLoaded', function() {
         programPhase: document.getElementById('programPhase'),
         nextWorkout: document.getElementById('nextWorkout'),
 
+        // Rowing progress
+        breatheProgress: document.getElementById('breatheProgress'),
+        sweatProgress: document.getElementById('sweatProgress'),
+        driveProgress: document.getElementById('driveProgress'),
+
         // Weekly progress
         weeklyDots: document.getElementById('weeklyDots'),
         workoutsComplete: document.getElementById('workoutsComplete'),
@@ -44,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateProgramStatus();
         updateWeeklyProgress();
         updateTodayWorkout();
+        updateRowingProgress();
         setupEventListeners();
         updateRecentProgress();
     }
@@ -67,6 +73,28 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.currentWeek.textContent = `Week ${currentWeek} of 12`;
         elements.programPhase.textContent = `Phase ${phase}`;
         elements.nextWorkout.textContent = getNextWorkout();
+    }
+
+    // Update rowing progress
+    function updateRowingProgress() {
+        const progress = dataManager.getProgress(state.currentUser);
+        
+        updateRowingType('Breathe', elements.breatheProgress, progress);
+        updateRowingType('Sweat', elements.sweatProgress, progress);
+        updateRowingType('Drive', elements.driveProgress, progress);
+    }
+
+    function updateRowingType(type, element, progress) {
+        const rowingKey = `rowing_${type}`;
+        const rowingData = progress[rowingKey];
+
+        if (rowingData && rowingData.history.length > 0) {
+            const recent = rowingData.history[rowingData.history.length - 1];
+            const bestPace = rowingData.personalBest.pace;
+            element.textContent = `${Math.round(recent.pace)} m/min (Best: ${Math.round(bestPace)})`;
+        } else {
+            element.textContent = 'No data';
+        }
     }
 
     // Get current week
@@ -141,49 +169,37 @@ document.addEventListener('DOMContentLoaded', function() {
             elements.startWorkoutBtn.classList.remove('opacity-50');
         }
     }
-    
-// Update recent progress
-function updateRecentProgress() {
-    const progress = dataManager.getRecentProgress(state.currentUser);
-    
-    if (!progress.length) {
-        elements.recentProgress.innerHTML = 
-            '<li class="text-gray-600">No recent progress recorded</li>';
-        return;
-    }
 
-    elements.recentProgress.innerHTML = progress
-        .slice(0, 3)
-        .map(p => {
-            if (p.type === 'dumbbell') {
-                return `
-                    <li class="mb-1">
-                        ${p.exercise}: ${p.previousWeight}→${p.currentWeight} lbs
-                    </li>`;
-            } else if (p.type === 'trx') {
-                return `
-                    <li class="mb-1">
-                        ${p.exercise}: ${p.previousReps}→${p.currentReps} reps
-                    </li>`;
-            } else if (p.type === 'rowing') {
-                return `
-                    <li class="mb-1">
-                        ${p.exercise}: ${p.previousPace}→${p.currentPace} m/min
-                    </li>`;
-            }
-        })
-        .join('');
-}
+    // Update recent progress
+    function updateRecentProgress() {
+        const progress = dataManager.getRecentProgress(state.currentUser);
+        
+        if (!progress.length) {
+            elements.recentProgress.innerHTML = 
+                '<li class="text-gray-600">No recent progress recorded</li>';
+            return;
+        }
 
         elements.recentProgress.innerHTML = progress
             .slice(0, 3)
-            .map(p => `
-                <li class="mb-1">
-                    ${p.exercise}: ${p.type === 'dumbbell' 
-                        ? `${p.previousWeight}→${p.currentWeight} lbs`
-                        : `${p.previousReps}→${p.currentReps} reps`}
-                </li>
-            `)
+            .map(p => {
+                if (p.type === 'dumbbell') {
+                    return `
+                        <li class="mb-1">
+                            ${p.exercise}: ${p.previousWeight}→${p.currentWeight} lbs
+                        </li>`;
+                } else if (p.type === 'trx') {
+                    return `
+                        <li class="mb-1">
+                            ${p.exercise}: ${p.previousReps}→${p.currentReps} reps
+                        </li>`;
+                } else if (p.type === 'rowing') {
+                    return `
+                        <li class="mb-1">
+                            ${p.exercise}: ${p.previousPace}→${p.currentPace} m/min
+                        </li>`;
+                }
+            })
             .join('');
     }
 
@@ -193,6 +209,7 @@ function updateRecentProgress() {
         dataManager.setCurrentUser(user);
         updateUserButtons();
         updateWeeklyProgress();
+        updateRowingProgress();
         updateRecentProgress();
     }
 
