@@ -87,13 +87,25 @@ document.addEventListener('DOMContentLoaded', function() {
         return 'Rest Day (Weekend)';
     }
 
+    // Get current workout type
+    function getCurrentWorkoutType() {
+        const day = new Date().getDay();
+        switch(day) {
+            case 1: return 'chestTriceps';
+            case 3: return 'shoulders';
+            case 5: return 'backBiceps';
+            default: return null;
+        }
+    }
+
     // Update weekly progress
     function updateWeeklyProgress() {
         const workouts = dataManager.getWeeklyWorkouts(state.currentUser);
         const today = new Date().getDay();
+        const dayLabels = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
 
-        // Create dots for each day
-        const dots = Array(7).fill('').map((_, index) => {
+        // Create dots and labels for each day
+        const dotsAndLabels = Array(7).fill('').map((_, index) => {
             let dotClass = 'progress-dot';
             if (workouts.includes(index)) {
                 dotClass += ' dot-complete';
@@ -102,10 +114,15 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 dotClass += ' dot-upcoming';
             }
-            return `<div class="${dotClass}"></div>`;
+            return `
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-gray-600 mb-1">${dayLabels[index]}</span>
+                    <div class="${dotClass}"></div>
+                </div>
+            `;
         });
 
-        elements.weeklyDots.innerHTML = dots.join('');
+        elements.weeklyDots.innerHTML = dotsAndLabels.join('');
         elements.workoutsComplete.textContent = 
             `${workouts.length} of 3 workouts complete this week`;
     }
@@ -114,9 +131,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateTodayWorkout() {
         const workout = getNextWorkout();
         elements.todayWorkout.textContent = workout;
-        elements.startWorkoutBtn.disabled = workout.includes('Rest Day');
         
-        if (workout.includes('Rest Day')) {
+        const workoutType = getCurrentWorkoutType();
+        elements.startWorkoutBtn.disabled = !workoutType;
+        
+        if (!workoutType) {
             elements.startWorkoutBtn.classList.add('opacity-50');
         } else {
             elements.startWorkoutBtn.classList.remove('opacity-50');
@@ -162,11 +181,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Workout buttons
         elements.startWorkoutBtn.addEventListener('click', () => {
-            const workout = getNextWorkout().split(' (')[0].toLowerCase().replace(/ & /g, '');
-            window.location.href = `workout.html?type=${workout}&user=${state.currentUser}`;
-            const workoutType = getCurrentWorkoutType(); // New function to add
-        if (workoutType) {
-            window.location.href = `workout.html?type=${workoutType}&user=${state.currentUser}`;
+            const workoutType = getCurrentWorkoutType();
+            if (workoutType) {
+                window.location.href = `workout.html?type=${workoutType}&user=${state.currentUser}`;
+            }
         });
 
         elements.chestTricepsBtn.addEventListener('click', () => {
@@ -181,15 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = `workout.html?type=backBiceps&user=${state.currentUser}`;
         });
     }
-function getCurrentWorkoutType() {
-    const day = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
-    switch(day) {
-        case 1: return 'chestTriceps';
-        case 3: return 'shoulders';
-        case 5: return 'backBiceps';
-        default: return null;
-    }
-}
+
     // Start initialization
     initializeDashboard();
 });
