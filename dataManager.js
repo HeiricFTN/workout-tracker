@@ -14,7 +14,7 @@ class DataManager {
         return localStorage.getItem(this.storageKeys.currentUser) || 'Dad';
     }
 
-    s  setCurrentUser(user) {
+    setCurrentUser(user) {
         localStorage.setItem(this.storageKeys.currentUser, user);
     }
 
@@ -96,7 +96,7 @@ class DataManager {
             progress[rowingKey].history.push({
                 date: workoutData.date,
                 minutes: workoutData.rowing.minutes,
-                meters: wo workoutData.rowing.meters,
+                meters: workoutData.rowing.meters,
                 pace: pacePerMinute
             });
 
