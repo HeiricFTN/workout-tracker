@@ -36,18 +36,37 @@
             </div>
         </section>
 
-<!-- This Week's Progress -->
-<section class="workout-card mb-4">
-    <h2 class="text-lg font-bold mb-2">This Week's Progress</h2>
-    <div class="space-y-2">
-        <div id="weeklyDots" class="flex justify-between mb-2">
-            <!-- Dots will be inserted here by JavaScript -->
-        </div>
-    </div>
-    <p id="workoutsComplete" class="text-center"></p>
-</section>
-        
-        <!-- Quick Start Workout -->
+        <!-- Rowing Progress -->
+        <section class="workout-card mb-4">
+            <h2 class="text-lg font-bold mb-2">Rowing Progress</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm">Breathe</span>
+                    <span id="breatheProgress" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm">Sweat</span>
+                    <span id="sweatProgress" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm">Drive</span>
+                    <span id="driveProgress" class="font-medium"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- This Week's Progress -->
+        <section class="workout-card mb-4">
+            <h2 class="text-xt-lg font-bold mb-2">This Week's Progress</h2>
+            <div class="space-y-2">
+                <div id="weeklyDots" class="flex justify-between mb-2">
+                    <!-- Dots and day labels will be inserted here by JavaScript -->
+                </div>
+            </div>
+            <p id="workoutsComplete" class="text-center"></p>
+        </section>
+
+        <!-- Quick Start Workoukout -->
         <section class="workout-card mb-4">
             <h2 class="text-lg font-bold mb-2">Today's Workout</h2>
             <p id="todayWorkout" class="mb-2"></p>
@@ -83,7 +102,8 @@
             </a>
         </section>
     </div>
-<script src="dataManager.js"></script>
-<script src="dashboard.js"></script>
+
+    <script src="dataManager.js"></script>
+    <script src="dashboard.js"></script>
 </body>
 </html>
