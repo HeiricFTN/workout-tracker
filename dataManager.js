@@ -14,7 +14,7 @@ class DataManager {
         return localStorage.getItem(this.storageKeys.currentUser) || 'Dad';
     }
 
-    setCurrentUser(user) {
+    s  setCurrentUser(user) {
         localStorage.setItem(this.storageKeys.currentUser, user);
     }
 
@@ -45,16 +45,73 @@ class DataManager {
     // Progress Management
     updateProgress(userId, workoutData) {
         const progress = this.getProgress(userId);
+        
+        // Update exercise progress
         workoutData.exercises.forEach(exercise => {
             if (!progress[exercise.name]) {
-                progress[exercise.name] = [];
+                progress[exercise.name] = {
+                    history: [],
+                    personalBest: {}
+                };
             }
-            progress[exercise.name].push({
-                date: new Date().toISOString(),
-                weight: exercise.weight,
-                reps: exercise.reps
+
+            // Add to history
+            progress[exercise.name].history.push({
+                date: workoutData.date,
+                reps: exercise.reps,
+                weight: exercise.weight
             });
+
+            // Update personal bests
+            if (exercise.type === 'dumbbell') {
+                if (!progress[exercise.name].personalBest.weight || 
+                    exercise.weight > progress[exercise.name].personalBest.weight) {
+                    progress[exercise.name].personalBest = {
+                        weight: exercise.weight,
+                        reps: exercise.reps,
+                        date: workoutData.date
+                    };
+                }
+            } else if (exercise.reps > (progress[exercise.name].personalBest.reps || 0)) {
+                progress[exercise.name].personalBest = {
+                    reps: exercise.reps,
+                    date: workoutData.date
+                };
+            }
         });
+
+        // Update rowing progress
+        if (workoutData.rowing) {
+            const rowingKey = `rowing_${workoutData.rowing.type}`;
+            if (!progress[rowingKey]) {
+                progress[rowingKey] = {
+                    history: [],
+                    personalBest: {}
+                };
+            }
+
+            const pacePerMinute = workoutData.rowing.meters / workoutData.rowing.minutes;
+
+            // Add to history
+            progress[rowingKey].history.push({
+                date: workoutData.date,
+                minutes: workoutData.rowing.minutes,
+                meters: wo workoutData.rowing.meters,
+                pace: pacePerMinute
+            });
+
+            // Update personal bests
+            if (!progress[rowingKey].personalBest.pace || 
+                pacePerMinute > progress[rowingKey].personalBest.pace) {
+                progress[rowingKey].personalBest = {
+                    minutes: workoutData.rowing.minutes,
+                    meters: workoutData.rowing.meters,
+                    pace: pacePerMinute,
+                    date: workoutData.date
+                };
+            }
+        }
+
         localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
     }
 
@@ -66,37 +123,60 @@ class DataManager {
         const progress = this.getProgress(userId);
         const recentProgress = [];
 
-        Object.entries(progress).forEach(([exercise, data]) => {
-            if (data.length < 2) return;
+        // Process exercise progress
+        Object.entries(progress).forEach(([name, data]) => {
+            if (!name.startsWith('rowing_') && data.history.length >= 2) {
+                const recent = data.history.slice(-2);
+                const current = recent[1];
+                const previous = recent[0];
 
-            const current = data[data.length - 1];
-            const previous = data[data.length - 2];
-
-            if (current.weight !== undefined) {
-                // Dumbbell exercise
-                if (current.weight !== previous.weight) {
-                    recentProgress.push({
-                        exercise,
-                        type: 'dumbbell',
-                        previousWeight: previous.weight,
-                        currentWeight: current.weight,
-                        date: current.date
-                    });
+                if (data.personalBest.weight !== undefined) {
+                    // Dumbbell exercise
+                    if (current.weight !== previous.weight) {
+                        recentProgress.push({
+                            exercise: name,
+                            type: 'dumbbell',
+                            previousWeight: previous.weight,
+                            currentWeight: current.weight,
+                            date: current.date
+                        });
+                    }
+                } else {
+                    // TRX exercise
+                    if (current.reps !== previous.reps) {
+                        recentProgress.push({
+                            exercise: name,
+                            type: 'trx',
+                            previousReps: previous.reps,
+                            currentReps: current.reps,
+                            date: current.date
+                        });
+                    }
                 }
-            } else {
-                // TRX exercise
-                if (current.reps !== previous.reps) {
+            }
+        });
+
+        // Process rowing progress
+        ['Breathe', 'Sweat', 'Drive'].forEach(type => {
+            const rowingKey = `rowing_${type}`;
+            if (progress[rowingKey] && progress[rowingKey].history.length >= 2) {
+                const recent = progress[rowingKey].history.slice(-2);
+                const current = recent[1];
+                const previous = recent[0];
+
+                if (current.pace !== previous.pace) {
                     recentProgress.push({
-                        exercise,
-                        type: 'trx',
-                        previousReps: previous.reps,
-                        currentReps: current.reps,
+                        exercise: `${type} Row`,
+                        type: 'rowing',
+                        previousPace: Math.round(previous.pace),
+                        currentPace: Math.round(current.pace),
                         date: current.date
                     });
                 }
             }
         });
 
+        // Sort by date, most recent first
         return recentProgress.sort((a, b) => 
             new Date(b.date) - new Date(a.date)
         );
@@ -110,5 +190,5 @@ class DataManager {
     }
 }
 
-// Create a global instance
+// Create instance
 const dataManager = new DataManager();
