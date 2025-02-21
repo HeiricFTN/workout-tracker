@@ -22,6 +22,32 @@
         <!-- Workout Title -->
         <div id="workoutTitle" class="text-xl font-bold mb-4"></div>
 
+        <!-- Rowing Section -->
+        <section id="rowingSection" class="workout-card mb-6">
+            <h2 class="text-lg font-bold mb-2">Hydrow Rowing</h2>
+            <p class="text-sm text-gray-600 mb-4">Complete before strength training</p>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="rowingType" class="block text-sm font-medium text-gray-700">Type</label>
+                        <select id="rowingType" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="Breathe">Breathe</option>
+                            <option value="Sweat">Sweat</option>
+                            <option value="Drive">Drive</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="rowingMinutes" class="block text-sm font-medium text-gray-700">Minutes</label>
+                        <input type="number" id="rowingMinutes" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="0">
+                    </div>
+                </div>
+                <div>
+                    <label for="rowingMeters" class="block text-sm font-medium text-gray-700">Meters</label>
+                    <input type="number" id="rowingMeters" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="0">
+                </div>
+            </div>
+        </section>
+
         <!-- Workout Container -->
         <main id="workoutContainer" class="space-y-6">
             <!-- Supersets will be inserted here by JavaScript -->
@@ -75,8 +101,8 @@
     </template>
 
     <!-- Scripts -->
-<script src="workoutLibrary.js"></script>
-<script src="dataManager.js"></script>
-<script src="workoutTracker.js"></script>
+    <script src="workoutLibrary.js"></script>
+    <script src="dataManager.js"></script>
+    <script src="workoutTracker.js"></script>
 </body>
 </html>
