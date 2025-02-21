@@ -164,6 +164,9 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.startWorkoutBtn.addEventListener('click', () => {
             const workout = getNextWorkout().split(' (')[0].toLowerCase().replace(/ & /g, '');
             window.location.href = `workout.html?type=${workout}&user=${state.currentUser}`;
+            const workoutType = getCurrentWorkoutType(); // New function to add
+        if (workoutType) {
+            window.location.href = `workout.html?type=${workoutType}&user=${state.currentUser}`;
         });
 
         elements.chestTricepsBtn.addEventListener('click', () => {
@@ -178,7 +181,15 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = `workout.html?type=backBiceps&user=${state.currentUser}`;
         });
     }
-
+function getCurrentWorkoutType() {
+    const day = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+    switch(day) {
+        case 1: return 'chestTriceps';
+        case 3: return 'shoulders';
+        case 5: return 'backBiceps';
+        default: return null;
+    }
+}
     // Start initialization
     initializeDashboard();
 });
