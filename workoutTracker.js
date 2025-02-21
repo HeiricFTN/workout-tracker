@@ -7,7 +7,10 @@ document.addEventListener('DOMContentLoaded', function() {
         workoutContainer: document.getElementById('workoutContainer'),
         completeWorkoutBtn: document.getElementById('completeWorkoutBtn'),
         supersetTemplate: document.getElementById('supersetTemplate'),
-        exerciseTemplate: document.getElementById('exerciseTemplate')
+        exerciseTemplate: document.getElementById('exerciseTemplate'),
+        rowingType: document.getElementById('rowingType'),
+        rowingMinutes: document.getElementById('rowingMinutes'),
+        rowingMeters: document.getElementById('rowingMeters')
     };
 
     // State
@@ -28,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         state.currentUser = urlParams.get('user') || 'Dad';
         const workoutType = urlParams.get('type');
-        state.currentWorkout = workoutLibrary[workoutType];
+        state.currentWorkout = WorkoutLibrary.getWorkout(workoutType);
 
         if (!state.currentWorkout) {
             console.error('Invalid workout type:', workoutType);
@@ -76,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const exerciseElement = template.querySelector('.exercise');
 
         exerciseElement.querySelector('h4').textContent = exercise.name;
-           exerciseElement.querySelector('p').textContent = exercise.description;
+        exerciseElement.querySelector('p').textContent = exercise.description;
 
         const weightInput = exerciseElement.querySelector('.weight-input-container');
         if (exercise.type === 'trx') {
@@ -92,25 +95,9 @@ document.addEventListener('DOMContentLoaded', function() {
             user: state.currentUser,
             workoutName: state.currentWorkout.name,
             date: new Date().toISOString(),
-            exercises: []
+            rowing: getRowingData(),
+            exercises: getExercisesData()
         };
-
-        elements.workoutContainer.querySelectorAll('.superset').forEach((supersetElement, supersetIndex) => {
-            supersetElement.querySelectorAll('.exercise').forEach((exerciseElement, exerciseIndex) => {
-                const exercise = state.currentWorkout.supersets[supersetIndex].exercises[exerciseIndex];
-                const exerciseData = {
-                    name: exercise.name,
-                    type: exercise.type,
-                    reps: exerciseElement.querySelector('.reps-input').value
-                };
-
-                if (exercise.type === 'dumbbell') {
-                    exerciseData.weight = exerciseElement.querySelector('.weight-input').value;
-                }
-
-                workoutData.exercises.push(exerciseData);
-            });
-        });
 
         try {
             dataManager.saveWorkout(state.currentUser, workoutData);
@@ -120,6 +107,37 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error saving workout:', error);
             alert('Failed to save workout. Please try again.');
         }
+    }
+
+    // Get rowing data
+    function getRowingData() {
+        return {
+            type: elements.rowingType.value,
+            minutes: parseInt(elements.rowingMinutes.value) || 0,
+            meters: parseInt(elements.rowingMeters.value) || 0
+        };
+    }
+
+    // Get exercises data
+    function getExercisesData() {
+        const exercisesData = [];
+        elements.workoutContainer.querySelectorAll('.superset').forEach((supersetElement, supersetIndex) => {
+            supersetElement.querySelectorAll('.exercise').forEach((exerciseElement, exerciseIndex) => {
+                const exercise = state.currentWorkout.supersets[supersetIndex].exercises[exerciseIndex];
+                const exerciseData = {
+                    name: exercise.name,
+                    type: exercise.type,
+                    reps: parseInt(exerciseElement.querySelector('.reps-input').value) || 0
+                };
+
+                if (exercise.type === 'dumbbell') {
+                    exerciseData.weight = parseInt(exerciseElement.querySelector('.weight-input').value) || 0;
+                }
+
+                exercisesData.push(exerciseData);
+            });
+        });
+        return exercisesData;
     }
 
     // Start initialization
