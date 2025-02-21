@@ -141,16 +141,39 @@ document.addEventListener('DOMContentLoaded', function() {
             elements.startWorkoutBtn.classList.remove('opacity-50');
         }
     }
+    
+// Update recent progress
+function updateRecentProgress() {
+    const progress = dataManager.getRecentProgress(state.currentUser);
+    
+    if (!progress.length) {
+        elements.recentProgress.innerHTML = 
+            '<li class="text-gray-600">No recent progress recorded</li>';
+        return;
+    }
 
-    // Update recent progress
-    function updateRecentProgress() {
-        const progress = dataManager.getRecentProgress(state.currentUser);
-        
-        if (!progress.length) {
-            elements.recentProgress.innerHTML = 
-                '<li class="text-gray-600">No recent progress recorded</li>';
-            return;
-        }
+    elements.recentProgress.innerHTML = progress
+        .slice(0, 3)
+        .map(p => {
+            if (p.type === 'dumbbell') {
+                return `
+                    <li class="mb-1">
+                        ${p.exercise}: ${p.previousWeight}→${p.currentWeight} lbs
+                    </li>`;
+            } else if (p.type === 'trx') {
+                return `
+                    <li class="mb-1">
+                        ${p.exercise}: ${p.previousReps}→${p.currentReps} reps
+                    </li>`;
+            } else if (p.type === 'rowing') {
+                return `
+                    <li class="mb-1">
+                        ${p.exercise}: ${p.previousPace}→${p.currentPace} m/min
+                    </li>`;
+            }
+        })
+        .join('');
+}
 
         elements.recentProgress.innerHTML = progress
             .slice(0, 3)
