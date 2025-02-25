@@ -14,12 +14,14 @@ const workoutLibrary = {
                     {
                         name: "DB Bench Press",
                         description: "Lying on bench, press dumbbells up",
-                        type: "dumbbell"
+                        type: "dumbbell",
+                        sets: 3
                     },
                     {
                         name: "TRX Row",
                         description: "Face anchor, pull chest to hands, squeeze shoulder blades",
-                        type: "trx"
+                        type: "trx",
+                        sets: 3
                     }
                 ]
             },
@@ -28,12 +30,14 @@ const workoutLibrary = {
                     {
                         name: "DB Incline Press",
                         description: "Bench at 30°, press dumbbells up",
-                        type: "dumbbell"
+                        type: "dumbbell",
+                        sets: 3
                     },
                     {
                         name: "TRX Face Pull",
                         description: "Face anchor, pull to face height, high elbows, external rotation",
-                        type: "trx"
+                        type: "trx",
+                        sets: 3
                     }
                 ]
             },
@@ -42,12 +46,14 @@ const workoutLibrary = {
                     {
                         name: "DB Chest Fly",
                         description: "Lying on bench, wide arm circles",
-                        type: "dumbbell"
+                        type: "dumbbell",
+                        sets: 3
                     },
                     {
                         name: "TRX Power Pull",
                         description: "Side to anchor, single-arm row with rotation",
-                        type: "trx"
+                        type: "trx",
+                        sets: 3
                     }
                 ]
             }
@@ -68,12 +74,14 @@ const workoutLibrary = {
                     {
                         name: "DB Shoulder Press",
                         description: "Seated or standing, press dumbbells overhead",
-                        type: "dumbbell"
+                        type: "dumbbell",
+                        sets: 3
                     },
                     {
                         name: "TRX Y-Raise",
                         description: "Face anchor, raise arms to Y position, focus on upper back",
-                        type: "trx"
+                        type: "trx",
+                        sets: 3
                     }
                 ]
             },
@@ -82,12 +90,14 @@ const workoutLibrary = {
                     {
                         name: "DB Lateral Raise",
                         description: "Standing, raise arms to sides",
-                        type: "dumbbell"
+                        type: "dumbbell",
+                        sets: 3
                     },
                     {
                         name: "TRX Row",
                         description: "Face anchor, pull chest to hands, elbows wide",
-                        type: "trx"
+                        type: "trx",
+                        sets: 3
                     }
                 ]
             },
@@ -96,12 +106,14 @@ const workoutLibrary = {
                     {
                         name: "DB Front Raise",
                         description: "Standing, raise arms to front",
-                        type: "dumbbell"
+                        type: "dumbbell",
+                        sets: 3
                     },
                     {
                         name: "TRX Reverse Fly",
                         description: "Face anchor, pull arms apart horizontally",
-                        type: "trx"
+                        type: "trx",
+                        sets: 3
                     }
                 ]
             }
@@ -122,12 +134,14 @@ const workoutLibrary = {
                     {
                         name: "DB Row",
                         description: "Bent over, pull dumbbells to ribs",
-                        type: "dumbbell"
+                        type: "dumbbell",
+                        sets: 3
                     },
                     {
                         name: "TRX Tricep Extension",
                         description: "Face away from anchor, extend arms down",
-                        type: "trx"
+                        type: "trx",
+                        sets: 3
                     }
                 ]
             },
@@ -136,12 +150,14 @@ const workoutLibrary = {
                     {
                         name: "DB Bicep Curl",
                         description: "Standing, curl dumbbells to shoulders",
-                        type: "dumbbell"
+                        type: "dumbbell",
+                        sets: 3
                     },
                     {
                         name: "TRX Push-Up",
                         description: "Face away from anchor, perform push-up with handles",
-                        type: "trx"
+                        type: "trx",
+                        sets: 3
                     }
                 ]
             },
@@ -150,12 +166,14 @@ const workoutLibrary = {
                     {
                         name: "DB Hammer Curl",
                         description: "Standing, curl with palms facing each other",
-                        type: "dumbbell"
+                        type: "dumbbell",
+                        sets: 3
                     },
                     {
                         name: "TRX Chest Press",
                         description: "Face away from anchor, lean forward, press body up",
-                        type: "trx"
+                        type: "trx",
+                        sets: 3
                     }
                 ]
             }
