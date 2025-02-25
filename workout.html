@@ -77,24 +77,73 @@
                 <h4 class="font-medium">{name}</h4>
                 <p class="text-sm text-gray-600">{description}</p>
             </div>
-            <div class="exercise-grid">
-                <!-- For dumbbells -->
-                <div class="weight-input-container {hideForTRX}">
-                    <label class="text-sm text-gray-600">Weight (lbs)</label>
-                    <input type="number" 
-                           class="number-input weight-input" 
-                           min="0" 
-                           max="999" 
-                           placeholder="0">
+            <!-- Sets Container -->
+            <div class="sets-container space-y-4">
+                <!-- Set 1 -->
+                <div class="exercise-grid">
+                    <div class="col-span-2 text-sm font-medium mb-1">Set 1:</div>
+                    <div class="weight-input-container {hideForTRX}">
+                        <label class="text-sm text-gray-600">Weight (lbs)</label>
+                        <input type="number" 
+                               class="number-input weight-input" 
+                               min="0" 
+                               max="999" 
+                               placeholder="0"
+                               data-set="1">
+                    </div>
+                    <div class="reps-input-container">
+                        <label class="text-sm text-gray-600">Reps</label>
+                        <input type="number" 
+                               class="number-input reps-input" 
+                               min="0" 
+                               max="999" 
+                               placeholder="0"
+                               data-set="1">
+                    </div>
                 </div>
-                <!-- For all exercises -->
-                <div class="reps-input-container">
-                    <label class="text-sm text-gray-600">Reps</label>
-                    <input type="number" 
-                           class="number-input reps-input" 
-                           min="0" 
-                           max="999" 
-                           placeholder="0">
+                <!-- Set 2 -->
+                <div class="exercise-grid">
+                    <div class="col-span-2 text-sm font-medium mb-1">Set 2:</div>
+                    <div class="weight-input-container {hideForTRX}">
+                        <label class="text-sm text-gray-600">Weight (lbs)</label>
+                        <input type="number" 
+                               class="number-input weight-input" 
+                               min="0" 
+                               max="999" 
+                               placeholder="0"
+                               data-set="2">
+                    </div>
+                    <div class="reps-input-container">
+                        <label class="text-sm text-gray-600">Reps</label>
+                        <input type="number" 
+                               class="number-input reps-input" 
+                               min="0" 
+                               max="999" 
+                               placeholder="0"
+                               data-set="2">
+                    </div>
+                </div>
+                <!-- Set 3 -->
+                <div class="exercise-grid">
+                    <div class="col-span-2 text-sm font-medium mb-1">Set 3:</div>
+                    <div class="weight-input-container {hideForTRX}">
+                        <label class="text-sm text-gray-600">Weight (lbs)</label>
+                        <input type="number" 
+                               class="number-input weight-input" 
+                               min="0" 
+                               max="999" 
+                               placeholder="0"
+                               data-set="3">
+                    </div>
+                    <div class="reps-input-container">
+                        <label class="text-sm text-gray-600">Reps</label>
+                        <input type="number" 
+                               class="number-input reps-input" 
+                               min="0" 
+                               max="999" 
+                               placeholder="0"
+                               data-set="3">
+                    </div>
                 </div>
             </div>
         </div>
