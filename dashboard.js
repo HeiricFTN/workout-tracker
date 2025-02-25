@@ -1,8 +1,7 @@
 // dashboard.js
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize
-    const dataManager = new DataManager();
-    
+import dataManager from './dataManager.js';
+
+document.addEventListener('DOMContentLoaded', async function() {
     // Cache DOM elements
     const elements = {
         // User buttons
@@ -16,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Rowing progress
         breatheProgress: document.getElementById('breatheProgress'),
-        sweatProgress: document.getElementById('sweatProgress'),
+        sweateatProgress: document.getElementById('sweatProgress'),
         driveProgress: document.getElementById('driveProgress'),
 
         // Weekly progress
@@ -44,14 +43,18 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Initialize dashboard
-    function initializeDashboard() {
-        updateUserButtons();
-        updateProgramStatus();
-        updateWeeklyProgress();
-        updateTodayWorkout();
-        updateRowingProgress();
-        setupEventListeners();
-        updateRecentProgress();
+    async function initializeDashboard() {
+        try {
+            updateUserButtons();
+            updateProgramStatus();
+            await updateWeeklyProgress();
+            updateTodayWorkout();
+            await updateRowingProgress();
+            setupEventListeners();
+            await updateRecentProgress();
+        } catch (error) {
+            console.error('Error initializing dashboard:', error);
+        }
     }
 
     // Update user buttons
@@ -76,15 +79,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update rowing progress
-    function updateRowingProgress() {
-        const progress = dataManager.getProgress(state.currentUser);
-        
-        updateRowingType('Breathe', elements.breatheProgress, progress);
-        updateRowingType('Sweat', elements.sweatProgress, progress);
-        updateRowingType('Drive', elements.driveProgress, progress);
+    async function updateRowingProgress() {
+        try {
+            const progress = await dataManager.getProgress(state.currentUser);
+            await updateRowingType('Breathe', elements.breatheProgress, progress);
+            await updateRowingType('Sweat', elements.sweatProgress, progress);
+            await updateRowingType('Drive', elements.driveProgress, progress);
+        } catch (error) {
+            console.error('Error updating rowing progress:', error);
+        }
     }
 
-    function updateRowingType(type, element, progress) {
+    async function updateRowingType(type, element, progress) {
         const rowingKey = `rowing_${type}`;
         const rowingData = progress[rowingKey];
 
@@ -127,32 +133,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update weekly progress
-    function updateWeeklyProgress() {
-        const workouts = dataManager.getWeeklyWorkouts(state.currentUser);
-        const today = new Date().getDay();
-        const dayLabels = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
+    async function updateWeeklyProgress() {
+        try {
+            const workouts = await dataManager.getWeeklyWorkouts(state.currentUser);
+            const today = new Date().getDay();
+            const dayLabels = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
 
-        // Create dots and labels for each day
-        const dotsAndLabels = Array(7).fill('').map((_, index) => {
-            let dotClass = 'progress-dot';
-            if (workouts.includes(index)) {
-                dotClass += ' dot-complete';
-            } else if (index === today) {
-                dotClass += ' dot-today';
-            } else {
-                dotClass += ' dot-upcoming';
-            }
-            return `
-                <div class="flex flex-col items-center">
-                    <span class="text-xs text-gray-600 mb-1">${dayLabels[index]}</span>
-                    <div class="${dotClass}"></div>
-                </div>
-            `;
-        });
+            const dotsAndLabels = Array(7).fill('').map((_, index) => {
+                let dotClass = 'progress-dot';
+                if (workouts.includes(index)) {
+                    dotClass += ' dot-complete';
+                } else if (index === today) {
+                    dotClass += ' dot-today';
+                } else {
+                    dotClass += ' dot-upcoming';
+                }
+                return `
+                    <div class="flex flex-col items-center">
+                        <span class="text-xs text-gray-600 mb-1">${dayLabels[index]}</span>
+                        <div class="${dotClass}"></div>
+                    </div>
+                `;
+            });
 
-        elements.weeklyDots.innerHTML = dotsAndLabels.join('');
-        elements.workoutsComplete.textContent = 
-            `${workouts.length} of 3 workouts complete this week`;
+            elements.weeklyDots.innerHTML = dotsAndLabels.join('');
+            elements.workoutsComplete.textContent = 
+                `${workouts.length} of 3 workouts complete this week`;
+        } catch (error) {
+            console.error('Error updating weekly progress:', error);
+        }
     }
 
     // Update today's workout
@@ -171,46 +180,54 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update recent progress
-    function updateRecentProgress() {
-        const progress = dataManager.getRecentProgress(state.currentUser);
-        
-        if (!progress.length) {
-            elements.recentProgress.innerHTML = 
-                '<li class="text-gray-600">No recent progress recorded</li>';
-            return;
-        }
+    async function updateRecentProgress() {
+        try {
+            const progress = await dataManager.getRecentProgress(state.currentUser);
+            
+            if (!progress.length) {
+                elements.recentProgress.innerHTML = 
+                    '<li class="text-gray-600">No recent progress recorded</li>';
+                return;
+            }
 
-        elements.recentProgress.innerHTML = progress
-            .slice(0, 3)
-            .map(p => {
-                if (p.type === 'dumbbell') {
-                    return `
-                        <li class="mb-1">
-                            ${p.exercise}: ${p.previousWeight}→${p.currentWeight} lbs
-                        </li>`;
-                } else if (p.type === 'trx') {
-                    return `
-                        <li class="mb-1">
-                            ${p.exercise}: ${p.previousReps}→${p.currentReps} reps
-                        </li>`;
-                } else if (p.type === 'rowing') {
-                    return `
-                        <li class="mb-1">
-                            ${p.exercise}: ${p.previousPace}→${p.currentPace} m/min
-                        </li>`;
-                }
-            })
-            .join('');
+            elements.recentProgress.innerHTML = progress
+                .slice(0, 3)
+                .map(p => {
+                    if (p.type === 'dumbbell') {
+                        return `
+                            <li class="mb-1">
+                                ${p.exercise}: ${p.previousWeight}→${p.currentWeight} lbs
+                            </li>`;
+                    } else if (p.type === 'trx') {
+                        return `
+                            <li class="mb-1">
+                                ${p.exercise}: ${p.previousReps}→${p.currentReps} reps
+                            </li>`;
+                    } else if (p.type === 'rowing') {
+                        return `
+                            <li class="mb-1">
+                                ${p.exercise}: ${p.previousPace}→${p.currentPace} m/min
+                            </li>`;
+                    }
+                })
+                .join('');
+        } catch (error) {
+            console.error('Error updating recent progress:', error);
+        }
     }
 
     // Switch user
-    function switchUser(user) {
-        state.currentUser = user;
-        dataManager.setCurrentUser(user);
-        updateUserButtons();
-        updateWeeklyProgress();
-        updateRowingProgress();
-        updateRecentProgress();
+    async function switchUser(user) {
+        try {
+            state.currentUser = user;
+            dataManager.setCurrentUser(user);
+            updateUserButtons();
+            await updateWeeklyProgress();
+            await updateRowingProgress();
+            await updateRecentProgress();
+        } catch (error) {
+            console.error('Error switching user:', error);
+        }
     }
 
     // Setup event listeners
@@ -241,5 +258,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Start initialization
-    initializeDashboard();
+    await initializeDashboard();
 });
