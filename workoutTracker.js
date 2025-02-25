@@ -1,4 +1,7 @@
 // workoutTracker.js
+import dataManager from './dataManager.js';
+import workoutLibrary from './workoutLibrary.js';
+
 document.addEventListener('DOMContentLoaded', function() {
     // DOM Elements
     const elements = {
@@ -20,10 +23,16 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Initialize
-    function init() {
-        loadWorkoutFromURL();
-        setupEventListeners();
-        renderWorkout();
+    async function init() {
+        try {
+            loadWorkoutFromURL();
+            setupEventListeners();
+            renderWorkout();
+        } catch (error) {
+            console.error('Error initializing workout:', error);
+            alert('Error loading workout. Returning to dashboard.');
+            window.location.href = 'index.html';
+        }
     }
 
     // Load workout based on URL parameters
@@ -31,12 +40,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         state.currentUser = urlParams.get('user') || 'Dad';
         const workoutType = urlParams.get('type');
-        state.currentWorkout = WorkoutLibrary.getWorkout(workoutType);
+        state.currentWorkout = workoutLibrary[workoutType];
 
         if (!state.currentWorkout) {
-            console.error('Invalid workout type:', workoutType);
-            window.location.href = 'index.html';
-            return;
+            throw new Error(`Invalid workout type: ${workoutType}`);
         }
 
         elements.currentUser.textContent = state.currentUser;
@@ -91,23 +98,59 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Complete workout
-    function completeWorkout() {
-        const workoutData = {
-            user: state.currentUser,
-            workoutName: state.currentWorkout.name,
-            date: new Date().toISOString(),
-            rowing: getRowingData(),
-            exercises: getExercisesData()
-        };
-
+    async function completeWorkout() {
         try {
-            dataManager.saveWorkout(state.currentUser, workoutData);
+            const workoutData = {
+                user: state.currentUser,
+                workoutName: state.currentWorkout.name,
+                date: new Date().toISOString(),
+                rowing: getRowingData(),
+                exercises: getExercisesData()
+            };
+
+            // Validate workout data
+            if (!validateWorkoutData(workoutData)) {
+                alert('Please fill in all required fields before completing the workout.');
+                return;
+            }
+
+            // Show loading state
+            elements.completeWorkoutBtn.disabled = true;
+            elements.completeWorkoutBtn.textContent = 'Saving...';
+
+            // Save to Firebase via dataManager
+            await dataManager.saveWorkout(state.currentUser, workoutData);
+            
             alert('Workout completed and saved!');
             window.location.href = 'index.html';
         } catch (error) {
             console.error('Error saving workout:', error);
             alert('Failed to save workout. Please try again.');
+            
+            // Reset button state
+            elements.completeWorkoutBtn.disabled = false;
+            elements.completeWorkoutBtn.textContent = 'Complete Workout';
         }
+    }
+
+    // Validate workout data
+    function validateWorkoutData(workoutData) {
+        // Validate rowing data if provided
+        if (workoutData.rowing.minutes > 0 || workoutData.rowing.meters > 0) {
+            if (workoutData.rowing.minutes <= 0 || workoutData.rowing.meters <= 0) {
+                return false;
+            }
+        }
+
+        // Validate exercise data
+        return workoutData.exercises.every(exercise => {
+            return exercise.sets.every(set => {
+                if (exercise.type === 'dumbbell') {
+                    return set.weight > 0 && set.reps > 0;
+                }
+                return set.reps > 0;
+            });
+        });
     }
 
     // Get rowing data
@@ -152,5 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Start initialization
-    init();
+    init().catch(error => {
+        console.error('Failed to initialize workout tracker:', error);
+    });
 });
