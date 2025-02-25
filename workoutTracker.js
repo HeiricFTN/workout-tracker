@@ -81,9 +81,10 @@ document.addEventListener('DOMContentLoaded', function() {
         exerciseElement.querySelector('h4').textContent = exercise.name;
         exerciseElement.querySelector('p').textContent = exercise.description;
 
-        const weightInput = exerciseElement.querySelector('.weight-input-container');
+        // Handle TRX exercises
+        const weightInputContainers = exerciseElement.querySelectorAll('.weight-input-container');
         if (exercise.type === 'trx') {
-            weightInput.classList.add('hidden');
+            weightInputContainers.forEach(container => container.classList.add('hidden'));
         }
 
         return exerciseElement;
@@ -127,11 +128,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 const exerciseData = {
                     name: exercise.name,
                     type: exercise.type,
-                    reps: parseInt(exerciseElement.querySelector('.reps-input').value) || 0
+                    sets: []
                 };
 
-                if (exercise.type === 'dumbbell') {
-                    exerciseData.weight = parseInt(exerciseElement.querySelector('.weight-input').value) || 0;
+                // Get data for each set
+                for (let setNum = 1; setNum <= 3; setNum++) {
+                    const setData = {
+                        setNumber: setNum,
+                        reps: parseInt(exerciseElement.querySelector(`.reps-input[data-set="${setNum}"]`)?.value) || 0
+                    };
+
+                    if (exercise.type === 'dumbbell') {
+                        setData.weight = parseInt(exerciseElement.querySelector(`.weight-input[data-set="${setNum}"]`)?.value) || 0;
+                    }
+
+                    exerciseData.sets.push(setData);
                 }
 
                 exercisesData.push(exerciseData);
