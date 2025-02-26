@@ -1,5 +1,7 @@
 // progress.js
-document.addEventListener('DOMContentLoaded', function() {
+import dataManager from './dataManager.js';
+
+document.addEventListener('DOMContentLoaded', async function() {
     // DOM Elements
     const elements = {
         userToggle: document.getElementById('userToggle'),
@@ -20,29 +22,29 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Initialize
-    function init() {
+    async function init() {
         setupEventListeners();
         populateWeekSelector();
-        updateDisplay();
+        await updateDisplay();
     }
 
     // Setup Event Listeners
     function setupEventListeners() {
         elements.userToggle.addEventListener('click', toggleUser);
-        elements.weekSelector.addEventListener('change', (e) => {
+        elements.weekSelector.addEventListener('change', async (e) => {
             state.selectedWeek = parseInt(e.target.value);
-            updateDisplay();
+            await updateDisplay();
         });
     }
 
     // Toggle User
-    function toggleUser() {
+    async function toggleUser() {
         state.currentUser = state.currentUser === 'Dad' ? 'Alex' : 'Dad';
-        dataManager.setCurrentUser(state.currentUser);
+        await dataManager.setCurrentUser(state.currentUser);
         elements.userToggle.textContent = state.currentUser;
         elements.userToggle.classList.toggle('bg-blue-500');
         elements.userToggle.classList.toggle('bg-green-500');
-        updateDisplay();
+        await updateDisplay();
     }
 
     // Populate Week Selector
@@ -64,24 +66,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update Display
-    function updateDisplay() {
+    async function updateDisplay() {
         updateProgramStatus();
-        updateRowingProgress();
-        updateStrengthProgress();
-        updatePersonalBests();
-        updateNextTargets();
+        await updateRowingProgress();
+        await updateStrengthProgress();
+        await updatePersonalBests();
+        await updateNextTargets();
     }
 
     // Update Program Status
-    function updateProgramStatus() {
+    function updateProgramStatus() () {
         elements.currentWeek.textContent = `Week ${state.selectedWeek} of 12`;
         elements.programPhase.textContent = `Phase ${state.selectedWeek <= 6 ? '1' : '2'}`;
     }
 
     // Update Rowing Progress
-    function updateRowingProgress() {
-        const progress = dataManager.getProgress(state.currentUser);
+    async function updateRowingProgress() {
+        const progress = await dataManager.getProgress(state.currentUser);
         const rowingTypes = ['Breathe', 'Sweat', 'Drive'];
+  
         const template = document.getElementById('rowingProgressTemplate');
         
         elements.rowingProgress.innerHTML = '';
@@ -115,8 +118,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update Strength Progress
-    function updateStrengthProgress() {
-        const progress = dataManager.getProgress(state.currentUser);
+    async function updateStrengthProgress() {
+        const progress = await dataManager.getProgress(state.currentUser);
         elements.progressContainer.innerHTML = '';
 
         Object.entries(progress)
@@ -192,8 +195,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update Personal Bests
-    function updatePersonalBests() {
-        const progress = dataManager.getProgress(state.currentUser);
+    async function updatePersonalBests() {
+        const progress = await dataManager.getProgress(state.currentUser);
         elements.personalBests.innerHTML = '';
 
         // Strength Personal Bests
@@ -241,8 +244,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update Next Targets
-    function updateNextTargets() {
-        const progress = dataManager.getProgress(state.currentUser);
+    async function updateNextTargets() {
+        const progress = await dataManager.getProgress(state.currentUser);
         elements.nextTargets.innerHTML = '';
 
         // Strength Targets
@@ -309,5 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize the page
-    init();
+    init().catch(error => {
+        console.error('Failed to initialize progress page:', error);
+    });
 });
