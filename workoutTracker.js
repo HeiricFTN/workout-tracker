@@ -1,6 +1,8 @@
 // workoutTracker.js
 import dataManager from './dataManager.js';
-import workoutLibrary from './workoutLibrary.js';
+import workoutLibrary, { WorkoutLibrary } from './workoutLibrary.js';
+import { db } from './firebase-config.js';
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', function() {
     // DOM Elements
@@ -25,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize
     async function init() {
         try {
-            loadWorkoutFromURL();
+            await loadWorkoutFromURL();
             setupEventListeners();
             renderWorkout();
         } catch (error) {
@@ -36,11 +38,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Load workout based on URL parameters
-    function loadWorkoutFromURL() {
+    async function loadWorkoutFromURL() {
         const urlParams = new URLSearchParams(window.location.search);
         state.currentUser = urlParams.get('user') || 'Dad';
         const workoutType = urlParams.get('type');
-        state.currentWorkout = workoutLibrary[workoutType];
+        
+        // Try to load custom workout from Firebase, fallback to default
+        state.currentWorkout = await WorkoutLibrary.getWorkoutFromFirebase(state.currentUser, workoutType) || workoutLibrary[workoutType];
 
         if (!state.currentWorkout) {
             throw new Error(`Invalid workout type: ${workoutType}`);
@@ -118,7 +122,10 @@ document.addEventListener('DOMContentLoaded', function() {
             elements.completeWorkoutBtn.disabled = true;
             elements.completeWorkoutBtn.textContent = 'Saving...';
 
-            // Save to Firebase via dataManager
+            // Save to Firebase
+            await saveWorkoutToFirebase(workoutData);
+            
+            // Save to local storage via dataManager
             await dataManager.saveWorkout(state.currentUser, workoutData);
             
             alert('Workout completed and saved!');
@@ -130,6 +137,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Reset button state
             elements.completeWorkoutBtn.disabled = false;
             elements.completeWorkoutBtn.textContent = 'Complete Workout';
+        }
+    }
+
+    // Save workout to Firebase
+    async function saveWorkoutToFirebase(workoutData) {
+        try {
+            const workoutRef = doc(db, 'workoutHistory', `${state.currentUser}_${new Date().toISOString()}`);
+            await setDoc(workoutRef, workoutData);
+        } catch (error) {
+            console.error('Error saving workout to Firebase:', error);
+            throw error; // Re-throw to be caught in completeWorkout
         }
     }
 
