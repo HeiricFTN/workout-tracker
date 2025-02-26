@@ -1,4 +1,5 @@
 // workoutLibrary.js
+
 const workoutLibrary = {
     // Chest & Triceps Workout
     chestTriceps: {
@@ -195,7 +196,6 @@ const WorkoutLibrary = {
         return exercise.type === 'dumbbell';
     },
 
-    // New rowing utility functions
     getRowingTypes() {
         return ["Breathe", "Sweat", "Drive"];
     },
@@ -203,5 +203,58 @@ const WorkoutLibrary = {
     calculateRowingPace(meters, minutes) {
         if (!minutes || minutes === 0) return 0;
         return Math.round(meters / minutes);
+    },
+
+    formatWorkoutForSave(workout) {
+        return {
+            ...workout,
+            lastUpdated: new Date().toISOString(),
+            version: '1.0'
+        };
+    },
+
+    validateWorkout(workout) {
+        if (!workout || !workout.name || !workout.supersets) {
+            return false;
+        }
+
+        return workout.supersets.every(superset => 
+            superset.exercises && 
+            Array.isArray(superset.exercises) && 
+            superset.exercises.every(exercise => 
+                exercise.name && 
+                exercise.description && 
+                exercise.type && 
+                exercise.sets
+            )
+        );
+    },
+
+    getExercisesByType(type) {
+        const exercises = new Set();
+        Object.values(workoutLibrary).forEach(workout => {
+            workout.supersets.forEach(superset => {
+                superset.exercises.forEach(exercise => {
+                    if (exercise.type === type) {
+                        exercises.add(exercise.name);
+                    }
+                });
+            });
+        });
+        return Array.from(exercises);
+    },
+
+    getAllExercises() {
+        return {
+            dumbbell: this.getExercisesByType('dumbbell'),
+            trx: this.getExercisesByType('trx')
+        };
     }
 };
+
+// Freeze objects to prevent modifications
+Object.freeze(workoutLibrary);
+Object.freeze(WorkoutLibrary);
+
+// Export both the library and utility functions
+export { workoutLibrary as default, WorkoutLibrary };
