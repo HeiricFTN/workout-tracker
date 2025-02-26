@@ -13,9 +13,78 @@ const firebaseConfig = {
     measurementId: "G-RWFV5YVDQ1"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+let app;
+let db;
+let auth;
 
-export { db, auth };
+try {
+    // Initialize Firebase
+    app = initializeApp(firebaseConfig);
+    
+    // Initialize Firestore
+    db = getFirestore(app);
+    if (!db) {
+        throw new Error('Firestore initialization failed');
+    }
+
+    // Initialize Authentication
+    auth = getAuth(app);
+    if (!auth) {
+        throw new Error('Authentication initialization failed');
+    }
+
+    console.log('Firebase initialized successfully');
+} catch (error) {
+    console.error('Firebase initialization error:', error);
+    
+    // Fallback initialization for offline functionality
+    db = {
+        collection: () => ({
+            add: async () => {},
+            get: async () => ({ docs: [] })
+        }),
+        doc: () => ({
+            set: async () => {},
+            get: async () => ({ exists: false, data: () => ({}) })
+        })
+    };
+    
+    auth = {
+        currentUser: null,
+        onAuthStateChanged: (callback) => callback(null)
+    };
+}
+
+// Verify connection status
+async function checkFirebaseConnection() {
+    try {
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Connection timeout')), 5000)
+        );
+        
+        const connectionPromise = db.collection('_healthcheck').doc('online').get();
+        
+        await Promise.race([timeoutPromise, connectionPromise]);
+        return true;
+    } catch (error) {
+        console.warn('Firebase connection check failed:', error);
+        return false;
+    }
+}
+
+// Helper functions for other files
+const FirebaseHelper = {
+    isInitialized() {
+        return !!app && !!db && !!auth;
+    },
+
+    async isOnline() {
+        return await checkFirebaseConnection();
+    },
+
+    getErrorMessage(error) {
+        return error.message || 'An unknown error occurred';
+    }
+};
+
+export { db, auth, FirebaseHelper };
