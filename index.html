@@ -6,6 +6,7 @@
     <title>Dad & Alex Workout Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 <body class="bg-gray-100">
     <div class="app-container">
@@ -17,7 +18,7 @@
             </div>
         </header>
 
-        <!-- Current Week Overview -->
+        <!-- Program Status -->
         <section class="workout-card mb-4">
             <h2 class="text-lg font-bold mb-2">Program Status</h2>
             <div class="grid grid-cols-2 gap-4">
@@ -58,15 +59,11 @@
         <!-- This Week's Progress -->
         <section class="workout-card mb-4">
             <h2 class="text-lg font-bold mb-2">This Week's Progress</h2>
-            <div class="space-y-2">
-                <div id="weeklyDots" class="flex justify-between mb-2">
-                    <!-- Dots and day labels will be inserted here by JavaScript -->
-                </div>
-            </div>
+            <div id="weeklyDots" class="flex justify-between mb-2"></div>
             <p id="workoutsComplete" class="text-center"></p>
         </section>
 
-        <!-- Quick Start Workout -->
+        <!-- Today's Workout -->
         <section class="workout-card mb-4">
             <h2 class="text-lg font-bold mb-2">Today's Workout</h2>
             <p id="todayWorkout" class="mb-2"></p>
@@ -91,20 +88,24 @@
             </div>
         </section>
 
-        <!-- Progress Overview -->
+        <!-- Recent Progress -->
         <section class="workout-card mb-4">
             <h2 class="text-lg font-bold mb-2">Recent Progress</h2>
-            <ul id="recentProgress" class="list-disc pl-5 mb-2">
-                <!-- Recent progress items will be inserted here by JavaScript -->
-            </ul>
+            <ul id="recentProgress" class="list-disc pl-5 mb-2"></ul>
             <a href="progress.html" class="block w-full py-2 px-4 bg-blue-500 text-white text-center rounded-lg shadow">
                 View Full Progress
             </a>
         </section>
     </div>
-<script type="module" src="firebase-config.js"></script>
-<script type="module" src="workoutLibrary.js"></script>
-<script type="module" src="dataManager.js"></script>
-<script type="module" src="dashboard.js"></script>
+
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <script src="firebase-config.js"></script>
+    <script type="module" src="workoutLibrary.js"></script>
+    <script type="module" src="dataManager.js"></script>
+    <script type="module" src="dashboard.js"></script>
 </body>
 </html>
