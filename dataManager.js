@@ -1,47 +1,25 @@
 // dataManager.js
-import { db } from './firebase-config.js';
-import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+import firebaseService from './services/firebaseService.js';
 
 class DataManager {
     constructor() {
         this.storageKeys = {
             currentUser: 'currentUser',
             workouts: userId => `workouts_${userId}`,
-            progress: userId => `progress_${userId}`,
-            lastSyncTime: 'lastSyncTime'
+            progress: userId => `progress_${userId}`
         };
         this.programStartDate = new Date('2025-02-18');
-        this.isOnline = navigator.onLine;
-        this.setupOnlineListener();
+        this.initializeSync();
     }
 
-    setupOnlineListener() {
-        window.addEventListener('online', () => {
-            this.isOnline = true;
-            this.syncWithFirebase();
-        });
-        window.addEventListener('offline', () => {
-            this.isOnline = false;
-        });
-    }
-
-    async syncWithFirebase() {
-        const lastSyncTime = localStorage.getItem(this.storageKeys.lastSyncTime) || 0;
-        const currentUser = this.getCurrentUser();
-
-        // Sync workouts
-        const workouts = await this.getWorkoutsLocal(currentUser);
-        for (const workout of workouts) {
-            if (new Date(workout.date).getTime() > lastSyncTime) {
-                await this.saveWorkoutToFirebase(currentUser, workout);
-            }
+    async initializeSync() {
+        // Set up sync when online
+        if (navigator.onLine) {
+            await this.syncData();
         }
-
-        // Sync progress
-        const progress = this.getProgressLocal(currentUser);
-        await this.updateProgressInFirebase(currentUser, progress);
-
-        localStorage.setItem(this.storageKeys.lastSyncTime, Date.now().toString());
+        window.addEventListener('online', async () => {
+            await this.syncData();
+        });
     }
 
     // User Management
@@ -56,58 +34,48 @@ class DataManager {
     // Workout Management
     async saveWorkout(userId, workoutData) {
         try {
-            if (this.isOnline) {
-                await this.saveWorkoutToFirebase(userId, workoutData);
-            }
-            await this.saveWorkoutLocally(userId, workoutData);
+            // Save to Firebase
+            await firebaseService.saveWorkout(userId, {
+                ...workoutData,
+                date: new Date().toISOString(),
+                week: this.getCurrentWeek()
+            });
+
+            // Keep local storage in sync
+            const workouts = await this.getWorkouts(userId);
+            workouts.push(workoutData);
+            localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
+
+            // Update progress
             await this.updateProgress(userId, workoutData);
+
             return true;
         } catch (error) {
             console.error('Error saving workout:', error);
+            // Fallback to local storage only if Firebase fails
+            this.saveWorkoutLocally(userId, workoutData);
             return false;
         }
     }
 
-    async saveWorkoutToFirebase(userId, workoutData) {
-        const workoutRef = doc(collection(db, 'workouts'));
-        const workoutWithMeta = {
+    saveWorkoutLocally(userId, workoutData) {
+        const workouts = this.getWorkoutsLocal(userId);
+        workouts.push({
             ...workoutData,
             date: new Date().toISOString(),
             week: this.getCurrentWeek(),
-            userId: userId
-        };
-        await setDoc(workoutRef, workoutWithMeta);
-    }
-
-    async saveWorkoutLocally(userId, workoutData) {
-        const workouts = this.getWorkoutsLocal(userId);
-        const workoutWithMeta = {
-            ...workoutData,
-            date: new Date().toISOString(),
-            week: this.getCurrentWeek()
-        };
-        workouts.push(workoutWithMeta);
+            pendingSync: true
+        });
         localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
     }
 
     async getWorkouts(userId) {
         try {
-            if (this.isOnline) {
-                const q = query(
-                    collection(db, 'workouts'),
-                    where('userId', '==', userId),
-                    orderBy('date', 'desc')
-                );
-                const querySnapshot = await getDocs(q);
-                const workouts = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
-                return workouts;
-            } else {
-                return this.getWorkoutsLocal(userId);
-            }
+            // Try Firebase first
+            const workouts = await firebaseService.getWorkouts(userId);
+            // Update local storage
+            localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
+            return workouts;
         } catch (error) {
             console.error('Error getting workouts:', error);
             return this.getWorkoutsLocal(userId);
@@ -129,100 +97,81 @@ class DataManager {
     // Progress Management
     async updateProgress(userId, workoutData) {
         try {
-            let progress = await this.getProgress(userId);
-
+            const progress = await this.getProgress(userId);
+            
             // Update exercise progress
-            workoutData.exercises.forEach(exercise => {
-                if (!progress[exercise.name]) {
-                    progress[exercise.name] = {
-                        history: [],
-                        personalBest: {}
-                    };
-                }
-
-                progress[exercise.name].history.push({
-                    date: workoutData.date,
-                    reps: exercise.reps,
-                    weight: exercise.weight
-                });
-
-                if (exercise.type === 'dumbbell') {
-                    if (!progress[exercise.name].personalBest.weight || 
-                        exercise.weight > progress[exercise.name].personalBest.weight) {
-                        progress[exercise.name].personalBest = {
-                            weight: exercise.weight,
-                            reps: exercise.reps,
-                            date: workoutData.date
-                        };
-                    }
-                } else if (exercise.reps > (progress[exercise.name].personalBest.reps || 0)) {
-                    progress[exercise.name].personalBest = {
-                        reps: exercise.reps,
-                        date: workoutData.date
-                    };
-                }
-            });
-
+            this.updateExerciseProgress(progress, workoutData);
+            
             // Update rowing progress
             if (workoutData.rowing) {
-                const rowingKey = `rowing_${workoutData.rowing.type}`;
-                if (!progress[rowingKey]) {
-                    progress[rowingKey] = {
-                        history: [],
-                        personalBest: {}
-                    };
-                }
-
-                const pacePerMinute = workoutData.rowing.meters / workoutData.rowing.minutes;
-
-                progress[rowingKey].history.push({
-                    date: workoutData.date,
-                    minutes: workoutData.rowing.minutes,
-                    meters: workoutData.rowing.meters,
-                    pace: pacePerMinute
-                });
-
-                if (!progress[rowingKey].personalBest.pace || 
-                    pacePerMinute > progress[rowingKey].personalBest.pace) {
-                    progress[rowingKey].personalBest = {
-                        minutes: workoutData.rowing.minutes,
-                        meters: workoutData.rowing.meters,
-                        pace: pacePerMinute,
-                        date: workoutData.date
-                    };
-                }
+                this.updateRowingProgress(progress, workoutData.rowing);
             }
 
-            if (this.isOnline) {
-                await this.updateProgressInFirebase(userId, progress);
-            }
-            this.updateProgressLocally(userId, progress);
+            // Save to Firebase
+            await firebaseService.saveProgress(userId, progress);
+            
+            // Update local storage
+            localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
         } catch (error) {
             console.error('Error updating progress:', error);
-            this.updateProgressLocally(userId, this.getProgressLocal(userId));
+            // Save to local storage only
+            this.updateProgressLocally(userId, workoutData);
         }
     }
 
-    async updateProgressInFirebase(userId, progress) {
-        const progressRef = doc(db, 'progress', userId);
-        await setDoc(progressRef, progress);
+    updateExerciseProgress(progress, workoutData) {
+        workoutData.exercises.forEach(exercise => {
+            if (!progress[exercise.name]) {
+                progress[exercise.name] = {
+                    history: [],
+                    personalBest: {}
+                };
+            }
+
+            const exerciseProgress = progress[exercise.name];
+            exerciseProgress.history.push({
+                date: workoutData.date,
+                sets: exercise.sets
+            });
+
+            this.updatePersonalBest(exerciseProgress, exercise);
+        });
     }
 
-    updateProgressLocally(userId, progress) {
-        localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
+    updateRowingProgress(progress, rowingData) {
+        const rowingKey = `rowing_${rowingData.type}`;
+        if (!progress[rowingKey]) {
+            progress[rowingKey] = {
+                history: [],
+                personalBest: {}
+            };
+        }
+
+        const pacePerMinute = rowingData.meters / rowingData.minutes;
+        const rowingProgress = progress[rowingKey];
+
+        rowingProgress.history.push({
+            date: new Date().toISOString(),
+            minutes: rowingData.minutes,
+            meters: rowingData.meters,
+            pace: pacePerMinute
+        });
+
+        if (!rowingProgress.personalBest.pace || pacePerMinute > rowingProgress.personalBest.pace) {
+            rowingProgress.personalBest = {
+                minutes: rowingData.minutes,
+                meters: rowingData.meters,
+                pace: pacePerMinute,
+                date: new Date().toISOString()
+            };
+        }
     }
 
     async getProgress(userId) {
         try {
-            if (this.isOnline) {
-                const progressRef = doc(db, 'progress', userId);
-                const progressDoc = await getDoc(progressRef);
-                const progress = progressDoc.exists() ? progressDoc.data() : {};
-                this.updateProgressLocally(userId, progress);
-                return progress;
-            } else {
-                return this.getProgressLocal(userId);
-            }
+            const progress = await firebaseService.getProgress(userId);
+            localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
+            return progress;
         } catch (error) {
             console.error('Error getting progress:', error);
             return this.getProgressLocal(userId);
@@ -235,52 +184,45 @@ class DataManager {
 
     async getRecentProgress(userId) {
         const progress = await this.getProgress(userId);
+        return this.processRecentProgress(progress);
+    }
+
+    processRecentProgress(progress) {
         const recentProgress = [];
 
-        Object.entries(progress).forEach(([name, data]) => {
-            if (data.history && data.history.length >= 2) {
-                const recent = data.history.slice(-2);
-                const current = recent[1];
-                const previous = recent[0];
+        // Process exercise progress
+        Object.entries(progress)
+            .filter(([key]) => !key.startsWith('rowing_'))
+            .forEach(([name, data]) => {
+                this.processExerciseProgress(name, data, recentProgress);
+            });
 
-                if (name.startsWith('rowing_')) {
-                    recentProgress.push({
-                        exercise: name.replace('rowing_', ''),
-                        type: 'rowing',
-                        previousPace: Math.round(previous.pace),
-                        currentPace: Math.round(current.pace),
-                        date: current.date
-                    });
-                } else if (data.personalBest.weight !== undefined) {
-                    recentProgress.push({
-                        exercise: name,
-                        type: 'dumbbell',
-                        previousWeight: previous.weight,
-                        currentWeight: current.weight,
-                        date: current.date
-                    });
-                } else {
-                    recentProgress.push({
-                        exercise: name,
-                        type: 'trx',
-                        previousReps: previous.reps,
-                        currentReps: current.reps,
-                        date: current.date
-                    });
-                }
-            }
+        // Process rowing progress
+        ['Breathe', 'Sweat', 'Drive'].forEach(type => {
+            this.processRowingProgress(type, progress, recentProgress);
         });
 
         return recentProgress.sort((a, b) => new Date(b.date) - new Date(a.date));
     }
 
+    // Utility Functions
     getCurrentWeek() {
         const today = new Date();
         const weeksPassed = Math.floor((today - this.programStartDate) / (7 * 24 * 60 * 60 * 1000));
         return Math.min(Math.max(weeksPassed + 1, 1), 12);
     }
+
+    async syncData() {
+        const currentUser = this.getCurrentUser();
+        const localWorkouts = this.getWorkoutsLocal(currentUser)
+            .filter(workout => workout.pendingSync);
+
+        for (const workout of localWorkouts) {
+            await this.saveWorkout(currentUser, workout);
+        }
+    }
 }
 
-// Create and export instance
+// Create instance
 const dataManager = new DataManager();
 export default dataManager;
