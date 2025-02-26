@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Rowing progress
         breatheProgress: document.getElementById('breatheProgress'),
-        sweateatProgress: document.getElementById('sweatProgress'),
+        sweatProgress: document.getElementById('sweatProgress'),
         driveProgress: document.getElementById('driveProgress'),
 
         // Weekly progress
