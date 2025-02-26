@@ -1,15 +1,47 @@
 // dataManager.js
 import { db } from './firebase-config.js';
-import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 
 class DataManager {
     constructor() {
         this.storageKeys = {
             currentUser: 'currentUser',
             workouts: userId => `workouts_${userId}`,
-            progress: userId => `progress_${userId}`
+            progress: userId => `progress_${userId}`,
+            lastSyncTime: 'lastSyncTime'
         };
         this.programStartDate = new Date('2025-02-18');
+        this.isOnline = navigator.onLine;
+        this.setupOnlineListener();
+    }
+
+    setupOnlineListener() {
+        window.addEventListener('online', () => {
+            this.isOnline = true;
+            this.syncWithFirebase();
+        });
+        window.addEventListener('offline', () => {
+            this.isOnline = false;
+        });
+    }
+
+    async syncWithFirebase() {
+        const lastSyncTime = localStorage.getItem(this.storageKeys.lastSyncTime) || 0;
+        const currentUser = this.getCurrentUser();
+
+        // Sync workouts
+        const workouts = await this.getWorkoutsLocal(currentUser);
+        for (const workout of workouts) {
+            if (new Date(workout.date).getTime() > lastSyncTime) {
+                await this.saveWorkoutToFirebase(currentUser, workout);
+            }
+        }
+
+        // Sync progress
+        const progress = this.getProgressLocal(currentUser);
+        await this.updateProgressInFirebase(currentUser, progress);
+
+        localStorage.setItem(this.storageKeys.lastSyncTime, Date.now().toString());
     }
 
     // User Management
@@ -24,60 +56,60 @@ class DataManager {
     // Workout Management
     async saveWorkout(userId, workoutData) {
         try {
-            // Save to Firebase
-            const workoutRef = doc(collection(db, 'workouts'));
-            const workoutWithMeta = {
-                ...workoutData,
-                date: new Date().toISOString(),
-                week: this.getCurrentWeek(),
-                userId: userId
-            };
-
-            await setDoc(workoutRef, workoutWithMeta);
-
-            // Update progress
+            if (this.isOnline) {
+                await this.saveWorkoutToFirebase(userId, workoutData);
+            }
+            await this.saveWorkoutLocally(userId, workoutData);
             await this.updateProgress(userId, workoutData);
-
-            // Keep local storage for backup
-            const workouts = await this.getWorkouts(userId);
-            workouts.push(workoutWithMeta);
-            localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
-
             return true;
         } catch (error) {
             console.error('Error saving workout:', error);
-            // Fallback to local storage if Firebase fails
-            const workouts = this.getWorkoutsLocal(userId);
-            workouts.push({
-                ...workoutData,
-                date: new Date().toISOString(),
-                week: this.getCurrentWeek()
-            });
-            localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
             return false;
         }
     }
 
+    async saveWorkoutToFirebase(userId, workoutData) {
+        const workoutRef = doc(collection(db, 'workouts'));
+        const workoutWithMeta = {
+            ...workoutData,
+            date: new Date().toISOString(),
+            week: this.getCurrentWeek(),
+            userId: userId
+        };
+        await setDoc(workoutRef, workoutWithMeta);
+    }
+
+    async saveWorkoutLocally(userId, workoutData) {
+        const workouts = this.getWorkoutsLocal(userId);
+        const workoutWithMeta = {
+            ...workoutData,
+            date: new Date().toISOString(),
+            week: this.getCurrentWeek()
+        };
+        workouts.push(workoutWithMeta);
+        localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
+    }
+
     async getWorkouts(userId) {
         try {
-            // Try Firebase first
-            const q = query(
-                collection(db, 'workouts'),
-                where('userId', '==', userId),
-                orderBy('date', 'desc')
-            );
-            const querySnapshot = await getDocs(q);
-            const workouts = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-
-            // Update local storage for backup
-            localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
-            return workouts;
+            if (this.isOnline) {
+                const q = query(
+                    collection(db, 'workouts'),
+                    where('userId', '==', userId),
+                    orderBy('date', 'desc')
+                );
+                const querySnapshot = await getDocs(q);
+                const workouts = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
+                return workouts;
+            } else {
+                return this.getWorkoutsLocal(userId);
+            }
         } catch (error) {
             console.error('Error getting workouts:', error);
-            // Fallback to local storage
             return this.getWorkoutsLocal(userId);
         }
     }
@@ -97,9 +129,7 @@ class DataManager {
     // Progress Management
     async updateProgress(userId, workoutData) {
         try {
-            const progressRef = doc(db, 'progress', userId);
-            const progressDoc = await getDoc(progressRef);
-            let progress = progressDoc.exists() ? progressDoc.data() : {};
+            let progress = await this.getProgress(userId);
 
             // Update exercise progress
             workoutData.exercises.forEach(exercise => {
@@ -110,14 +140,12 @@ class DataManager {
                     };
                 }
 
-                // Add to history
                 progress[exercise.name].history.push({
                     date: workoutData.date,
                     reps: exercise.reps,
                     weight: exercise.weight
                 });
 
-                // Update personal bests
                 if (exercise.type === 'dumbbell') {
                     if (!progress[exercise.name].personalBest.weight || 
                         exercise.weight > progress[exercise.name].personalBest.weight) {
@@ -147,7 +175,6 @@ class DataManager {
 
                 const pacePerMinute = workoutData.rowing.meters / workoutData.rowing.minutes;
 
-                // Add to history
                 progress[rowingKey].history.push({
                     date: workoutData.date,
                     minutes: workoutData.rowing.minutes,
@@ -155,7 +182,6 @@ class DataManager {
                     pace: pacePerMinute
                 });
 
-                // Update personal bests
                 if (!progress[rowingKey].personalBest.pace || 
                     pacePerMinute > progress[rowingKey].personalBest.pace) {
                     progress[rowingKey].personalBest = {
@@ -167,32 +193,38 @@ class DataManager {
                 }
             }
 
-            // Save to Firebase
-            await setDoc(progressRef, progress);
-
-            // Update local storage for backup
-            localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
+            if (this.isOnline) {
+                await this.updateProgressInFirebase(userId, progress);
+            }
+            this.updateProgressLocally(userId, progress);
         } catch (error) {
             console.error('Error updating progress:', error);
-            // Fallback to local storage
-            const progress = this.getProgressLocal(userId);
-            // ... same progress update logic ...
-            localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
+            this.updateProgressLocally(userId, this.getProgressLocal(userId));
         }
+    }
+
+    async updateProgressInFirebase(userId, progress) {
+        const progressRef = doc(db, 'progress', userId);
+        await setDoc(progressRef, progress);
+    }
+
+    updateProgressLocally(userId, progress) {
+        localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
     }
 
     async getProgress(userId) {
         try {
-            const progressRef = doc(db, 'progress', userId);
-            const progressDoc = await getDoc(progressRef);
-            const progress = progressDoc.exists() ? progressDoc.data() : {};
-            
-            // Update local storage for backup
-            localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
-            return progress;
+            if (this.isOnline) {
+                const progressRef = doc(db, 'progress', userId);
+                const progressDoc = await getDoc(progressRef);
+                const progress = progressDoc.exists() ? progressDoc.data() : {};
+                this.updateProgressLocally(userId, progress);
+                return progress;
+            } else {
+                return this.getProgressLocal(userId);
+            }
         } catch (error) {
             console.error('Error getting progress:', error);
-            // Fallback to local storage
             return this.getProgressLocal(userId);
         }
     }
@@ -201,7 +233,46 @@ class DataManager {
         return JSON.parse(localStorage.getItem(this.storageKeys.progress(userId)) || '{}');
     }
 
-    // ... rest of the methods remain the same ...
+    async getRecentProgress(userId) {
+        const progress = await this.getProgress(userId);
+        const recentProgress = [];
+
+        Object.entries(progress).forEach(([name, data]) => {
+            if (data.history && data.history.length >= 2) {
+                const recent = data.history.slice(-2);
+                const current = recent[1];
+                const previous = recent[0];
+
+                if (name.startsWith('rowing_')) {
+                    recentProgress.push({
+                        exercise: name.replace('rowing_', ''),
+                        type: 'rowing',
+                        previousPace: Math.round(previous.pace),
+                        currentPace: Math.round(current.pace),
+                        date: current.date
+                    });
+                } else if (data.personalBest.weight !== undefined) {
+                    recentProgress.push({
+                        exercise: name,
+                        type: 'dumbbell',
+                        previousWeight: previous.weight,
+                        currentWeight: current.weight,
+                        date: current.date
+                    });
+                } else {
+                    recentProgress.push({
+                        exercise: name,
+                        type: 'trx',
+                        previousReps: previous.reps,
+                        currentReps: current.reps,
+                        date: current.date
+                    });
+                }
+            }
+        });
+
+        return recentProgress.sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
 
     getCurrentWeek() {
         const today = new Date();
