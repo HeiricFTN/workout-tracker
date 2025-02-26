@@ -1,41 +1,43 @@
 // progressTracker.js
+import dataManager from './dataManager.js';
+
 class ProgressTracker {
     constructor() {
-        this.dataManager = dataManager; // Use existing global dataManager instance
+        this.dataManager = dataManager;
     }
 
     // Program Tracking
-    getCurrentProgram() {
-           const currentWeek = this.dataManager.getCurrentWeek();
+    async getCurrentProgram() {
+        const currentWeek = await this.dataManager.getCurrentWeek();
         return {
             week: currentWeek,
             phase: currentWeek <= 6 ? 1 : 2,
-            daysCompleted: this.getCompletedDays()
+            daysCompleted: await this.getCompletedDays()
         };
     }
 
-    getCompletedDays() {
+    async getCompletedDays() {
         const user = this.dataManager.getCurrentUser();
-        return this.dataManager.getWeeklyWorkouts(user);
+        return await this.dataManager.getWeeklyWorkouts(user);
     }
 
     // Progress Analysis
-    analyzeProgress(user, exerciseType = 'all') {
-        const progress = this.dataManager.getProgress(user);
+    async analyzeProgress(user, exerciseType = 'all') {
+        const progress = await this.dataManager.getProgress(user);
         const analysis = {};
 
-        Object.entries(progress).forEach(([name, data]) => {
+        for (const [name, data] of Object.entries(progress)) {
             // Filter by exercise type if specified
             if (exerciseType !== 'all') {
-                if (exerciseType === 'rowing' && !name.startsWith('rowing_')) return;
-                if (exerciseType === 'strength' && name.startsWith('rowing_')) return;
+                if (exerciseType === 'rowing' && !name.startsWith('rowing_')) continue;
+                if (exerciseType === 'strength' && name.startsWith('rowing_')) continue;
             }
 
             if (data.history.length >= 2) {
                 const recent = data.history.slice(-2);
                 analysis[name] = this.calculateProgressMetrics(name, recent, data.personalBest);
             }
-        });
+        }
 
         return analysis;
     }
@@ -87,16 +89,16 @@ class ProgressTracker {
     }
 
     // Target Calculations
-    getNextTargets(user) {
-        const progress = this.dataManager.getProgress(user);
+    async getNextTargets(user) {
+        const progress = await this.dataManager.getProgress(user);
         const targets = {};
 
-        Object.entries(progress).forEach(([name, data]) => {
+        for (const [name, data] of Object.entries(progress)) {
             if (data.history.length > 0) {
                 const current = data.history[data.history.length - 1];
                 targets[name] = this.calculateTarget(name, current);
             }
-        });
+        }
 
         return targets;
     }
@@ -125,11 +127,11 @@ class ProgressTracker {
     }
 
     // Rowing Specific Methods
-    getRowingStats(user) {
-        const progress = this.dataManager.getProgress(user);
+    async getRowingStats(user) {
+        const progress = await this.dataManager.getProgress(user);
         const stats = {};
 
-        ['Breathe', 'Sweat', 'Drive'].forEach(type => {
+        for (const type of ['Breathe', 'Sweat', 'Drive']) {
             const key = `rowing_${type}`;
             if (progress[key]) {
                 stats[type] = {
@@ -139,7 +141,7 @@ class ProgressTracker {
                     totalMinutes: this.calculateTotalMinutes(progress[key].history)
                 };
             }
-        });
+        }
 
         return stats;
     }
@@ -159,5 +161,6 @@ class ProgressTracker {
     }
 }
 
-// Create global instance
+// Create and export instance
 const progressTracker = new ProgressTracker();
+export default progressTracker;
