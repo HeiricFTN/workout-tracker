@@ -1,4 +1,6 @@
 // workoutLibrary.js
+import { db } from './firebase-config.js';
+import { doc, getDoc, setDoc, collection, query, where } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 
 const workoutLibrary = {
     // Chest & Triceps Workout
@@ -182,8 +184,9 @@ const workoutLibrary = {
     }
 };
 
-// Utility functions
+// Enhanced Utility functions
 const WorkoutLibrary = {
+    // Original utility functions
     getWorkout(type) {
         return workoutLibrary[type] || null;
     },
@@ -205,6 +208,7 @@ const WorkoutLibrary = {
         return Math.round(meters / minutes);
     },
 
+    // Existing validation and formatting functions
     formatWorkoutForSave(workout) {
         return {
             ...workout,
@@ -249,6 +253,55 @@ const WorkoutLibrary = {
             dumbbell: this.getExercisesByType('dumbbell'),
             trx: this.getExercisesByType('trx')
         };
+    },
+
+    // New Firebase integration functions
+    async getWorkoutFromFirebase(userId, workoutType) {
+        try {
+            const workoutRef = doc(db, 'workouts', `${userId}_${workoutType}`);
+            const workoutDoc = await getDoc(workoutRef);
+            
+            if (workoutDoc.exists()) {
+                return workoutDoc.data();
+            }
+            return this.getWorkout(workoutType);
+        } catch (error) {
+            console.error('Error getting workout from Firebase:', error);
+            return this.getWorkout(workoutType);
+        }
+    },
+
+    async saveWorkoutToFirebase(userId, workoutType, workoutData) {
+        try {
+            const workoutRef = doc(db, 'workouts', `${userId}_${workoutType}`);
+            await setDoc(workoutRef, {
+                ...workoutData,
+                lastUpdated: new Date().toISOString(),
+                userId: userId
+            });
+            return true;
+        } catch (error) {
+            console.error('Error saving workout to Firebase:', error);
+            return false;
+        }
+    },
+
+    async getUserWorkoutHistory(userId, workoutType) {
+        try {
+            const q = query(
+                collection(db, 'workoutHistory'),
+                where('userId', '==', userId),
+                where('workoutType', '==', workoutType)
+            );
+            const querySnapshot = await getDocs(q);
+            return querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+        } catch (error) {
+            console.error('Error getting workout history:', error);
+            return [];
+        }
     }
 };
 
