@@ -1,11 +1,9 @@
 // workoutTracker.js
 import dataManager from './dataManager.js';
-import workoutLibrary, { WorkoutLibrary } from './workoutLibrary.js';
-import { db } from './firebase-config.js';
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+import workoutLibrary from './workoutLibrary.js';
+import firebaseService from './services/firebaseService.js';
 
-document.addEventListener('DOMContentLoaded', function() {
-    // DOM Elements
+document.addEventListener('DOMContentLoaded', async function() {
     const elements = {
         currentUser: document.getElementById('currentUser'),
         workoutTitle: document.getElementById('workoutTitle'),
@@ -15,61 +13,101 @@ document.addEventListener('DOMContentLoaded', function() {
         exerciseTemplate: document.getElementById('exerciseTemplate'),
         rowingType: document.getElementById('rowingType'),
         rowingMinutes: document.getElementById('rowingMinutes'),
-        rowingMeters: document.getElementById('rowingMeters')
+        rowingMeters: document.getElementById('rowingMeters'),
+        loadingIndicator: document.getElementById('loadingIndicator')
     };
 
-    // State
     const state = {
         currentUser: '',
-        currentWorkout: null
+        currentWorkout: null,
+        isLoading: false,
+        hasUnsavedChanges: false,
+        exerciseData: new Map()
     };
 
-    // Initialize
     async function init() {
         try {
+            showLoading(true);
             await loadWorkoutFromURL();
             setupEventListeners();
-            renderWorkout();
+            setupAutoSave();
+            await renderWorkout();
+            showLoading(false);
         } catch (error) {
             console.error('Error initializing workout:', error);
-            alert('Error loading workout. Returning to dashboard.');
+            showError('Error loading workout. Returning to dashboard.');
             window.location.href = 'index.html';
         }
     }
 
-    // Load workout based on URL parameters
     async function loadWorkoutFromURL() {
         const urlParams = new URLSearchParams(window.location.search);
         state.currentUser = urlParams.get('user') || 'Dad';
         const workoutType = urlParams.get('type');
-        
-        // Try to load custom workout from Firebase, fallback to default
-        state.currentWorkout = await WorkoutLibrary.getWorkoutFromFirebase(state.currentUser, workoutType) || workoutLibrary[workoutType];
 
-        if (!state.currentWorkout) {
-            throw new Error(`Invalid workout type: ${workoutType}`);
+        try {
+            state.currentWorkout = await firebaseService.getWorkout(state.currentUser, workoutType) 
+                               || workoutLibrary[workoutType];
+
+            if (!state.currentWorkout) {
+                throw new Error(`Invalid workout type: ${workoutType}`);
+            }
+
+            elements.currentUser.textContent = state.currentUser;
+            elements.workoutTitle.textContent = state.currentWorkout.name;
+        } catch (error) {
+            console.error('Error loading workout:', error);
+            throw error;
         }
-
-        elements.currentUser.textContent = state.currentUser;
-        elements.workoutTitle.textContent = state.currentWorkout.name;
     }
 
-    // Set up event listeners
     function setupEventListeners() {
         elements.completeWorkoutBtn.addEventListener('click', completeWorkout);
+        setupInputListeners();
+        setupBeforeUnloadWarning();
     }
 
-    // Render workout
-    function renderWorkout() {
+    function setupInputListeners() {
+        elements.workoutContainer.addEventListener('input', (event) => {
+            if (event.target.matches('input')) {
+                state.hasUnsavedChanges = true;
+                validateInput(event.target);
+                updateExerciseData(event.target);
+            }
+        });
+
+        elements.rowingMeters.addEventListener('input', validateRowingInput);
+        elements.rowingMinutes.addEventListener('input', validateRowingInput);
+    }
+
+    function setupBeforeUnloadWarning() {
+        window.addEventListener('beforeunload', (e) => {
+            if (state.hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    }
+
+    function setupAutoSave() {
+        setInterval(async () => {
+            if (state.hasUnsavedChanges) {
+                await saveProgress();
+            }
+        }, 30000);
+    }
+
+    async function renderWorkout() {
         elements.workoutContainer.innerHTML = '';
+        const savedData = await firebaseService.getWorkoutProgress(state.currentUser, state.currentWorkout.name);
+        
         state.currentWorkout.supersets.forEach((superset, index) => {
-            const supersetElement = renderSuperset(superset, index);
+            const supersetElement = renderSuperset(superset, index, savedData);
             elements.workoutContainer.appendChild(supersetElement);
         });
     }
 
-    // Render superset
-    function renderSuperset(superset, index) {
+    function renderSuperset(superset, index, savedData) {
         const template = elements.supersetTemplate.content.cloneNode(true);
         const supersetElement = template.querySelector('.superset');
         
@@ -77,101 +115,104 @@ document.addEventListener('DOMContentLoaded', function() {
         const exerciseContainer = supersetElement.querySelector('.exercise-container');
 
         superset.exercises.forEach(exercise => {
-            const exerciseElement = renderExercise(exercise);
+            const exerciseElement = renderExercise(exercise, savedData);
             exerciseContainer.appendChild(exerciseElement);
         });
 
         return supersetElement;
     }
 
-    // Render exercise
-    function renderExercise(exercise) {
+    function renderExercise(exercise, savedData) {
         const template = elements.exerciseTemplate.content.cloneNode(true);
         const exerciseElement = template.querySelector('.exercise');
 
         exerciseElement.querySelector('h4').textContent = exercise.name;
         exerciseElement.querySelector('p').textContent = exercise.description;
 
-        // Handle TRX exercises
-        const weightInputContainers = exerciseElement.querySelectorAll('.weight-input-container');
-        if (exercise.type === 'trx') {
-            weightInputContainers.forEach(container => container.classList.add('hidden'));
-        }
+        const savedExercise = savedData?.exercises?.find(e => e.name === exercise.name);
+        setupExerciseInputs(exerciseElement, exercise, savedExercise);
 
         return exerciseElement;
     }
 
-    // Complete workout
-    async function completeWorkout() {
-        try {
-            const workoutData = {
-                user: state.currentUser,
-                workoutName: state.currentWorkout.name,
-                date: new Date().toISOString(),
-                rowing: getRowingData(),
-                exercises: getExercisesData()
-            };
+    function setupExerciseInputs(element, exercise, savedData) {
+        const weightInputs = element.querySelectorAll('.weight-input');
+        const repsInputs = element.querySelectorAll('.reps-input');
 
-            // Validate workout data
-            if (!validateWorkoutData(workoutData)) {
-                alert('Please fill in all required fields before completing the workout.');
-                return;
-            }
-
-            // Show loading state
-            elements.completeWorkoutBtn.disabled = true;
-            elements.completeWorkoutBtn.textContent = 'Saving...';
-
-            // Save to Firebase
-            await saveWorkoutToFirebase(workoutData);
-            
-            // Save to local storage via dataManager
-            await dataManager.saveWorkout(state.currentUser, workoutData);
-            
-            alert('Workout completed and saved!');
-            window.location.href = 'index.html';
-        } catch (error) {
-            console.error('Error saving workout:', error);
-            alert('Failed to save workout. Please try again.');
-            
-            // Reset button state
-            elements.completeWorkoutBtn.disabled = false;
-            elements.completeWorkoutBtn.textContent = 'Complete Workout';
-        }
-    }
-
-    // Save workout to Firebase
-    async function saveWorkoutToFirebase(workoutData) {
-        try {
-            const workoutRef = doc(db, 'workoutHistory', `${state.currentUser}_${new Date().toISOString()}`);
-            await setDoc(workoutRef, workoutData);
-        } catch (error) {
-            console.error('Error saving workout to Firebase:', error);
-            throw error; // Re-throw to be caught in completeWorkout
-        }
-    }
-
-    // Validate workout data
-    function validateWorkoutData(workoutData) {
-        // Validate rowing data if provided
-        if (workoutData.rowing.minutes > 0 || workoutData.rowing.meters > 0) {
-            if (workoutData.rowing.minutes <= 0 || workoutData.rowing.meters <= 0) {
-                return false;
-            }
+        if (exercise.type === 'trx') {
+            weightInputs.forEach(input => input.closest('.weight-input-container').classList.add('hidden'));
         }
 
-        // Validate exercise data
-        return workoutData.exercises.every(exercise => {
-            return exercise.sets.every(set => {
-                if (exercise.type === 'dumbbell') {
-                    return set.weight > 0 && set.reps > 0;
-                }
-                return set.reps > 0;
+        if (savedData) {
+            savedData.sets.forEach((set, index) => {
+                if (weightInputs[index]) weightInputs[index].value = set.weight || '';
+                if (repsInputs[index]) repsInputs[index].value = set.reps || '';
             });
-        });
+        }
     }
 
-    // Get rowing data
+    function validateInput(input) {
+        const value = parseInt(input.value);
+        if (isNaN(value) || value < 0) {
+            input.value = '';
+        } else if (value > 999) {
+            input.value = '999';
+        }
+    }
+
+    function validateRowingInput() {
+        const minutes = parseInt(elements.rowingMinutes.value) || 0;
+        const meters = parseInt(elements.rowingMeters.value) || 0;
+        
+        const isValid = minutes > 0 && meters > 0;
+        elements.completeWorkoutBtn.disabled = !isValid;
+    }
+
+    function updateExerciseData(input) {
+        const exerciseElement = input.closest('.exercise');
+        const exerciseName = exerciseElement.querySelector('h4').textContent;
+        
+        if (!state.exerciseData.has(exerciseName)) {
+            state.exerciseData.set(exerciseName, { sets: [] });
+        }
+        
+        const setIndex = Array.from(exerciseElement.querySelectorAll('input')).indexOf(input) % 2;
+        const isWeight = input.classList.contains('weight-input');
+        
+        const exerciseData = state.exerciseData.get(exerciseName);
+        if (!exerciseData.sets[setIndex]) {
+            exerciseData.sets[setIndex] = {};
+        }
+        
+        if (isWeight) {
+            exerciseData.sets[setIndex].weight = parseInt(input.value) || 0;
+        } else {
+            exerciseData.sets[setIndex].reps = parseInt(input.value) || 0;
+        }
+    }
+
+    async function saveProgress() {
+        try {
+            const progressData = collectWorkoutData();
+            await firebaseService.saveWorkoutProgress(state.currentUser, progressData);
+            state.hasUnsavedChanges = false;
+        } catch (error) {
+            console.error('Error saving progress:', error);
+        }
+    }
+
+    function collectWorkoutData() {
+        return {
+            name: state.currentWorkout.name,
+            date: new Date().toISOString(),
+            rowing: getRowingData(),
+            exercises: Array.from(state.exerciseData.entries()).map(([name, data]) => ({
+                name,
+                sets: data.sets
+            }))
+        };
+    }
+
     function getRowingData() {
         return {
             type: elements.rowingType.value,
@@ -180,40 +221,62 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Get exercises data
-    function getExercisesData() {
-        const exercisesData = [];
-        elements.workoutContainer.querySelectorAll('.superset').forEach((supersetElement, supersetIndex) => {
-            supersetElement.querySelectorAll('.exercise').forEach((exerciseElement, exerciseIndex) => {
-                const exercise = state.currentWorkout.supersets[supersetIndex].exercises[exerciseIndex];
-                const exerciseData = {
-                    name: exercise.name,
-                    type: exercise.type,
-                    sets: []
-                };
+    async function completeWorkout() {
+        try {
+            if (!validateWorkoutData()) {
+                showError('Please fill in all required fields before completing the workout.');
+                return;
+            }
 
-                // Get data for each set
-                for (let setNum = 1; setNum <= 3; setNum++) {
-                    const setData = {
-                        setNumber: setNum,
-                        reps: parseInt(exerciseElement.querySelector(`.reps-input[data-set="${setNum}"]`)?.value) || 0
-                    };
-
-                    if (exercise.type === 'dumbbell') {
-                        setData.weight = parseInt(exerciseElement.querySelector(`.weight-input[data-set="${setNum}"]`)?.value) || 0;
-                    }
-
-                    exerciseData.sets.push(setData);
-                }
-
-                exercisesData.push(exerciseData);
-            });
-        });
-        return exercisesData;
+            showLoading(true);
+            const workoutData = collectWorkoutData();
+            
+            await firebaseService.saveWorkout(state.currentUser, workoutData);
+            await dataManager.saveWorkout(state.currentUser, workoutData);
+            
+            showSuccess('Workout completed and saved!');
+            setTimeout(() => window.location.href = 'index.html', 1500);
+        } catch (error) {
+            console.error('Error completing workout:', error);
+            showError('Failed to save workout. Please try again.');
+        } finally {
+            showLoading(false);
+        }
     }
 
-    // Start initialization
+    function validateWorkoutData() {
+        const rowing = getRowingData();
+        if (rowing.minutes > 0 || rowing.meters > 0) {
+            if (rowing.minutes <= 0 || rowing.meters <= 0) return false;
+        }
+
+        return Array.from(state.exerciseData.values()).every(exercise => 
+            exercise.sets.every(set => {
+                if ('weight' in set) return set.weight > 0 && set.reps > 0;
+                return set.reps > 0;
+            })
+        );
+    }
+
+    function showLoading(show) {
+        state.isLoading = show;
+        elements.loadingIndicator?.classList.toggle('hidden', !show);
+        elements.completeWorkoutBtn.disabled = show;
+    }
+
+    function showError(message) {
+        // Implement error toast/notification
+        alert(message);
+    }
+
+    function showSuccess(message) {
+        // Implement success toast/notification
+        alert(message);
+    }
+
+    // Initialize the tracker
     init().catch(error => {
         console.error('Failed to initialize workout tracker:', error);
+        showError('Failed to initialize workout tracker');
     });
 });
