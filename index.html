@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body class="bg-gray-100">
     <div class="app-container">
@@ -100,8 +101,9 @@
 
     <!-- Firebase SDK -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
-        import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js';
     </script>
 
     <!-- Application Scripts -->
@@ -119,7 +121,7 @@
             })
             .catch(error => {
                 console.error('Error loading version:', error);
-                document.querySelector('.app-version').textContent = 'v1.0.0';
+                document.querySelector('.app-version').textContent = 'v1.0.1';
             });
     </script>
     <div class="app-version">v1.0.1</div>
