@@ -13,22 +13,43 @@ class DataManager {
     }
 
     async initializeSync() {
-        // Set up sync when online
-        if (navigator.onLine) {
-            await this.syncData();
+        try {
+            // Set up sync when online
+            if (navigator.onLine) {
+                await this.syncData();
+            }
+            window.addEventListener('online', async () => {
+                await this.syncData();
+            });
+            console.log('Data sync initialized');
+        } catch (error) {
+            console.error('Error initializing sync:', error);
         }
-        window.addEventListener('online', async () => {
-            await this.syncData();
-        });
     }
 
     // User Management
-    getCurrentUser() {
-        return localStorage.getItem(this.storageKeys.currentUser) || 'Dad';
+    async getCurrentUser() {
+        try {
+            const user = localStorage.getItem(this.storageKeys.currentUser);
+            console.log('Getting current user:', user);
+            return user || 'Dad';
+        } catch (error) {
+            console.error('Error getting current user:', error);
+            return 'Dad';
+        }
     }
 
-    setCurrentUser(user) {
-        localStorage.setItem(this.storageKeys.currentUser, user);
+    async setCurrentUser(user) {
+        try {
+            console.log('Setting current user to:', user);
+            localStorage.setItem(this.storageKeys.currentUser, user);
+            // Fire an event for UI updates
+            window.dispatchEvent(new CustomEvent('userChanged', { detail: user }));
+            return true;
+        } catch (error) {
+            console.error('Error setting current user:', error);
+            return false;
+        }
     }
 
     // Workout Management
@@ -59,14 +80,19 @@ class DataManager {
     }
 
     saveWorkoutLocally(userId, workoutData) {
-        const workouts = this.getWorkoutsLocal(userId);
-        workouts.push({
-            ...workoutData,
-            date: new Date().toISOString(),
-            week: this.getCurrentWeek(),
-            pendingSync: true
-        });
-        localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
+        try {
+            const workouts = this.getWorkoutsLocal(userId);
+            workouts.push({
+                ...workoutData,
+                date: new Date().toISOString(),
+                week: this.getCurrentWeek(),
+                pendingSync: true
+            });
+            localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
+            console.log('Workout saved locally');
+        } catch (error) {
+            console.error('Error saving workout locally:', error);
+        }
     }
 
     async getWorkouts(userId) {
@@ -83,15 +109,28 @@ class DataManager {
     }
 
     getWorkoutsLocal(userId) {
-        return JSON.parse(localStorage.getItem(this.storageKeys.workouts(userId)) || '[]');
+        try {
+            return JSON.parse(localStorage.getItem(this.storageKeys.workouts(userId)) || '[]');
+        } catch (error) {
+            console.error('Error getting local workouts:', error);
+            return [];
+        }
     }
 
     async getWeeklyWorkouts(userId) {
-        const currentWeek = this.getCurrentWeek();
-        const workouts = await this.getWorkouts(userId);
-        return workouts
-            .filter(workout => workout.week === currentWeek)
-            .map(workout => new Date(workout.date).getDay());
+        try {
+            const currentWeek = this.getCurrentWeek();
+            const workouts = await this.getWorkouts(userId);
+            const workoutDays = workouts
+                .filter(workout => workout.week === currentWeek)
+                .map(workout => new Date(workout.date).getDay());
+            
+            console.log('Weekly workouts:', workoutDays);
+            return workoutDays;
+        } catch (error) {
+            console.error('Error getting weekly workouts:', error);
+            return [];
+        }
     }
 
     // Progress Management
@@ -112,10 +151,13 @@ class DataManager {
             
             // Update local storage
             localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
+            
+            return true;
         } catch (error) {
             console.error('Error updating progress:', error);
             // Save to local storage only
             this.updateProgressLocally(userId, workoutData);
+            return false;
         }
     }
 
@@ -167,6 +209,11 @@ class DataManager {
         }
     }
 
+    updatePersonalBest(exerciseProgress, exercise) {
+        // Implementation depends on your exercise data structure
+        // Add appropriate personal best calculation logic
+    }
+
     async getProgress(userId) {
         try {
             const progress = await firebaseService.getProgress(userId);
@@ -179,12 +226,22 @@ class DataManager {
     }
 
     getProgressLocal(userId) {
-        return JSON.parse(localStorage.getItem(this.storageKeys.progress(userId)) || '{}');
+        try {
+            return JSON.parse(localStorage.getItem(this.storageKeys.progress(userId)) || '{}');
+        } catch (error) {
+            console.error('Error getting local progress:', error);
+            return {};
+        }
     }
 
     async getRecentProgress(userId) {
-        const progress = await this.getProgress(userId);
-        return this.processRecentProgress(progress);
+        try {
+            const progress = await this.getProgress(userId);
+            return this.processRecentProgress(progress);
+        } catch (error) {
+            console.error('Error getting recent progress:', error);
+            return [];
+        }
     }
 
     processRecentProgress(progress) {
@@ -205,6 +262,14 @@ class DataManager {
         return recentProgress.sort((a, b) => new Date(b.date) - new Date(a.date));
     }
 
+    processExerciseProgress(name, data, recentProgress) {
+        // Add exercise progress processing logic
+    }
+
+    processRowingProgress(type, progress, recentProgress) {
+        // Add rowing progress processing logic
+    }
+
     // Utility Functions
     getCurrentWeek() {
         const today = new Date();
@@ -213,12 +278,17 @@ class DataManager {
     }
 
     async syncData() {
-        const currentUser = this.getCurrentUser();
-        const localWorkouts = this.getWorkoutsLocal(currentUser)
-            .filter(workout => workout.pendingSync);
+        try {
+            const currentUser = await this.getCurrentUser();
+            const localWorkouts = this.getWorkoutsLocal(currentUser)
+                .filter(workout => workout.pendingSync);
 
-        for (const workout of localWorkouts) {
-            await this.saveWorkout(currentUser, workout);
+            for (const workout of localWorkouts) {
+                await this.saveWorkout(currentUser, workout);
+            }
+            console.log('Data sync completed');
+        } catch (error) {
+            console.error('Error syncing data:', error);
         }
     }
 }
