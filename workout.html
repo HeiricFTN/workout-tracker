@@ -91,6 +91,7 @@
                 <!-- For all exercises -->
                 <div class="reps-input-container">
                     <label class="text-sm text-gray-600">Reps</label>
+ >
                     <input type="number" 
                            class="number-input reps-input" 
                            min="0" 
@@ -101,14 +102,30 @@
         </div>
     </template>
 
-    <!-- Firebase App (the core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <!-- Firebase Firestore -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+    </script>
 
-    <script src="firebase-config.js"></script>
+    <!-- Application Scripts -->
+    <script type="module" src="firebase-config.js"></script>
     <script type="module" src="workoutLibrary.js"></script>
     <script type="module" src="dataManager.js"></script>
     <script type="module" src="workoutTracker.js"></script>
+
+    <!-- Version Display -->
+    <script>
+        fetch('manifest.json')
+            .then(response => response.json())
+            .then(manifest => {
+                document.querySelector('.app-version').textContent = `v${manifest.version}`;
+            })
+            .catch(error => {
+                console.error('Error loading version:', error);
+                document.querySelector('.app-version').textContent = 'v1.0.0';
+            });
+    </script>
+    <div class="app-version">v1.0.0</div>
 </body>
 </html>
