@@ -43,44 +43,63 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Setup event listeners
     function setupEventListeners() {
-        // User switching
-        if (elements.dadButton) {
-            elements.dadButton.onclick = async () => {
-                console.log('Dad button clicked');
-                await switchUser('Dad');
-            };
-        }
-
-        if (elements.alexButton) {
-            elements.alexButton.onclick = async () => {
-                console.log('Alex button clicked');
-                await switchUser('Alex');
-            };
-        }
-
-        // Workout buttons
-        if (elements.chestTricepsBtn) {
-            elements.chestTricepsBtn.onclick = () => navigateToWorkout('chestTriceps');
-        }
-
-        if (elements.shouldersBtn) {
-            elements.shouldersBtn.onclick = () => navigateToWorkout('shoulders');
-        }
-
-        if (elements.backBicepsBtn) {
-            elements.backBicepsBtn.onclick = () => navigateToWorkout('backBiceps');
-        }
-
-        // Start workout button
-        if (elements.startWorkoutBtn) {
-            elements.startWorkoutBtn.onclick = () => {
-                const workoutType = getCurrentWorkoutType();
-                if (workoutType) {
-                    navigateToWorkout(workoutType);
-                }
-            };
-        }
+    // User switching
+    if (elements.dadButton) {
+        elements.dadButton.addEventListener('click', async (e) => {
+            e.preventDefault();
+            console.log('Dad button clicked');
+            await switchUser('Dad');
+        });
     }
+
+    if (elements.alexButton) {
+        elements.alexButton.addEventListener('click', async (e) => {
+            e.preventDefault();
+            console.log('Alex button clicked');
+            await switchUser('Alex');
+        });
+    }
+
+    // Workout buttons
+    if (elements.chestTricepsBtn) {
+        elements.chestTricepsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Chest & Triceps clicked');
+            navigateToWorkout('chestTriceps');
+        });
+    }
+
+    if (elements.shouldersBtn) {
+        elements.shouldersBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Shoulders clicked');
+            navigateToWorkout('shoulders');
+        });
+    }
+
+    if (elements.backBicepsBtn) {
+        elements.backBicepsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Back & Biceps clicked');
+            navigateToWorkout('backBiceps');
+        });
+    }
+
+    // Start workout button
+    if (elements.startWorkoutBtn) {
+        elements.startWorkoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Start workout clicked');
+            const workoutType = getCurrentWorkoutType();
+            if (workoutType) {
+                navigateToWorkout(workoutType);
+            }
+        });
+    }
+
+    console.log('Event listeners set up');
+}
+
 
     function navigateToWorkout(type) {
         window.location.href = `workout.html?type=${type}&user=${state.currentUser}`;
