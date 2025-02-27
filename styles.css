@@ -128,22 +128,22 @@ body {
 
 /* Weekly Progress Dots */
 .progress-dot {
-    width: 0.75rem;
-    height: 0.75rem;
-    border-radius: 9999px;
-    margin: 0 auto;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin: 0 2px;
 }
 
 .dot-complete {
-    background-color: var(--success-green);
+    background-color: #48BB78;
 }
 
 .dot-today {
-    background-color: var(--primary-blue);
+    background-color: #4299E1;
 }
 
 .dot-upcoming {
-    background-color: #e5e7eb;
+    background-color: #E2E8F0;
 }
 
 /* Error and Success Messages */
