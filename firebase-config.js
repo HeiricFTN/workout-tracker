@@ -13,31 +13,36 @@ const firebaseConfig = {
     measurementId: "G-RWFV5YVDQ1"
 };
 
-let app;
-let db;
-let auth;
+let app, db, auth;
 
-try {
-    // Initialize Firebase
-    app = initializeApp(firebaseConfig);
-    
-    // Initialize Firestore
-    db = getFirestore(app);
-    if (!db) {
-        throw new Error('Firestore initialization failed');
+async function initializeFirebase() {
+    try {
+        // Initialize Firebase
+        app = initializeApp(firebaseConfig);
+        console.log('Firebase app initialized');
+
+        // Initialize Firestore
+        db = getFirestore(app);
+        console.log('Firestore initialized');
+
+        // Initialize Authentication
+        auth = getAuth(app);
+        console.log('Auth initialized');
+
+        // Test connection
+        const isConnected = await checkFirebaseConnection();
+        console.log('Firebase connection status:', isConnected);
+
+        return true;
+    } catch (error) {
+        console.error('Firebase initialization error:', error);
+        setupOfflineFallback();
+        return false;
     }
+}
 
-    // Initialize Authentication
-    auth = getAuth(app);
-    if (!auth) {
-        throw new Error('Authentication initialization failed');
-    }
-
-    console.log('Firebase initialized successfully');
-} catch (error) {
-    console.error('Firebase initialization error:', error);
-    
-    // Fallback initialization for offline functionality
+function setupOfflineFallback() {
+    console.log('Setting up offline fallback');
     db = {
         collection: () => ({
             add: async () => {},
@@ -55,7 +60,6 @@ try {
     };
 }
 
-// Verify connection status
 async function checkFirebaseConnection() {
     try {
         const timeoutPromise = new Promise((_, reject) => 
@@ -72,7 +76,6 @@ async function checkFirebaseConnection() {
     }
 }
 
-// Helper functions for other files
 const FirebaseHelper = {
     isInitialized() {
         return !!app && !!db && !!auth;
@@ -86,5 +89,8 @@ const FirebaseHelper = {
         return error.message || 'An unknown error occurred';
     }
 };
+
+// Initialize Firebase immediately
+await initializeFirebase();
 
 export { db, auth, FirebaseHelper };
