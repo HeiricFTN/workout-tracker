@@ -6,7 +6,15 @@
     --error-red: #ef4444;
     --background-gray: #f3f4f6;
 }
-
+/* Version */
+.app-version {
+    position: fixed;
+    bottom: 5px;
+    right: 5px;
+    font-size: 0.7rem;
+    color: #666;
+    padding: 2px 5px;
+}
 /* Global Styles */
 body {
     -webkit-text-size-adjust: 100%;
