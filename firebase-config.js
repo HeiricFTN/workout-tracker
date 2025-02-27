@@ -3,6 +3,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebas
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
+// Verify module loading
+console.log('Loading firebase-config.js');
+
 // Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCt-35h-UfdO3WQeL7X7p43tatItPQ3cGw",
@@ -14,60 +17,13 @@ const firebaseConfig = {
     measurementId: "G-RWFV5YVDQ1"
 };
 
-// Initialize Firebase with retry logic
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
-
-async function initializeFirebaseWithRetry(retries = MAX_RETRIES) {
-    try {
-        console.log('Attempting Firebase initialization...');
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        console.log('Firebase initialized successfully');
-        return { app, db, auth };
-    } catch (error) {
-        console.error('Firebase initialization error:', error);
-        
-        if (retries > 0) {
-            console.log(`Retrying initialization... (${retries} attempts left)`);
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-            return initializeFirebaseWithRetry(retries - 1);
-        }
-        
-        console.error('Firebase initialization failed after all retries');
-        return setupOfflineFallback();
-    }
-}
-
-// Offline fallback setup
-function setupOfflineFallback() {
-    console.log('Setting up offline fallback');
-    return {
-        app: null,
-        db: {
-            collection: () => ({
-                add: async () => ({}),
-                get: async () => ({ docs: [] }),
-                where: () => ({
-                    get: async () => ({ docs: [] })
-                })
-            }),
-            doc: () => ({
-                set: async () => ({}),
-                get: async () => ({ exists: false, data: () => ({}) }),
-                update: async () => ({})
-            })
-        },
-        auth: {
-            currentUser: null,
-            onAuthStateChanged: (callback) => callback(null)
-        }
-    };
-}
-
 // Initialize Firebase
-let { app, db, auth } = await initializeFirebaseWithRetry();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// Verify initialization
+console.log('Firebase initialized:', !!app && !!db && !!auth);
 
 // Helper functions
 const FirebaseHelper = {
@@ -97,34 +53,49 @@ const FirebaseHelper = {
         return error?.message || 'An unknown error occurred';
     },
 
-    async reconnect() {
-        try {
-            const result = await initializeFirebaseWithRetry();
-            app = result.app;
-            db = result.db;
-            auth = result.auth;
-            return this.isInitialized();
-        } catch (error) {
-            console.error('Reconnection failed:', error);
-            return false;
-        }
+    getOfflineFallback() {
+        return {
+            db: {
+                collection: () => ({
+                    add: async () => ({}),
+                    get: async () => ({ docs: [] }),
+                    where: () => ({
+                        get: async () => ({ docs: [] })
+                    })
+                }),
+                doc: () => ({
+                    set: async () => ({}),
+                    get: async () => ({ exists: false, data: () => ({}) }),
+                    update: async () => ({})
+                })
+            },
+            auth: {
+                currentUser: null,
+                onAuthStateChanged: (callback) => callback(null)
+            }
+        };
     }
 };
 
-// Listen for online/offline status
+// Handle offline/online status
 if (typeof window !== 'undefined') {
     window.addEventListener('online', async () => {
-        console.log('Connection restored, attempting reconnection...');
-        await FirebaseHelper.reconnect();
+        console.log('Connection restored');
+        try {
+            await FirebaseHelper.isOnline();
+            console.log('Firebase reconnected');
+        } catch (error) {
+            console.error('Firebase reconnection failed:', error);
+        }
     });
 
     window.addEventListener('offline', () => {
-        console.log('Connection lost, switching to offline mode...');
-        const fallback = setupOfflineFallback();
-        db = fallback.db;
-        auth = fallback.auth;
+        console.log('Connection lost - switching to offline mode');
     });
 }
 
 // Export initialized instances and helper
 export { db, auth, FirebaseHelper };
+
+// Verify export
+console.log('firebase-config.js loaded successfully');
