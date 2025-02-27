@@ -204,7 +204,7 @@ const WorkoutLibrary = {
 
     calculateRowingPace(meters, minutes) {
         if (!minutes || minutes === 0) return 0;
-        return Mn Math.round(meters / minutes);
+        return Math.round(meters / minutes);
     },
 
     formatWorkoutForSave(workout) {
