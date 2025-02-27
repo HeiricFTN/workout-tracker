@@ -2,6 +2,8 @@
 import dataManager from './dataManager.js';
 
 document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Dashboard initializing...');
+
     // Cache DOM elements
     const elements = {
         dadButton: document.getElementById('dadButton'),
@@ -22,10 +24,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         recentProgress: document.getElementById('recentProgress')
     };
 
-    // Verify all elements exist
+    // Verify elements exist
     Object.entries(elements).forEach(([key, element]) => {
         if (!element) {
             console.error(`Missing element: ${key}`);
+        } else {
+            console.log(`Found element: ${key}`);
         }
     });
 
@@ -35,33 +39,47 @@ document.addEventListener('DOMContentLoaded', async function() {
         programStart: new Date('2025-02-18'),
         workouts: ['Chest & Triceps', 'Shoulders', 'Back & Biceps']
     };
+    console.log('Initial state:', state);
 
-    // Setup event listeners first
+    // Setup event listeners
     function setupEventListeners() {
         // User switching
-        elements.dadButton?.addEventListener('click', () => switchUser('Dad'));
-        elements.alexButton?.addEventListener('click', () => switchUser('Alex'));
+        if (elements.dadButton) {
+            elements.dadButton.onclick = async () => {
+                console.log('Dad button clicked');
+                await switchUser('Dad');
+            };
+        }
 
-        // Direct workout buttons
-        elements.chestTricepsBtn?.addEventListener('click', () => {
-            navigateToWorkout('chestTriceps');
-        });
+        if (elements.alexButton) {
+            elements.alexButton.onclick = async () => {
+                console.log('Alex button clicked');
+                await switchUser('Alex');
+            };
+        }
 
-        elements.shouldersBtn?.addEventListener('click', () => {
-            navigateToWorkout('shoulders');
-        });
+        // Workout buttons
+        if (elements.chestTricepsBtn) {
+            elements.chestTricepsBtn.onclick = () => navigateToWorkout('chestTriceps');
+        }
 
-        elements.backBicepsBtn?.addEventListener('click', () => {
-            navigateToWorkout('backBiceps');
-        });
+        if (elements.shouldersBtn) {
+            elements.shouldersBtn.onclick = () => navigateToWorkout('shoulders');
+        }
+
+        if (elements.backBicepsBtn) {
+            elements.backBicepsBtn.onclick = () => navigateToWorkout('backBiceps');
+        }
 
         // Start workout button
-        elements.startWorkoutBtn?.addEventListener('click', () => {
-            const workoutType = getCurrentWorkoutType();
-            if (workoutType) {
-                navigateToWorkout(workoutType);
-            }
-        });
+        if (elements.startWorkoutBtn) {
+            elements.startWorkoutBtn.onclick = () => {
+                const workoutType = getCurrentWorkoutType();
+                if (workoutType) {
+                    navigateToWorkout(workoutType);
+                }
+            };
+        }
     }
 
     function navigateToWorkout(type) {
@@ -70,15 +88,20 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Update user buttons
     function updateUserButtons() {
+        console.log('Updating user buttons for:', state.currentUser);
+        
         const baseClasses = 'flex-1 py-2 px-4 rounded-lg shadow';
         const activeClasses = 'bg-blue-500 text-white';
         const inactiveClasses = 'bg-gray-200';
 
         if (elements.dadButton) {
-            elements.dadButton.className = `${baseClasses} ${state.currentUser === 'Dad' ? activeClasses : inactiveClasses}`;
+            const isDadActive = state.currentUser === 'Dad';
+            elements.dadButton.className = `${baseClasses} ${isDadActive ? activeClasses : inactiveClasses}`;
         }
+
         if (elements.alexButton) {
-            elements.alexButton.className = `${baseClasses} ${state.currentUser === 'Alex' ? activeClasses : inactiveClasses}`;
+            const isAlexActive = state.currentUser === 'Alex';
+            elements.alexButton.className = `${baseClasses} ${isAlexActive ? activeClasses : inactiveClasses}`;
         }
     }
 
@@ -239,6 +262,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 ${p.exercise}: ${p.previousPace}→${p.currentPace} m/min
                             </li>`;
                     }
+                    return '';
                 })
                 .join('');
         } catch (error) {
@@ -248,28 +272,42 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Switch user
     async function switchUser(user) {
+        console.log('Switching to user:', user);
         try {
             state.currentUser = user;
+            updateUserButtons(); // Update UI immediately
             await dataManager.setCurrentUser(user);
-            updateUserButtons();
-            await updateWeeklyProgress();
-            await updateRowingProgress();
-            await updateRecentProgress();
+            
+            // Update all dependent data
+            await Promise.all([
+                updateWeeklyProgress(),
+                updateRowingProgress(),
+                updateRecentProgress()
+            ]);
+            
+            console.log('User switch completed:', user);
         } catch (error) {
             console.error('Error switching user:', error);
+            // Revert state if save failed
+            state.currentUser = await dataManager.getCurrentUser();
+            updateUserButtons();
         }
     }
 
     // Initialize dashboard
     async function initializeDashboard() {
+        console.log('Initializing dashboard...');
         try {
-            setupEventListeners(); // Setup listeners first
+            setupEventListeners();
             updateUserButtons();
             updateProgramStatus();
-            await updateWeeklyProgress();
             updateTodayWorkout();
-            await updateRowingProgress();
-            await updateRecentProgress();
+            await Promise.all([
+                updateWeeklyProgress(),
+                updateRowingProgress(),
+                updateRecentProgress()
+            ]);
+            console.log('Dashboard initialization complete');
         } catch (error) {
             console.error('Error initializing dashboard:', error);
         }
