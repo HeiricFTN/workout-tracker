@@ -13,7 +13,9 @@ const firebaseConfig = {
     measurementId: "G-RWFV5YVDQ1"
 };
 
-let app, db, auth;
+let app;
+let db;
+let auth;
 
 async function initializeFirebase() {
     try {
@@ -29,10 +31,7 @@ async function initializeFirebase() {
         auth = getAuth(app);
         console.log('Auth initialized');
 
-        // Test connection
-        const isConnected = await checkFirebaseConnection();
-        console.log('Firebase connection status:', isConnected);
-
+        // No need to check connection immediately
         return true;
     } catch (error) {
         console.error('Firebase initialization error:', error);
@@ -45,11 +44,11 @@ function setupOfflineFallback() {
     console.log('Setting up offline fallback');
     db = {
         collection: () => ({
-            add: async () => {},
+            add: async () => ({}),
             get: async () => ({ docs: [] })
         }),
         doc: () => ({
-            set: async () => {},
+            set: async () => ({}),
             get: async () => ({ exists: false, data: () => ({}) })
         })
     };
@@ -61,14 +60,17 @@ function setupOfflineFallback() {
 }
 
 async function checkFirebaseConnection() {
+    if (!db) return false;
+    
     try {
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Connection timeout')), 5000)
-        );
-        
-        const connectionPromise = db.collection('_healthcheck').doc('online').get();
-        
-        await Promise.race([timeoutPromise, connectionPromise]);
+        // Simple test query instead of healthcheck
+        const testRef = db.collection('_test').doc('connection');
+        await Promise.race([
+            testRef.get(),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Connection timeout')), 10000)
+            )
+        ]);
         return true;
     } catch (error) {
         console.warn('Firebase connection check failed:', error);
@@ -90,7 +92,8 @@ const FirebaseHelper = {
     }
 };
 
-// Initialize Firebase immediately
+// Initialize Firebase immediately but don't wait for connection check
 await initializeFirebase();
 
+// Export the initialized instances
 export { db, auth, FirebaseHelper };
