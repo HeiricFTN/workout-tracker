@@ -1,6 +1,6 @@
 // progress.js
 import dataManager from './dataManager.js';
-import firebaseService from './firebaseService.js;
+import firebaseService from './firebaseService.js';
 import { WorkoutLibrary } from './workoutLibrary.js';
 
 document.addEventListener('DOMContentLoaded', async function() {
