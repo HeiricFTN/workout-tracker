@@ -13,78 +13,51 @@ const firebaseConfig = {
     measurementId: "G-RWFV5YVDQ1"
 };
 
-let app;
-let db;
-let auth;
+// Initialize Firebase immediately
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-async function initializeFirebase() {
-    try {
-        // Initialize Firebase
-        app = initializeApp(firebaseConfig);
-        console.log('Firebase app initialized');
-
-        // Initialize Firestore
-        db = getFirestore(app);
-        console.log('Firestore initialized');
-
-        // Initialize Authentication
-        auth = getAuth(app);
-        console.log('Auth initialized');
-
-        // No need to check connection immediately
-        return true;
-    } catch (error) {
-        console.error('Firebase initialization error:', error);
-        setupOfflineFallback();
-        return false;
-    }
-}
-
-function setupOfflineFallback() {
-    console.log('Setting up offline fallback');
-    db = {
-        collection: () => ({
-            add: async () => ({}),
-            get: async () => ({ docs: [] })
-        }),
-        doc: () => ({
-            set: async () => ({}),
-            get: async () => ({ exists: false, data: () => ({}) })
-        })
-    };
-    
-    auth = {
-        currentUser: null,
-        onAuthStateChanged: (callback) => callback(null)
+// Offline fallback setup
+function getOfflineFallback() {
+    return {
+        db: {
+            collection: () => ({
+                add: async () => ({}),
+                get: async () => ({ docs: [] })
+            }),
+            doc: () => ({
+                set: async () => ({}),
+                get: async () => ({ exists: false, data: () => ({}) })
+            })
+        },
+        auth: {
+            currentUser: null,
+            onAuthStateChanged: (callback) => callback(null)
+        }
     };
 }
 
-async function checkFirebaseConnection() {
-    if (!db) return false;
-    
-    try {
-        // Simple test query instead of healthcheck
-        const testRef = db.collection('_test').doc('connection');
-        await Promise.race([
-            testRef.get(),
-            new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Connection timeout')), 10000)
-            )
-        ]);
-        return true;
-    } catch (error) {
-        console.warn('Firebase connection check failed:', error);
-        return false;
-    }
-}
-
+// Helper functions
 const FirebaseHelper = {
     isInitialized() {
         return !!app && !!db && !!auth;
     },
 
     async isOnline() {
-        return await checkFirebaseConnection();
+        try {
+            const testRef = db.collection('_test').doc('connection');
+            await Promise.race([
+                testRef.get(),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Connection timeout')), 5000)
+                )
+            ]);
+            return true;
+        } catch (error) {
+            consoleole.warn('Firebase connection check failed:', error);
+            return false;
+        }
     },
 
     getErrorMessage(error) {
@@ -92,8 +65,5 @@ const FirebaseHelper = {
     }
 };
 
-// Initialize Firebase immediately but don't wait for connection check
-await initializeFirebase();
-
-// Export the initialized instances
+// Export initialized instances
 export { db, auth, FirebaseHelper };
