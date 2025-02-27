@@ -99,34 +99,20 @@
         </section>
     </div>
 
-<!-- Firebase SDK -->
+<!-- Application Scripts -->
 <script type="module">
-    // Initialize Firebase first
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js';
-    import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js';
-    import { getAuth } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js';
-
-    // Wait for modules to load
-    window.addEventListener('load', async () => {
-        try {
-            // Load application scripts in order
-            await import('./firebase-config.js');
-            await import('./workoutLibrary.js');
-            await import('./dataManager.js');
-            await import('./dashboard.js');
-            
-            console.log('All modules loaded successfully');
-        } catch (error) {
-            console.error('Error loading modules:', error);
-        }
-    });
+    try {
+        const { db, auth, FirebaseHelper } = await import('./firebase-config.js');
+        window.firebaseInitialized = true;
+        console.log('Firebase initialized successfully');
+    } catch (error) {
+        console.error('Firebase initialization failed:', error);
+        window.firebaseInitialized = false;
+    }
 </script>
-
-    <!-- Application Scripts -->
-    <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="workoutLibrary.js"></script>
-    <script type="module" src="dataManager.js"></script>
-    <script type="module" src="dashboard.js"></script>
+<script type="module" src="workoutLibrary.js"></script>
+<script type="module" src="dataManager.js"></script>
+<script type="module" src="dashboard.js"></script>
 
 <!-- Version Display -->
 <script>
