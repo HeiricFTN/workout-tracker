@@ -55,7 +55,7 @@ const FirebaseHelper = {
             ]);
             return true;
         } catch (error) {
-            consoleole.warn('Firebase connection check failed:', error);
+            console.warn('Firebase connection check failed:', error);
             return false;
         }
     },
