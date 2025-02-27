@@ -1,5 +1,5 @@
 // dataManager.js
-import firebaseService from './services/firebaseService.js';
+import firebaseService from './firebaseService.js';
 
 class DataManager {
     constructor() {
