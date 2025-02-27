@@ -2,6 +2,13 @@
 import { db } from './firebase-config.js';
 import { doc, getDoc, setDoc, collection, query, where } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 
+// Add at the top of workoutLibrary.js after imports
+const VERSION = {
+    number: "1.0.0",
+    phase: "Phase 1",
+    lastUpdated: "2024-02-27",
+    features: "Initial Release - 8 Week Program"
+};
 const workoutLibrary = {
     // Chest & Triceps Workout
     chestTriceps: {
