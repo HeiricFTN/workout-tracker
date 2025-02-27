@@ -101,9 +101,25 @@
 
 <!-- Firebase SDK -->
 <script type="module">
+    // Initialize Firebase first
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js';
     import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js';
     import { getAuth } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js';
+
+    // Wait for modules to load
+    window.addEventListener('load', async () => {
+        try {
+            // Load application scripts in order
+            await import('./firebase-config.js');
+            await import('./workoutLibrary.js');
+            await import('./dataManager.js');
+            await import('./dashboard.js');
+            
+            console.log('All modules loaded successfully');
+        } catch (error) {
+            console.error('Error loading modules:', error);
+        }
+    });
 </script>
 
     <!-- Application Scripts -->
@@ -112,18 +128,18 @@
     <script type="module" src="dataManager.js"></script>
     <script type="module" src="dashboard.js"></script>
 
-    <!-- Version Display -->
-    <script>
-        fetch('manifest.json')
-            .then(response => response.json())
-            .then(manifest => {
-                document.querySelector('.app-version').textContent = `v${manifest.version}`;
-            })
-            .catch(error => {
-                console.error('Error loading version:', error);
-                document.querySelector('.app-version').textContent = 'v1.0.1';
-            });
-    </script>
+<!-- Version Display -->
+<script>
+    fetch('manifest.json')
+        .then(response => response.json())
+        .then(manifest => {
+            document.querySelector('.app-version').textContent = `v${manifest.version}`;
+        })
+        .catch(error => {
+            console.error('Error loading version:', error);
+            document.querySelector('.app-version').textContent = 'v1.0.1';
+        });
+</script>
     <div class="app-version">v1.0.1</div>
 </body>
 </html>
