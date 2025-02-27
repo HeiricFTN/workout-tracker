@@ -99,33 +99,53 @@
         </section>
     </div>
 
-<!-- Application Scripts -->
-<script type="module">
-    try {
-        const { db, auth, FirebaseHelper } = await import('./firebase-config.js');
-        window.firebaseInitialized = true;
-        console.log('Firebase initialized successfully');
-    } catch (error) {
-        console.error('Firebase initialization failed:', error);
-        window.firebaseInitialized = false;
-    }
-</script>
-<script type="module" src="workoutLibrary.js"></script>
-<script type="module" src="dataManager.js"></script>
-<script type="module" src="dashboard.js"></script>
+    <!-- Application Initialization -->
+    <script type="module">
+        async function initializeApp() {
+            try {
+                console.log('Starting application initialization...');
+                
+                // Import Firebase modules
+                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js');
+                const { getFirestore } = await import('https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js');
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js');
+                
+                console.log('Firebase modules imported successfully');
 
-<!-- Version Display -->
-<script>
-    fetch('manifest.json')
-        .then(response => response.json())
-        .then(manifest => {
-            document.querySelector('.app-version').textContent = `v${manifest.version}`;
-        })
-        .catch(error => {
-            console.error('Error loading version:', error);
-            document.querySelector('.app-version').textContent = 'v1.0.1';
-        });
-</script>
+                // Load application modules
+                const [firebaseConfig, workoutLib, dataManager, dashboard] = await Promise.all([
+                    import('./firebase-config.js'),
+                    import('./workoutLibrary.js'),
+                    import('./dataManager.js'),
+                    import('./dashboard.js')
+                ]);
+
+                console.log('Application modules loaded successfully');
+            } catch (error) {
+                console.error('Error during initialization:', error);
+            }
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+    </script>
+
+    <!-- Version Display -->
+    <script>
+        fetch('manifest.json')
+            .then(response => response.json())
+            .then(manifest => {
+                document.querySelector('.app-version').textContent = `v${manifest.version}`;
+            })
+            .catch(error => {
+                console.error('Error loading version:', error);
+                document.querySelector('.app-version').textContent = 'v1.0.1';
+            });
+    </script>
     <div class="app-version">v1.0.1</div>
 </body>
 </html>
