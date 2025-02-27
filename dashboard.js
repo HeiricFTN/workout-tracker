@@ -22,37 +22,64 @@ document.addEventListener('DOMContentLoaded', async function() {
         recentProgress: document.getElementById('recentProgress')
     };
 
+    // Verify all elements exist
+    Object.entries(elements).forEach(([key, element]) => {
+        if (!element) {
+            console.error(`Missing element: ${key}`);
+        }
+    });
+
     // Initialize state
     const state = {
-        currentUser: await dataManager.getCurrentUser(),
+        currentUser: await dataManager.getCurrentUser() || 'Dad',
         programStart: new Date('2025-02-18'),
         workouts: ['Chest & Triceps', 'Shoulders', 'Back & Biceps']
     };
 
-    // Initialize dashboard
-    async function initializeDashboard() {
-        try {
-            updateUserButtons();
-            updateProgramStatus();
-            await updateWeeklyProgress();
-            updateTodayWorkout();
-            await updateRowingProgress();
-            await updateRecentProgress();
-            setupEventListeners();
-        } catch (error) {
-            console.error('Error initializing dashboard:', error);
-        }
+    // Setup event listeners first
+    function setupEventListeners() {
+        // User switching
+        elements.dadButton?.addEventListener('click', () => switchUser('Dad'));
+        elements.alexButton?.addEventListener('click', () => switchUser('Alex'));
+
+        // Direct workout buttons
+        elements.chestTricepsBtn?.addEventListener('click', () => {
+            navigateToWorkout('chestTriceps');
+        });
+
+        elements.shouldersBtn?.addEventListener('click', () => {
+            navigateToWorkout('shoulders');
+        });
+
+        elements.backBicepsBtn?.addEventListener('click', () => {
+            navigateToWorkout('backBiceps');
+        });
+
+        // Start workout button
+        elements.startWorkoutBtn?.addEventListener('click', () => {
+            const workoutType = getCurrentWorkoutType();
+            if (workoutType) {
+                navigateToWorkout(workoutType);
+            }
+        });
+    }
+
+    function navigateToWorkout(type) {
+        window.location.href = `workout.html?type=${type}&user=${state.currentUser}`;
     }
 
     // Update user buttons
     function updateUserButtons() {
-        elements.dadButton.className = state.currentUser === 'Dad'
-            ? 'flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg shadow'
-            : 'flex-1 py-2 px-4 bg-gray-200 rounded-lg shadow';
+        const baseClasses = 'flex-1 py-2 px-4 rounded-lg shadow';
+        const activeClasses = 'bg-blue-500 text-white';
+        const inactiveClasses = 'bg-gray-200';
 
-        elements.alexButton.className = state.currentUser === 'Alex'
-            ? 'flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg shadow'
-            : 'flex-1 py-2 px-4 bg-gray-200 rounded-lg shadow';
+        if (elements.dadButton) {
+            elements.dadButton.className = `${baseClasses} ${state.currentUser === 'Dad' ? activeClasses : inactiveClasses}`;
+        }
+        if (elements.alexButton) {
+            elements.alexButton.className = `${baseClasses} ${state.currentUser === 'Alex' ? activeClasses : inactiveClasses}`;
+        }
     }
 
     // Update program status
@@ -60,9 +87,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         const currentWeek = getCurrentWeek();
         const phase = currentWeek <= 6 ? 1 : 2;
 
-        elements.currentWeek.textContent = `Week ${currentWeek} of 12`;
-        elements.programPhase.textContent = `Phase ${phase}`;
-        elements.nextWorkout.textContent = getNextWorkout();
+        if (elements.currentWeek) {
+            elements.currentWeek.textContent = `Week ${currentWeek} of 12`;
+        }
+        if (elements.programPhase) {
+            elements.programPhase.textContent = `Phase ${phase}`;
+        }
+        if (elements.nextWorkout) {
+            elements.nextWorkout.textContent = getNextWorkout();
+        }
     }
 
     // Update rowing progress
@@ -78,12 +111,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function updateRowingType(type, element, progress) {
-        const rowingKey = `rowing_${type}`;
-        const rowingData = progress[rowingKey];
+        if (!element) return;
 
-        if (rowingData && rowingData.history && rowingData.history.length > 0) {
+        const rowingKey = `rowing_${type}`;
+        const rowingData = progress?.[rowingKey];
+
+        if (rowingData?.history?.length > 0) {
             const recent = rowingData.history[rowingData.history.length - 1];
-            const bestPace = rowingData.personalBest ? rowingData.personalBest.pace : 0;
+            const bestPace = rowingData.personalBest?.pace || 0;
             element.textContent = `${Math.round(recent.pace)} m/min (Best: ${Math.round(bestPace)})`;
         } else {
             element.textContent = 'No data';
@@ -123,6 +158,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function updateWeeklyProgress() {
         try {
             const workouts = await dataManager.getWeeklyWorkouts(state.currentUser);
+            if (!elements.weeklyDots) return;
+
             const today = new Date().getDay();
             const dayLabels = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
 
@@ -144,8 +181,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
 
             elements.weeklyDots.innerHTML = dotsAndLabels.join('');
-            elements.workoutsComplete.textContent = 
-                `${workouts.length} of 3 workouts complete this week`;
+            if (elements.workoutsComplete) {
+                elements.workoutsComplete.textContent = 
+                    `${workouts.length} of 3 workouts complete this week`;
+            }
         } catch (error) {
             console.error('Error updating weekly progress:', error);
         }
@@ -153,6 +192,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Update today's workout
     function updateTodayWorkout() {
+        if (!elements.todayWorkout || !elements.startWorkoutBtn) return;
+
         const workout = getNextWorkout();
         elements.todayWorkout.textContent = workout;
         
@@ -168,6 +209,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Update recent progress
     async function updateRecentProgress() {
+        if (!elements.recentProgress) return;
+
         try {
             const progress = await dataManager.getRecentProgress(state.currentUser);
             
@@ -217,31 +260,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Setup event listeners
-    function setupEventListeners() {
-        // User switching
-        elements.dadButton.addEventListener('click', () => switchUser('Dad'));
-        elements.alexButton.addEventListener('click', () => switchUser('Alex'));
-
-        // Workout buttons
-        elements.startWorkoutBtn.addEventListener('click', () => {
-            const workoutType = getCurrentWorkoutType();
-            if (workoutType) {
-                window.location.href = `workout.html?type=${workoutType}&user=${state.currentUser}`;
-            }
-        });
-
-        elements.chestTricepsBtn.addEventListener('click', () => {
-            window.location.href = `workout.html?type=chestTriceps&user=${state.currentUser}`;
-        });
-
-        elements.shouldersBtn.addEventListener('click', () => {
-            window.location.href = `workout.html?type=shoulders&user=${state.currentUser}`;
-        });
-
-        elements.backBicepsBtn.addEventListener('click', () => {
-            window.location.href = `workout.html?type=backBiceps&user=${state.currentUser}`;
-        });
+    // Initialize dashboard
+    async function initializeDashboard() {
+        try {
+            setupEventListeners(); // Setup listeners first
+            updateUserButtons();
+            updateProgramStatus();
+            await updateWeeklyProgress();
+            updateTodayWorkout();
+            await updateRowingProgress();
+            await updateRecentProgress();
+        } catch (error) {
+            console.error('Error initializing dashboard:', error);
+        }
     }
 
     // Start initialization
