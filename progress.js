@@ -1,6 +1,6 @@
 // progress.js
 import dataManager from './dataManager.js';
-import firebaseService from './services/firebaseService.js';
+import firebaseService from './firebaseService.js';';
 import { WorkoutLibrary } from './workoutLibrary.js';
 
 document.addEventListener('DOMContentLoaded', async function() {
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    functiotion setupEventListeners() {
+    function setupEventListeners() {
         elements.userToggle.addEventListener('click', toggleUser);
         elements.weekSelector.addEventListener('change', handleWeekChange);
     }
