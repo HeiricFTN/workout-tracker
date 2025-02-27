@@ -4,41 +4,28 @@ import dataManager from './dataManager.js';
 document.addEventListener('DOMContentLoaded', async function() {
     // Cache DOM elements
     const elements = {
-        // User buttons
         dadButton: document.getElementById('dadButton'),
         alexButton: document.getElementById('alexButton'),
-
-        // Program status
         currentWeek: document.getElementById('currentWeek'),
         programPhase: document.getElementById('programPhase'),
         nextWorkout: document.getElementById('nextWorkout'),
-
-        // Rowing progress
         breatheProgress: document.getElementById('breatheProgress'),
         sweatProgress: document.getElementById('sweatProgress'),
         driveProgress: document.getElementById('driveProgress'),
-
-        // Weekly progress
         weeklyDots: document.getElementById('weeklyDots'),
         workoutsComplete: document.getElementById('workoutsComplete'),
-
-        // Today's workout
         todayWorkout: document.getElementById('todayWorkout'),
         startWorkoutBtn: document.getElementById('startWorkoutBtn'),
-
-        // Workout buttons
         chestTricepsBtn: document.getElementById('chestTricepsBtn'),
         shouldersBtn: document.getElementById('shouldersBtn'),
         backBicepsBtn: document.getElementById('backBicepsBtn'),
-
-        // Progress
         recentProgress: document.getElementById('recentProgress')
     };
 
     // Initialize state
     const state = {
-        currentUser: dataManager.getCurrentUser(),
-        programStart: new Date('2025-02-18'), // Program start date
+        currentUser: await dataManager.getCurrentUser(),
+        programStart: new Date('2025-02-18'),
         workouts: ['Chest & Triceps', 'Shoulders', 'Back & Biceps']
     };
 
@@ -50,8 +37,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             await updateWeeklyProgress();
             updateTodayWorkout();
             await updateRowingProgress();
-            setupEventListeners();
             await updateRecentProgress();
+            setupEventListeners();
         } catch (error) {
             console.error('Error initializing dashboard:', error);
         }
@@ -82,21 +69,21 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function updateRowingProgress() {
         try {
             const progress = await dataManager.getProgress(state.currentUser);
-            await updateRowingType('Breathe', elements.breatheProgress, progress);
-            await updateRowingType('Sweat', elements.sweatProgress, progress);
-            await updateRowingType('Drive', elements.driveProgress, progress);
+            updateRowingType('Breathe', elements.breatheProgress, progress);
+            updateRowingType('Sweat', elements.sweatProgress, progress);
+            updateRowingType('Drive', elements.driveProgress, progress);
         } catch (error) {
             console.error('Error updating rowing progress:', error);
         }
     }
 
-    async function updateRowingType(type, element, progress) {
+    function updateRowingType(type, element, progress) {
         const rowingKey = `rowing_${type}`;
         const rowingData = progress[rowingKey];
 
-        if (rowingData && rowingData.history.length > 0) {
+        if (rowingData && rowingData.history && rowingData.history.length > 0) {
             const recent = rowingData.history[rowingData.history.length - 1];
-            const bestPace = rowingData.personalBest.pace;
+            const bestPace = rowingData.personalBest ? rowingData.personalBest.pace : 0;
             element.textContent = `${Math.round(recent.pace)} m/min (Best: ${Math.round(bestPace)})`;
         } else {
             element.textContent = 'No data';
@@ -184,7 +171,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             const progress = await dataManager.getRecentProgress(state.currentUser);
             
-            if (!progress.length) {
+            if (!progress || progress.length === 0) {
                 elements.recentProgress.innerHTML = 
                     '<li class="text-gray-600">No recent progress recorded</li>';
                 return;
@@ -220,7 +207,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function switchUser(user) {
         try {
             state.currentUser = user;
-            dataManager.setCurrentUser(user);
+            await dataManager.setCurrentUser(user);
             updateUserButtons();
             await updateWeeklyProgress();
             await updateRowingProgress();
