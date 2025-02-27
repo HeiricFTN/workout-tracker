@@ -164,7 +164,6 @@ function getNextWorkout() {
 function getCurrentWorkoutType() {
     const day = new Date().getDay();
     switch(day) {
- {
         case 1: return 'chestTriceps';
         case 3: return 'shoulders';
         case 5: return 'backBiceps';
