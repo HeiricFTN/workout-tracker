@@ -21,15 +21,15 @@ class DataManager {
 
     // Weekly Progress
     async getWeeklyWorkouts(userId) {
-        try {
-            console.log('Getting weekly workouts for:', userId);
-            // For now, return empty array until we implement Firebase
-            return [];
-        } catch (error) {
-            console.error('Error getting weekly workouts:', error);
-            return [];
+            try {
+                console.log('Getting weekly workouts for:', userId);
+                // Return test data - array of completed workout days (0 = Sunday, 1 = Monday, etc.)
+                return [1, 3, 5]; // This will show completed workouts for Monday, Wednesday, Friday
+            } catch (error) {
+                console.error('Error getting weekly workouts:', error);
+                return [];
+            }
         }
-    }
 
     // Progress Management
     async getProgress(userId) {
