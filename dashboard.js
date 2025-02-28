@@ -312,8 +312,22 @@ async function initializeDashboard() {
         
         // Setup UI
         setupEventListeners();
-        updateUserButtons(); // Make sure buttons reflect current user
-        // ... rest of initialization
+        console.log('Event listeners set up');
+        
+        // Update UI components
+        updateUserButtons();
+        updateProgramStatus();
+        updateTodayWorkout();
+        
+        // Load data
+        console.log('Starting data updates...');
+        await Promise.all([
+            updateWeeklyProgress(),
+            updateRowingProgress(),
+            updateRecentProgress()
+        ]);
+        
+        console.log('Dashboard initialization complete');
     } catch (error) {
         console.error('Error initializing dashboard:', error);
     }
