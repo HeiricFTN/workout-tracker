@@ -2,10 +2,7 @@
 import dataManager from './dataManager.js';
 
 console.log('Starting dashboard script...');
-console.log('Elements found:', {
-    weeklyDots: !!elements.weeklyDots,
-    workoutsComplete: !!elements.workoutsComplete
-});
+
 // Cache DOM elements
 const elements = {
     dadButton: document.getElementById('dadButton'),
@@ -25,6 +22,12 @@ const elements = {
     backBicepsBtn: document.getElementById('backBicepsBtn'),
     recentProgress: document.getElementById('recentProgress')
 };
+
+// Log elements after they're defined
+console.log('Elements found:', {
+    weeklyDots: !!elements.weeklyDots,
+    workoutsComplete: !!elements.workoutsComplete
+});
 
 // State management
 let state = {
