@@ -274,6 +274,12 @@ async function updateRecentProgress() {
 
 // User Switching
 async function switchUser(user) {
+    // Validate user value
+    if (user !== 'Dad' && user !== 'Alex') {
+        console.error('Invalid user:', user);
+        return;
+    }
+
     console.log('Switching to user:', user);
     try {
         state.currentUser = user;
