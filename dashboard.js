@@ -2,7 +2,10 @@
 import dataManager from './dataManager.js';
 
 console.log('Starting dashboard script...');
-
+console.log('Elements found:', {
+    weeklyDots: !!elements.weeklyDots,
+    workoutsComplete: !!elements.workoutsComplete
+});
 // Cache DOM elements
 const elements = {
     dadButton: document.getElementById('dadButton'),
@@ -173,14 +176,21 @@ function getCurrentWorkoutType() {
 
 // Weekly Progress
 async function updateWeeklyProgress() {
+    console.log('Starting updateWeeklyProgress');
     try {
         const workouts = await dataManager.getWeeklyWorkouts(state.currentUser);
+        console.log('Workouts received:', workouts);
+        
         if (!elements.weeklyDots) {
-            console.log('weeklyDots element not found');
+            console.error('weeklyDots element not found');
             return;
         }
+
         const today = new Date().getDay();
+        console.log('Today is day:', today);
+        
         const dayLabels = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
+        
         const dotsAndLabels = Array(7).fill('').map((_, index) => {
             let dotClass = 'progress-dot';
             if (workouts.includes(index)) {
@@ -199,11 +209,14 @@ async function updateWeeklyProgress() {
         });
 
         elements.weeklyDots.innerHTML = dotsAndLabels.join('');
-        console.log('Dots HTML set:', elements.weeklyDots.innerHTML); // Add this debug line
+        console.log('Dots HTML set:', elements.weeklyDots.innerHTML);
+        
         if (elements.workoutsComplete) {
             elements.workoutsComplete.textContent = 
                 `${workouts.length} of 3 workouts complete this week`;
         }
+        
+        console.log('Weekly progress updated successfully');
     } catch (error) {
         console.error('Error updating weekly progress:', error);
     }
@@ -283,18 +296,22 @@ async function switchUser(user) {
 
 // Initialize dashboard
 async function initializeDashboard() {
-    console.log('Initializing dashboard...');
+    console.log('Starting initializeDashboard');
     try {
         // Get initial user
         state.currentUser = await dataManager.getCurrentUser();
+        console.log('Current user:', state.currentUser);
         
         // Setup UI
         setupEventListeners();
+        console.log('Event listeners set up');
+        
         updateUserButtons();
         updateProgramStatus();
         updateTodayWorkout();
         
         // Load data
+        console.log('Starting data updates...');
         await Promise.all([
             updateWeeklyProgress(),
             updateRowingProgress(),
