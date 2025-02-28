@@ -31,7 +31,7 @@ console.log('Elements found:', {
 
 // State management
 let state = {
-    currentUser: 'Dad',
+    currentUser: 'Dad', // Set default
     programStart: new Date('2025-02-18'),
     workouts: ['Chest & Triceps', 'Shoulders', 'Back & Biceps']
 };
@@ -306,27 +306,14 @@ async function switchUser(user) {
 async function initializeDashboard() {
     console.log('Starting initializeDashboard');
     try {
-        // Get initial user
+        // Get initial user with default
         state.currentUser = await dataManager.getCurrentUser();
-        console.log('Current user:', state.currentUser);
+        console.log('Initialized current user as:', state.currentUser);
         
         // Setup UI
         setupEventListeners();
-        console.log('Event listeners set up');
-        
-        updateUserButtons();
-        updateProgramStatus();
-        updateTodayWorkout();
-        
-        // Load data
-        console.log('Starting data updates...');
-        await Promise.all([
-            updateWeeklyProgress(),
-            updateRowingProgress(),
-            updateRecentProgress()
-        ]);
-        
-        console.log('Dashboard initialization complete');
+        updateUserButtons(); // Make sure buttons reflect current user
+        // ... rest of initialization
     } catch (error) {
         console.error('Error initializing dashboard:', error);
     }
