@@ -2,150 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dad & Alex Workout Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Tracker Test</title>
 </head>
-<body class="bg-gray-100">
-    <div class="app-container">
-        <!-- User Switch -->
-        <header class="mb-4">
-            <div class="flex gap-2">
-                <button id="dadButton" class="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg shadow">Dad</button>
-                <button id="alexButton" class="flex-1 py-2 px-4 bg-gray-200 rounded-lg shadow">Alex</button>
-            </div>
-        </header>
+<body>
+    <h1>Workout Tracker Test</h1>
+    <div id="status"></div>
 
-        <!-- Program Status -->
-        <section class="workout-card mb-4">
-            <h2 class="text-lg font-bold mb-2">Program Status</h2>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <p class="text-sm text-gray-600">Current Week</p>
-                    <p id="currentWeek" class="text-xl font-bold"></p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600">Program Phase</p>
-                    <p id="programPhase" class="text-xl font-bold"></p>
-                </div>
-            </div>
-            <div class="mt-2">
-                <p class="text-sm text-gray-600">Next Workout</p>
-                <p id="nextWorkout" class="font-medium"></p>
-            </div>
-        </section>
-
-        <!-- Rowing Progress -->
-        <section class="workout-card mb-4">
-            <h2 class="text-lg font-bold mb-2">Rowing Progress</h2>
-            <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                    <span class="text-sm">Breathe</span>
-                    <span id="breatheProgress" class="font-medium"></span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-sm">Sweat</span>
-                    <span id="sweatProgress" class="font-medium"></span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-sm">Drive</span>
-                    <span id="driveProgress" class="font-medium"></span>
-                </div>
-            </div>
-        </section>
-
-        <!-- This Week's Progress -->
-        <section class="workout-card mb-4">
-            <h2 class="text-lg font-bold mb-2">This Week's Progress</h2>
-            <div id="weeklyDots" class="flex justify-between mb-2"></div>
-            <p id="workoutsComplete" class="text-center"></p>
-        </section>
-
-        <!-- Today's Workout -->
-        <section class="workout-card mb-4">
-            <h2 class="text-lg font-bold mb-2">Today's Workout</h2>
-            <p id="todayWorkout" class="mb-2"></p>
-            <button id="startWorkoutBtn" class="w-full py-2 px-4 bg-green-500 text-white rounded-lg shadow">
-                Start Workout
-            </button>
-        </section>
-
-        <!-- All Workouts -->
-        <section class="workout-card mb-4">
-            <h2 class="text-lg font-bold mb-2">Select Workout</h2>
-            <div class="space-y-2">
-                <button id="chestTricepsBtn" class="w-full py-2 px-4 bg-gray-200 rounded-lg text-left">
-                    Chest & Triceps
-                </button>
-                <button id="shouldersBtn" class="w-full py-2 px-4 bg-gray-200 rounded-lg text-left">
-                    Shoulders
-                </button>
-                <button id="backBicepsBtn" class="w-full py-2 px-4 bg-gray-200 rounded-lg text-left">
-                    Back & Biceps
-                </button>
-            </div>
-        </section>
-
-        <!-- Recent Progress -->
-        <section class="workout-card mb-4">
-            <h2 class="text-lg font-bold mb-2">Recent Progress</h2>
-            <ul id="recentProgress" class="list-disc pl-5 mb-2"></ul>
-            <a href="progress.html" class="block w-full py-2 px-4 bg-blue-500 text-white text-center rounded-lg shadow">
-                View Full Progress
-            </a>
-        </section>
-    </div>
-
-    <!-- Application Initialization -->
     <script type="module">
-        async function initializeApp() {
+        const statusEl = document.getElementById('status');
+        
+        async function test() {
             try {
-                console.log('Starting application initialization...');
-                
-                // Import Firebase modules
-                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js');
-                const { getFirestore } = await import('https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js');
-                const { getAuth } = await import('https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js');
-                
-                console.log('Firebase modules imported successfully');
+                statusEl.textContent = 'Loading firebase-config.js...';
+                const firebaseConfig = await import('./firebase-config.js');
+                statusEl.textContent += ' Success!';
 
-                // Load application modules
-                const [firebaseConfig, workoutLib, dataManager, dashboard] = await Promise.all([
-                    import('./firebase-config.js'),
-                    import('./workoutLibrary.js'),
-                    import('./dataManager.js'),
-                    import('./dashboard.js')
-                ]);
+                statusEl.textContent += '\nLoading dataManager.js...';
+                const dataManager = await import('./dataManager.js');
+                statusEl.textContent += ' Success!';
 
-                console.log('Application modules loaded successfully');
+                statusEl.textContent += '\nAll modules loaded successfully.';
             } catch (error) {
+                statusEl.textContent += `\nError: ${error.message}`;
                 console.error('Error during initialization:', error);
             }
         }
 
-        // Initialize when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
-        } else {
-            initializeApp();
-        }
+        test();
     </script>
-
-    <!-- Version Display -->
-    <script>
-        fetch('manifest.json')
-            .then(response => response.json())
-            .then(manifest => {
-                document.querySelector('.app-version').textContent = `v${manifest.version}`;
-            })
-            .catch(error => {
-                console.error('Error loading version:', error);
-                document.querySelector('.app-version').textContent = 'v1.0.1';
-            });
-    </script>
-    <div class="app-version">v1.0.1</div>
 </body>
 </html>
