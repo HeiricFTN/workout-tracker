@@ -181,19 +181,17 @@ function getCurrentWorkoutType() {
 async function updateWeeklyProgress() {
     console.log('Starting updateWeeklyProgress');
     try {
-        const workouts = await dataManager.getWeeklyWorkouts(state.currentUser);
+        // Add test data for now
+        const workouts = [1, 3, 5]; // This will show Monday, Wednesday, Friday as complete
         console.log('Workouts received:', workouts);
         
         if (!elements.weeklyDots) {
             console.error('weeklyDots element not found');
             return;
         }
-
         const today = new Date().getDay();
         console.log('Today is day:', today);
-        
         const dayLabels = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
-        
         const dotsAndLabels = Array(7).fill('').map((_, index) => {
             let dotClass = 'progress-dot';
             if (workouts.includes(index)) {
@@ -201,18 +199,19 @@ async function updateWeeklyProgress() {
             } else if (index === today) {
                 dotClass += ' dot-today';
             } else {
-                dotClass += ' dot-upcoming';
-            }
+                dotClass += ' dot-upcoming';            }
             return `
                 <div class="flex flex-col items-center">
                     <span class="text-xs text-gray-600 mb-1">${dayLabels[index]}</span>
-                    <div class="${dotClass}"></div>
+                    <div class="${dotClass}" style="width: 12px; height: 12px; display: inline-block;"></div>
                 </div>
             `;
         });
-
-        elements.weeklyDots.innerHTML = dotsAndLabels.join('');
-        console.log('Dots HTML set:', elements.weeklyDots.innerHTML);
+        const htmlContent = dotsAndLabels.join('');
+        console.log('Generated HTML:', htmlContent);
+        elements.weeklyDots.innerHTML = htmlContent;
+// Add style check
+        console.log('Dot element style:', window.getComputedStyle(elements.weeklyDots.querySelector('.progress-dot')));
         
         if (elements.workoutsComplete) {
             elements.workoutsComplete.textContent = 
