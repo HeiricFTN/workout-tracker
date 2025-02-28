@@ -7,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body class="bg-gray-100">
     <div class="app-container">
@@ -99,40 +98,18 @@
         </section>
     </div>
 
-    <!-- Application Initialization -->
+    <!-- Firebase SDK -->
     <script type="module">
-        async function initializeApp() {
-            try {
-                console.log('Starting application initialization...');
-                
-                // Import Firebase modules
-                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js');
-                const { getFirestore } = await import('https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js');
-                const { getAuth } = await import('https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js');
-                
-                console.log('Firebase modules imported successfully');
-
-                // Load application modules
-                const [firebaseConfig, workoutLib, dataManager, dashboard] = await Promise.all([
-                    import('./firebase-config.js'),
-                    import('./workoutLibrary.js'),
-                    import('./dataManager.js'),
-                    import('./dashboard.js')
-                ]);
-
-                console.log('Application modules loaded successfully');
-            } catch (error) {
-                console.error('Error during initialization:', error);
-            }
-        }
-
-        // Initialize when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
-        } else {
-            initializeApp();
-        }
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js';
     </script>
+
+    <!-- Application Scripts -->
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="workoutLibrary.js"></script>
+    <script type="module" src="dataManager.js"></script>
+    <script type="module" src="dashboard.js"></script>
 
     <!-- Version Display -->
     <script>
