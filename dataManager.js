@@ -12,15 +12,19 @@ class DataManager {
 
 // User Management
 async getCurrentUser() {
-    return localStorage.getItem(this.storageKeys.currentUser) || 'Dad';
+    const user = localStorage.getItem(this.storageKeys.currentUser);
+    console.log('Getting current user from storage:', user); // Debug log
+    return user || 'Dad'; // Default to 'Dad' if null
 }
+
 async setCurrentUser(user) {
-    // Add validation to ensure only 'Dad' or 'Alex' are allowed
-    if (user !== 'Dad' && user !== 'Alex') {
+    console.log('Setting user to:', user); // Debug log
+    if (user === 'Dad' || user === 'Alex') {
+        localStorage.setItem(this.storageKeys.currentUser, user);
+        console.log('User set successfully to:', user); // Debug log
+    } else {
         console.error('Invalid user:', user);
-        return;
     }
-    localStorage.setItem(this.storageKeys.currentUser, user);
 }
 
     // Weekly Progress
