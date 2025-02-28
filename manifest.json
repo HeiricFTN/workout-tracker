@@ -2,7 +2,7 @@
     "name": "Dad & Alex Workout Tracker",
     "short_name": "Workout",
     "description": "Personal workout tracker for Dad and Alex with progress tracking and exercise guides",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "start_url": "/workout-tracker/",
     "id": "/workout-tracker/",
     "display": "standalone",
