@@ -132,18 +132,29 @@ body {
     height: 12px;
     border-radius: 50%;
     margin: 0 2px;
+    display: inline-block; /* Add this */
+    border: 1px solid #ccc; /* Add this */
 }
-
 .dot-complete {
     background-color: #48BB78;
+    border-color: #48BB78;
 }
-
 .dot-today {
     background-color: #4299E1;
+    border-color: #4299E1;
 }
-
 .dot-upcoming {
     background-color: #E2E8F0;
+    border-color: #E2E8F0;
+}
+
+/* Add this to ensure the container is visible */
+#weeklyDots {
+    min-height: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
 }
 
 /* Error and Success Messages */
