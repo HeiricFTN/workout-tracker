@@ -175,11 +175,12 @@ function getCurrentWorkoutType() {
 async function updateWeeklyProgress() {
     try {
         const workouts = await dataManager.getWeeklyWorkouts(state.currentUser);
-        if (!elements.weeklyDots) return;
-
+        if (!elements.weeklyDots) {
+            console.log('weeklyDots element not found');
+            return;
+        }
         const today = new Date().getDay();
         const dayLabels = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
-
         const dotsAndLabels = Array(7).fill('').map((_, index) => {
             let dotClass = 'progress-dot';
             if (workouts.includes(index)) {
@@ -198,6 +199,7 @@ async function updateWeeklyProgress() {
         });
 
         elements.weeklyDots.innerHTML = dotsAndLabels.join('');
+        console.log('Dots HTML set:', elements.weeklyDots.innerHTML); // Add this debug line
         if (elements.workoutsComplete) {
             elements.workoutsComplete.textContent = 
                 `${workouts.length} of 3 workouts complete this week`;
