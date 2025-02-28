@@ -10,14 +10,18 @@ class DataManager {
         };
     }
 
-    // User Management
-    async getCurrentUser() {
-        return localStorage.getItem(this.storageKeys.currentUser) || 'Dad';
+// User Management
+async getCurrentUser() {
+    return localStorage.getItem(this.storageKeys.currentUser) || 'Dad';
+}
+async setCurrentUser(user) {
+    // Add validation to ensure only 'Dad' or 'Alex' are allowed
+    if (user !== 'Dad' && user !== 'Alex') {
+        console.error('Invalid user:', user);
+        return;
     }
-
-    async setCurrentUser(user) {
-        localStorage.setItem(this.storageKeys.currentUser, user);
-    }
+    localStorage.setItem(this.storageKeys.currentUser, user);
+}
 
     // Weekly Progress
     async getWeeklyWorkouts(userId) {
