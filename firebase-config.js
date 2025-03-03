@@ -80,8 +80,6 @@ const FirebaseHelper = {
         }
     },
 const FirebaseHelper = {
-    // ... existing methods ...
-
     calculatePacePerFiveHundred(meters, minutes) {
         if (!meters || !minutes) return "0:00";
         
@@ -96,8 +94,7 @@ const FirebaseHelper = {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     },
 
-    
-    async getProgress(userId) {
+   async getProgress(userId) {
         try {
             const progressRef = doc(db, 'progress', userId);
             const docSnap = await getDoc(progressRef);
