@@ -127,7 +127,8 @@ class ProgressTracker {
     }
 
     // Rowing Specific Methods
-    async getRowingStats(user) {
+async getRowingStats(user) {
+    try {
         const progress = await this.dataManager.getProgress(user);
         const stats = {};
 
@@ -135,8 +136,8 @@ class ProgressTracker {
             const key = `rowing_${type}`;
             if (progress[key]) {
                 stats[type] = {
-                    bestPace: Math.round(progress[key].personalBest.pace),
-                    recentAverage: this.calculateRecentAverage(progress[key].history),
+                    bestPace: progress[key].personalBest?.pacePerFiveHundred || "0:00",
+                    recentAverage: this.calculateRecentPacePerFiveHundred(progress[key].history),
                     totalMeters: this.calculateTotalMeters(progress[key].history),
                     totalMinutes: this.calculateTotalMinutes(progress[key].history)
                 };
@@ -144,7 +145,11 @@ class ProgressTracker {
         }
 
         return stats;
+    } catch (error) {
+        console.error('Error getting rowing stats:', error);
+        return {};
     }
+}
 
     calculateRecentAverage(history, entries = 5) {
         if (!history.length) return 0;
