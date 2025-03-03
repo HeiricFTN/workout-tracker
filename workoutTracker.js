@@ -46,8 +46,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const workoutType = urlParams.get('type');
 
         try {
-            state.currentWorkout = await FirebaseHelper.getWorkout(state.currentUser, workoutType) 
-                               || workoutLibrary[workoutType];
+            state.currentWorkout = workoutLibrary[workoutType];
 
             if (!state.currentWorkout) {
                 throw new Error(`Invalid workout type: ${workoutType}`);
