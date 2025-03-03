@@ -32,7 +32,7 @@ console.log('Elements found:', {
 // State management
 let state = {
     currentUser: 'Dad', // Set default
-    programStart: new Date('2025-02-18'),
+    programStart: new Date('2025-03-03'),
     workouts: ['Chest & Triceps', 'Shoulders', 'Back & Biceps']
 };
 
