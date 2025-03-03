@@ -31,23 +31,34 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Authentication state
-let isAuthenticated = true;
-
 // Helper functions for data operations
 const FirebaseHelper = {
+    calculatePacePerFiveHundred(meters, minutes) {
+        if (!meters || !minutes) return "0:00";
+        
+        // Calculate minutes per 500m
+        const minutesPer500 = (minutes * 500) / meters;
+        
+        // Convert to minutes and seconds
+        const mins = Math.floor(minutesPer500);
+        const secs = Math.round((minutesPer500 - mins) * 60);
+        
+        // Format as M:SS
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    },
+
     async saveWorkout(userId, workoutData) {
         try {
             const workoutRef = collection(db, 'workouts');
-            await addDoc(workoutRef, {
+            const docRef = await addDoc(workoutRef, {
                 userId,
                 ...workoutData,
                 timestamp: new Date()
             });
-            return true;
+            return { id: docRef.id, ...workoutData };
         } catch (error) {
             console.error('Error saving workout:', error);
-            return false;
+            return null;
         }
     },
 
@@ -73,35 +84,21 @@ const FirebaseHelper = {
         try {
             const progressRef = doc(db, 'progress', userId);
             await setDoc(progressRef, progressData, { merge: true });
-            return true;
+            return { id: userId, ...progressData };
         } catch (error) {
             console.error('Error saving progress:', error);
-            return false;
+            return null;
         }
     },
-const FirebaseHelper = {
-    calculatePacePerFiveHundred(meters, minutes) {
-        if (!meters || !minutes) return "0:00";
-        
-        // Calculate minutes per 500m
-        const minutesPer500 = (minutes * 500) / meters;
-        
-        // Convert to minutes and seconds
-        const mins = Math.floor(minutesPer500);
-        const secs = Math.round((minutesPer500 - mins) * 60);
-        
-        // Format as M:SS
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    },
 
-   async getProgress(userId) {
+    async getProgress(userId) {
         try {
             const progressRef = doc(db, 'progress', userId);
             const docSnap = await getDoc(progressRef);
-            return docSnap.exists() ? docSnap.data() : {};
+            return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
         } catch (error) {
             console.error('Error getting progress:', error);
-            return {};
+            return null;
         }
     },
 
@@ -109,7 +106,7 @@ const FirebaseHelper = {
         try {
             const progressRef = doc(db, 'workoutProgress', `${userId}_${workoutName}`);
             const docSnap = await getDoc(progressRef);
-            return docSnap.exists() ? docSnap.data() : null;
+            return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
         } catch (error) {
             console.error('Error getting workout progress:', error);
             return null;
@@ -123,10 +120,10 @@ const FirebaseHelper = {
                 ...progressData,
                 lastUpdated: new Date()
             }, { merge: true });
-            return true;
+            return { id: `${userId}_${progressData.name}`, ...progressData };
         } catch (error) {
             console.error('Error saving workout progress:', error);
-            return false;
+            return null;
         }
     },
 
