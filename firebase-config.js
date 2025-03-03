@@ -79,7 +79,24 @@ const FirebaseHelper = {
             return false;
         }
     },
+const FirebaseHelper = {
+    // ... existing methods ...
 
+    calculatePacePerFiveHundred(meters, minutes) {
+        if (!meters || !minutes) return "0:00";
+        
+        // Calculate minutes per 500m
+        const minutesPer500 = (minutes * 500) / meters;
+        
+        // Convert to minutes and seconds
+        const mins = Math.floor(minutesPer500);
+        const secs = Math.round((minutesPer500 - mins) * 60);
+        
+        // Format as M:SS
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    },
+
+    
     async getProgress(userId) {
         try {
             const progressRef = doc(db, 'progress', userId);
