@@ -126,21 +126,21 @@ class DataManager {
         }
     }
     // Weekly Progress
-    async getWeeklyWorkouts(userId) {
-        try {
-            const currentWeek = this.getCurrentWeek();
-            const workouts = await this.getWorkouts(userId);
-            const workoutDays = workouts
-                .filter(workout => workout.week === currentWeek)
-                .map(workout => new Date(workout.date).getDay());
-            
-            console.log('Weekly workouts:', workoutDays);
-            return workoutDays.length > 0 ? workoutDays : [1, 3, 5]; // Fallback to test data
-        } catch (error) {
-            console.error('Error getting weekly workouts:', error);
-            return [1, 3, 5]; // Fallback to test data
-        }
+async getWeeklyWorkouts(userId) {
+    try {
+        const currentWeek = this.getCurrentWeek();
+        const workouts = await this.getWorkouts(userId);
+        const workoutDays = workouts
+            .filter(workout => workout.week === currentWeek)
+            .map(workout => new Date(workout.date).getDay());
+        
+        console.log('Weekly workouts:', workoutDays);
+        return workoutDays;
+    } catch (error) {
+        console.error('Error getting weekly workouts:', error);
+        return []; // Return empty array instead of test data [1, 3, 5]
     }
+}
 
     // Progress Management
     async updateProgress(userId, workoutData) {
