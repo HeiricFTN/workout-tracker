@@ -189,34 +189,36 @@ async getWeeklyWorkouts(userId) {
         });
     }
 
-    updateRowingProgress(progress, rowingData) {
-        const rowingKey = `rowing_${rowingData.type}`;
-        if (!progress[rowingKey]) {
-            progress[rowingKey] = {
-                history: [],
-                personalBest: {}
-            };
-        }
+updateRowingProgress(progress, rowingData) {
+    const rowingKey = `rowing_${rowingData.type}`;
+    if (!progress[rowingKey]) {
+        progress[rowingKey] = {
+            history: [],
+            personalBest: {}
+        };
+    }
 
-        const pacePerMinute = rowingData.meters / rowingData.minutes;
-        const rowingProgress = progress[rowingKey];
+    const pacePerMinute = rowingData.meters / rowingData.minutes;
+    const rowingProgress = progress[rowingKey];
 
-        rowingProgress.history.push({
-            date: new Date().toISOString(),
+    rowingProgress.history.push({
+        date: new Date().toISOString(),
+        minutes: rowingData.minutes,
+        meters: rowingData.meters,
+        pace: pacePerMinute,
+        pacePerFiveHundred: this.calculatePacePerFiveHundred(rowingData.meters, rowingData.minutes)
+    });
+
+    if (!rowingProgress.personalBest.pace || pacePerMinute > rowingProgress.personalBest.pace) {
+        rowingProgress.personalBest = {
             minutes: rowingData.minutes,
             meters: rowingData.meters,
-            pace: pacePerMinute
-        });
-
-        if (!rowingProgress.personalBest.pace || pacePerMinute > rowingProgress.personalBest.pace) {
-            rowingProgress.personalBest = {
-                minutes: rowingData.minutes,
-                meters: rowingData.meters,
-                pace: pacePerMinute,
-                date: new Date().toISOString()
-            };
-        }
+            pace: pacePerMinute,
+            pacePerFiveHundred: this.calculatePacePerFiveHundred(rowingData.meters, rowingData.minutes),
+            date: new Date().toISOString()
+        };
     }
+}
 
     updatePersonalBest(exerciseProgress, exercise) {
         if (!exercise.sets || exercise.sets.length === 0) return;
