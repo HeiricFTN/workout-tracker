@@ -42,8 +42,8 @@ let isAuthenticated = false;
 async function authenticateApp() {
     try {
         // Replace these with your secure authentication details
-        const email = "admin@workouttracker.com";
-        const password = "your-secure-password";
+        const email = "heiric@gmail.com";
+        const password = "Sup3rman807!";
 
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         isAuthenticated = true;
