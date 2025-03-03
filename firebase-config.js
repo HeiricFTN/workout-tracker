@@ -1,20 +1,24 @@
 // firebase-config.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { 
-    getFirestore,
-    collection,
-    doc,
-    addDoc,
-    getDoc,
-    getDocs,
-    setDoc,
-    query,
-    where,
-    orderBy
+    getFirestore, 
+    collection, 
+    doc, 
+    addDoc, 
+    getDoc, 
+    getDocs, 
+    setDoc, 
+    query, 
+    where, 
+    orderBy 
 } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+import { 
+    getAuth, 
+    signInWithEmailAndPassword,
+    onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
-// Your Firebase configuration
+// Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCt-35h-UfdO3WQeL7X7p43tatItPQ3cGw",
     authDomain: "workout-tracker-74d9c.firebaseapp.com",
@@ -31,10 +35,45 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// Authentication state
+let isAuthenticated = false;
+
+// Authentication function
+async function authenticateApp() {
+    try {
+        // Replace these with your secure authentication details
+        const email = "admin@workouttracker.com";
+        const password = "your-secure-password";
+
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        isAuthenticated = true;
+        console.log('Authentication successful');
+        return userCredential.user;
+    } catch (error) {
+        console.error('Authentication failed:', error);
+        isAuthenticated = false;
+        throw error;
+    }
+}
+
+// Monitor auth state
+onAuthStateChanged(auth, (user) => {
+    isAuthenticated = !!user;
+    console.log('Auth state changed:', isAuthenticated ? 'authenticated' : 'not authenticated');
+});
+
 // Helper functions for data operations
 const FirebaseHelper = {
+    async ensureAuthenticated() {
+        if (!isAuthenticated) {
+            await authenticateApp();
+        }
+        return isAuthenticated;
+    },
+
     async saveWorkout(userId, workoutData) {
         try {
+            await this.ensureAuthenticated();
             const workoutRef = collection(db, 'workouts');
             await addDoc(workoutRef, {
                 userId,
@@ -50,6 +89,7 @@ const FirebaseHelper = {
 
     async getWorkouts(userId) {
         try {
+            await this.ensureAuthenticated();
             const q = query(
                 collection(db, 'workouts'),
                 where('userId', '==', userId),
@@ -68,6 +108,7 @@ const FirebaseHelper = {
 
     async saveProgress(userId, progressData) {
         try {
+            await this.ensureAuthenticated();
             const progressRef = doc(db, 'progress', userId);
             await setDoc(progressRef, progressData, { merge: true });
             return true;
@@ -79,6 +120,7 @@ const FirebaseHelper = {
 
     async getProgress(userId) {
         try {
+            await this.ensureAuthenticated();
             const progressRef = doc(db, 'progress', userId);
             const docSnap = await getDoc(progressRef);
             return docSnap.exists() ? docSnap.data() : {};
@@ -88,8 +130,36 @@ const FirebaseHelper = {
         }
     },
 
+    async getWorkoutProgress(userId, workoutName) {
+        try {
+            await this.ensureAuthenticated();
+            const progressRef = doc(db, 'workoutProgress', `${userId}_${workoutName}`);
+            const docSnap = await getDoc(progressRef);
+            return docSnap.exists() ? docSnap.data() : null;
+        } catch (error) {
+            console.error('Error getting workout progress:', error);
+            return null;
+        }
+    },
+
+    async saveWorkoutProgress(userId, progressData) {
+        try {
+            await this.ensureAuthenticated();
+            const progressRef = doc(db, 'workoutProgress', `${userId}_${progressData.name}`);
+            await setDoc(progressRef, {
+                ...progressData,
+                lastUpdated: new Date()
+            }, { merge: true });
+            return true;
+        } catch (error) {
+            console.error('Error saving workout progress:', error);
+            return false;
+        }
+    },
+
     async isOnline() {
         try {
+            await this.ensureAuthenticated();
             const testRef = doc(db, '_health', 'online');
             await Promise.race([
                 getDoc(testRef),
@@ -104,6 +174,11 @@ const FirebaseHelper = {
         }
     }
 };
+
+// Initialize authentication
+await authenticateApp().catch(error => {
+    console.error('Initial authentication failed:', error);
+});
 
 // Export initialized instances and helper
 export { db, auth, FirebaseHelper };
