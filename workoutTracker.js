@@ -1,7 +1,7 @@
 // workoutTracker.js
 import dataManager from './dataManager.js';
 import workoutLibrary from './workoutLibrary.js';
-import firebaseService from './services/firebaseService.js';
+import { FirebaseHelper } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', async function() {
     const elements = {
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const workoutType = urlParams.get('type');
 
         try {
-            state.currentWorkout = await firebaseService.getWorkout(state.currentUser, workoutType) 
+            state.currentWorkout = await FirebaseHelper.getWorkout(state.currentUser, workoutType) 
                                || workoutLibrary[workoutType];
 
             if (!state.currentWorkout) {
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     async function renderWorkout() {
         elements.workoutContainer.innerHTML = '';
-        const savedData = await firebaseService.getWorkoutProgress(state.currentUser, state.currentWorkout.name);
+        const savedData = await FirebaseHelper.getWorkoutProgress(state.currentUser, state.currentWorkout.name);
         
         state.currentWorkout.supersets.forEach((superset, index) => {
             const supersetElement = renderSuperset(superset, index, savedData);
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function saveProgress() {
         try {
             const progressData = collectWorkoutData();
-            await firebaseService.saveWorkoutProgress(state.currentUser, progressData);
+            await FirebaseHelper.saveWorkoutProgress(state.currentUser, progressData);
             state.hasUnsavedChanges = false;
         } catch (error) {
             console.error('Error saving progress:', error);
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             showLoading(true);
             const workoutData = collectWorkoutData();
             
-            await firebaseService.saveWorkout(state.currentUser, workoutData);
+            await FirebaseHelper.saveWorkout(state.currentUser, workoutData);
             await dataManager.saveWorkout(state.currentUser, workoutData);
             
             showSuccess('Workout completed and saved!');
