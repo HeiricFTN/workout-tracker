@@ -280,10 +280,7 @@ processRecentProgress(progress) {
 
     const recentProgress = [];
 
-    processRecentProgress(progress) {
-        const recentProgress = [];
-
-        // Process exercise progress
+    // Process exercise progress
     Object.entries(progress)
         .filter(([key, value]) => key && value && !key.startsWith('rowing_') && Array.isArray(value.history))
         .forEach(([name, data]) => {
@@ -303,7 +300,7 @@ processRecentProgress(progress) {
             }
         });
 
-        // Process rowing progress
+    // Process rowing progress
     ['Breathe', 'Sweat', 'Drive'].forEach(type => {
         const rowingKey = `rowing_${type}`;
         const rowingData = progress[rowingKey];
@@ -327,7 +324,19 @@ processRecentProgress(progress) {
     return recentProgress.sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
-
+calculatePacePerFiveHundred(meters, minutes) {
+    if (!meters || !minutes) return "0:00";
+    
+    // Calculate minutes per 500m
+    const minutesPer500 = (minutes * 500) / meters;
+    
+    // Convert to minutes and seconds
+    const mins = Math.floor(minutesPer500);
+    const secs = Math.round((minutesPer500 - mins) * 60);
+    
+    // Format as M:SS
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
     // Utility Functions
     getCurrentWeek() {
         const today = new Date();
