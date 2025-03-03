@@ -252,18 +252,15 @@ async function updateRecentProgress() {
         const progress = await dataManager.getRecentProgress(state.currentUser);
         
         if (!progress || progress.length === 0) {
-            elements.recentProgress.innerHTML = 
-                '<li class="text-gray-600">No recent progress recorded</li>';
+            elements.recentProgress.innerHTML = '<li class="text-gray-600">No recent progress recorded</li>';
             return;
         }
 
         elements.recentProgress.innerHTML = progress
             .slice(0, 3)
             .map(p => {
-                if (p.type === 'dumbbell') {
+                if (p.type === 'exercise') {
                     return `<li class="mb-1">${p.exercise}: ${p.previousWeight}→${p.currentWeight} lbs</li>`;
-                } else if (p.type === 'trx') {
-                    return `<li class="mb-1">${p.exercise}: ${p.previousReps}→${p.currentReps} reps</li>`;
                 } else if (p.type === 'rowing') {
                     return `<li class="mb-1">${p.exercise}: ${p.previousPace}→${p.currentPace} m/min</li>`;
                 }
@@ -272,6 +269,7 @@ async function updateRecentProgress() {
             .join('');
     } catch (error) {
         console.error('Error updating recent progress:', error);
+        elements.recentProgress.innerHTML = '<li class="text-red-600">Error loading recent progress</li>';
     }
 }
 
@@ -325,16 +323,18 @@ async function initializeDashboard() {
         // Load data
         console.log('Starting data updates...');
         await Promise.all([
-            updateWeeklyProgress(),
-            updateRowingProgress(),
-            updateRecentProgress()
+            updateWeeklyProgress().catch(error => console.error('Error updating weekly progress:', error)),
+            updateRowingProgress().catch(error => console.error('Error updating rowing progress:', error)),
+            updateRecentProgress().catch(error => console.error('Error updating recent progress:', error))
         ]);
         
         console.log('Dashboard initialization complete');
     } catch (error) {
         console.error('Error initializing dashboard:', error);
+        showError('There was an error loading the dashboard. Please try refreshing the page.');
     }
 }
+
 
 // Main initialization
 document.addEventListener('DOMContentLoaded', async function() {
