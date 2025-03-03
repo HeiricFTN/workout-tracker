@@ -258,60 +258,75 @@ updateRowingProgress(progress, rowingData) {
         }
     }
 
-    async getRecentProgress(userId) {
-        try {
-            const progress = await this.getProgress(userId);
-            return this.processRecentProgress(progress);
-        } catch (error) {
-            console.error('Error getting recent progress:', error);
+async getRecentProgress(userId) {
+    try {
+        const progress = await this.getProgress(userId);
+        if (!progress || typeof progress !== 'object') {
+            console.warn('No valid progress data available for user:', userId);
             return [];
         }
+        return this.processRecentProgress(progress);
+    } catch (error) {
+        console.error('Error getting recent progress:', error);
+        return [];
     }
+}
+
+processRecentProgress(progress) {
+    if (!progress || typeof progress !== 'object') {
+        console.warn('Invalid progress data received in processRecentProgress');
+        return [];
+    }
+
+    const recentProgress = [];
 
     processRecentProgress(progress) {
         const recentProgress = [];
 
         // Process exercise progress
-        Object.entries(progress)
-            .filter(([key]) => !key.startsWith('rowing_'))
-            .forEach(([name, data]) => {
-                if (data.history && data.history.length > 0) {
-                    const recent = data.history[data.history.length - 1];
-                    const previous = data.history[data.history.length - 2];
-                    
-                    if (recent && previous) {
-                        recentProgress.push({
-                            type: 'exercise',
-                            exercise: name,
-                            previousWeight: previous.weight,
-                            currentWeight: recent.weight,
-                            date: recent.date
-                        });
-                    }
-                }
-            });
-
-        // Process rowing progress
-        ['Breathe', 'Sweat', 'Drive'].forEach(type => {
-            const rowingKey = `rowing_${type}`;
-            const rowingData = progress[rowingKey];
-            
-            if (rowingData?.history?.length > 1) {
-                const recent = rowingData.history[rowingData.history.length - 1];
-                const previous = rowingData.history[rowingData.history.length - 2];
+    Object.entries(progress)
+        .filter(([key, value]) => key && value && !key.startsWith('rowing_') && Array.isArray(value.history))
+        .forEach(([name, data]) => {
+            if (data.history && data.history.length > 1) {
+                const recent = data.history[data.history.length - 1];
+                const previous = data.history[data.history.length - 2];
                 
-                recentProgress.push({
-                    type: 'rowing',
-                    exercise: type,
-                    previousPace: Math.round(previous.pace),
-                    currentPace: Math.round(recent.pace),
-                    date: recent.date
-                });
+                if (recent && previous) {
+                    recentProgress.push({
+                        type: 'exercise',
+                        exercise: name,
+                        previousWeight: previous.weight || 0,
+                        currentWeight: recent.weight || 0,
+                        date: recent.date || new Date().toISOString()
+                    });
+                }
             }
         });
 
-        return recentProgress.sort((a, b) => new Date(b.date) - new Date(a.date));
-    }
+        // Process rowing progress
+    ['Breathe', 'Sweat', 'Drive'].forEach(type => {
+        const rowingKey = `rowing_${type}`;
+        const rowingData = progress[rowingKey];
+        
+        if (rowingData && rowingData.history && rowingData.history.length > 1) {
+            const recent = rowingData.history[rowingData.history.length - 1];
+            const previous = rowingData.history[rowingData.history.length - 2];
+            
+            if (recent && previous) {
+                recentProgress.push({
+                    type: 'rowing',
+                    exercise: type,
+                    previousPace: Math.round(previous.pace || 0),
+                    currentPace: Math.round(recent.pace || 0),
+                    date: recent.date || new Date().toISOString()
+                });
+            }
+        }
+    });
+
+    return recentProgress.sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
 
     // Utility Functions
     getCurrentWeek() {
