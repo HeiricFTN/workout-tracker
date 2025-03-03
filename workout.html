@@ -1,282 +1,133 @@
-// workoutTracker.js
-import dataManager from './dataManager.js';
-import workoutLibrary from './workoutLibrary.js';
-import { FirebaseHelper } from './firebase-config.js';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Dad & Alex Workout</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.json">
+</head>
+<body class="bg-gray-100">
+<div class="app-container">
+<!-- Header -->
+<header class="mb-4">
+<div class="flex items-center justify-between">
+<a href="index.html" class="py-2 px-4 bg-gray-200 rounded-lg shadow">
+Back
+</a>
+<span id="currentUser" class="font-semibold"></span>
+</div>
+</header>
 
-document.addEventListener('DOMContentLoaded', async function() {
-    const elements = {
-        currentUser: document.getElementById('currentUser'),
-        workoutTitle: document.getElementById('workoutTitle'),
-        workoutContainer: document.getElementById('workoutContainer'),
-        completeWorkoutBtn: document.getElementById('completeWorkoutBtn'),
-        supersetTemplate: document.getElementById('supersetTemplate'),
-        exerciseTemplate: document.getElementById('exerciseTemplate'),
-        rowingType: document.getElementById('rowingType'),
-        rowingMinutes: document.getElementById('rowingMinutes'),
-        rowingMeters: document.getElementById('rowingMeters'),
-        loadingIndicator: document.getElementById('loadingIndicator')
-    };
+    <!-- Workout Title -->
+    <div id="workoutTitle" class="text-xl font-bold mb-4"></div>
 
-    const state = {
-        currentUser: '',
-        currentWorkout: null,
-        isLoading: false,
-        hasUnsavedChanges: false,
-        exerciseData: new Map()
-    };
+    <!-- Rowing Section -->
+    <section id="rowingSection" class="workout-card mb-6">
+        <h2 class="text-lg font-bold mb-2">Hydrow Rowing</h2>
+        <p class="text-sm text-gray-600 mb-4">Complete before strength training</p>
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="rowingType" class="block text-sm font-medium text-gray-700">Type</label>
+                    <select id="rowingType" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="Breathe">Breathe</option>
+                        <option value="Sweat">Sweat</option>
+                        <option value="Drive">Drive</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="rowingMinutes" class="block text-sm font-medium text-gray-700">Minutes</label>
+                    <input type="number" id="rowingMinutes" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="0">
+                </div>
+            </div>
+            <div>
+                <label for="rowingMeters" class="block text-sm font-medium text-gray-700">Meters</label>
+                <input type="number" id="rowingMeters" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="0">
+            </div>
+        </div>
+    </section>
 
-    async function init() {
-        try {
-            showLoading(true);
-            await loadWorkoutFromURL();
-            setupEventListeners();
-            setupAutoSave();
-            await renderWorkout();
-            showLoading(false);
-        } catch (error) {
-            console.error('Error initializing workout:', error);
-            showError('Error loading workout. Returning to dashboard.');
-            window.location.href = 'index.html';
-        }
-    }
+    <!-- Workout Container -->
+    <main id="workoutContainer" class="space-y-6">
+        <!-- Supersets will be inserted here by JavaScript -->
+    </main>
 
-    async function loadWorkoutFromURL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        state.currentUser = urlParams.get('user') || 'Dad';
-        const workoutType = urlParams.get('type');
+    <!-- Fixed Bottom Button -->
+    <div class="fixed-bottom">
+        <button id="completeWorkoutBtn" class="w-full py-3 bg-green-500 text-white rounded-lg shadow">
+            Complete Workout
+        </button>
+    </div>
+</div>
 
-        try {
-            state.currentWorkout = await FirebaseHelper.getWorkout(state.currentUser, workoutType) 
-                               || workoutLibrary[workoutType];
+<!-- Templates -->
+<template id="supersetTemplate">
+    <div class="superset workout-card">
+        <h3 class="font-semibold mb-4">Superset {number}</h3>
+        <div class="exercise-container space-y-4">
+            <!-- Exercises will be inserted here -->
+        </div>
+    </div>
+</template>
 
-            if (!state.currentWorkout) {
-                throw new Error(`Invalid workout type: ${workoutType}`);
-            }
+<template id="exerciseTemplate">
+    <div class="exercise">
+        <div class="mb-2">
+            <h4 class="font-medium">{name}</h4>
+            <p class="text-sm text-gray-600">{description}</p>
+        </div>
+        <div class="exercise-grid">
+            <!-- For dumbbells -->
+            <div class="weight-input-container {hideForTRX}">
+                <label class="text-sm text-gray-600">Weight (lbs)</label>
+                <input type="number" 
+                       class="number-input weight-input" 
+                       min="0" 
+                       max="999" 
+                       placeholder="0">
+            </div>
+            <!-- For all exercises -->
+            <div class="reps-input-container">
+                <label class="text-sm text-gray-600">Reps</label>
 
-            elements.currentUser.textContent = state.currentUser;
-            elements.workoutTitle.textContent = state.currentWorkout.name;
-        } catch (error) {
-            console.error('Error loading workout:', error);
-            throw error;
-        }
-    }
+                <input type="number" 
+                       class="number-input reps-input" 
+                       min="0" 
+                       max="999" 
+                       placeholder="0">
+            </div>
+        </div>
+    </div>
+</template>
 
-    function setupEventListeners() {
-        elements.completeWorkoutBtn.addEventListener('click', completeWorkout);
-        setupInputListeners();
-        setupBeforeUnloadWarning();
-    }
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js';
+import { getAuth } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js';
+</script>
 
-    function setupInputListeners() {
-        elements.workoutContainer.addEventListener('input', (event) => {
-            if (event.target.matches('input')) {
-                state.hasUnsavedChanges = true;
-                validateInput(event.target);
-                updateExerciseData(event.target);
-            }
+<!-- Application Scripts -->
+<script type="module" src="firebase-config.js"></script>
+<script type="module" src="workoutLibrary.js"></script>
+<script type="module" src="dataManager.js"></script>
+<script type="module" src="workoutTracker.js"></script>
+
+<!-- Version Display -->
+<script>
+    fetch('manifest.json')
+        .then(response => response.json())
+        .then(manifest => {
+            document.querySelector('.app-version').textContent = `v${manifest.version}`;
+        })
+        .catch(error => {
+            console.error('Error loading version:', error);
+            document.querySelector('.app-version').textContent = 'v1.0.0';
         });
+</script>
+<div class="app-version">v1.0.0</div>
 
-        elements.rowingMeters.addEventListener('input', validateRowingInput);
-        elements.rowingMinutes.addEventListener('input', validateRowingInput);
-    }
-
-    function setupBeforeUnloadWarning() {
-        window.addEventListener('beforeunload', (e) => {
-            if (state.hasUnsavedChanges) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        });
-    }
-
-    function setupAutoSave() {
-        setInterval(async () => {
-            if (state.hasUnsavedChanges) {
-                await saveProgress();
-            }
-        }, 30000);
-    }
-
-    async function renderWorkout() {
-        elements.workoutContainer.innerHTML = '';
-        const savedData = await FirebaseHelper.getWorkoutProgress(state.currentUser, state.currentWorkout.name);
-        
-        state.currentWorkout.supersets.forEach((superset, index) => {
-            const supersetElement = renderSuperset(superset, index, savedData);
-            elements.workoutContainer.appendChild(supersetElement);
-        });
-    }
-
-    function renderSuperset(superset, index, savedData) {
-        const template = elements.supersetTemplate.content.cloneNode(true);
-        const supersetElement = template.querySelector('.superset');
-        
-        supersetElement.querySelector('h3').textContent = `Superset ${index + 1}`;
-        const exerciseContainer = supersetElement.querySelector('.exercise-container');
-
-        superset.exercises.forEach(exercise => {
-            const exerciseElement = renderExercise(exercise, savedData);
-            exerciseContainer.appendChild(exerciseElement);
-        });
-
-        return supersetElement;
-    }
-
-    function renderExercise(exercise, savedData) {
-        const template = elements.exerciseTemplate.content.cloneNode(true);
-        const exerciseElement = template.querySelector('.exercise');
-
-        exerciseElement.querySelector('h4').textContent = exercise.name;
-        exerciseElement.querySelector('p').textContent = exercise.description;
-
-        const savedExercise = savedData?.exercises?.find(e => e.name === exercise.name);
-        setupExerciseInputs(exerciseElement, exercise, savedExercise);
-
-        return exerciseElement;
-    }
-
-    function setupExerciseInputs(element, exercise, savedData) {
-        const weightInputs = element.querySelectorAll('.weight-input');
-        const repsInputs = element.querySelectorAll('.reps-input');
-
-        if (exercise.type === 'trx') {
-            weightInputs.forEach(input => input.closest('.weight-input-container').classList.add('hidden'));
-        }
-
-        if (savedData) {
-            savedData.sets.forEach((set, index) => {
-                if (weightInputs[index]) weightInputs[index].value = set.weight || '';
-                if (repsInputs[index]) repsInputs[index].value = set.reps || '';
-            });
-        }
-    }
-
-    function validateInput(input) {
-        const value = parseInt(input.value);
-        if (isNaN(value) || value < 0) {
-            input.value = '';
-        } else if (value > 999) {
-            input.value = '999';
-        }
-    }
-
-    function validateRowingInput() {
-        const minutes = parseInt(elements.rowingMinutes.value) || 0;
-        const meters = parseInt(elements.rowingMeters.value) || 0;
-        
-        const isValid = minutes > 0 && meters > 0;
-        elements.completeWorkoutBtn.disabled = !isValid;
-    }
-
-    function updateExerciseData(input) {
-        const exerciseElement = input.closest('.exercise');
-        const exerciseName = exerciseElement.querySelector('h4').textContent;
-        
-        if (!state.exerciseData.has(exerciseName)) {
-            state.exerciseData.set(exerciseName, { sets: [] });
-        }
-        
-        const setIndex = Array.from(exerciseElement.querySelectorAll('input')).indexOf(input) % 2;
-        const isWeight = input.classList.contains('weight-input');
-        
-        const exerciseData = state.exerciseData.get(exerciseName);
-        if (!exerciseData.sets[setIndex]) {
-            exerciseData.sets[setIndex] = {};
-        }
-        
-        if (isWeight) {
-            exerciseData.sets[setIndex].weight = parseInt(input.value) || 0;
-        } else {
-            exerciseData.sets[setIndex].reps = parseInt(input.value) || 0;
-        }
-    }
-
-    async function saveProgress() {
-        try {
-            const progressData = collectWorkoutData();
-            await FirebaseHelper.saveWorkoutProgress(state.currentUser, progressData);
-            state.hasUnsavedChanges = false;
-        } catch (error) {
-            console.error('Error saving progress:', error);
-        }
-    }
-
-    function collectWorkoutData() {
-        return {
-            name: state.currentWorkout.name,
-            date: new Date().toISOString(),
-            rowing: getRowingData(),
-            exercises: Array.from(state.exerciseData.entries()).map(([name, data]) => ({
-                name,
-                sets: data.sets
-            }))
-        };
-    }
-
-    function getRowingData() {
-        return {
-            type: elements.rowingType.value,
-            minutes: parseInt(elements.rowingMinutes.value) || 0,
-            meters: parseInt(elements.rowingMeters.value) || 0
-        };
-    }
-
-    async function completeWorkout() {
-        try {
-            if (!validateWorkoutData()) {
-                showError('Please fill in all required fields before completing the workout.');
-                return;
-            }
-
-            showLoading(true);
-            const workoutData = collectWorkoutData();
-            
-            await FirebaseHelper.saveWorkout(state.currentUser, workoutData);
-            await dataManager.saveWorkout(state.currentUser, workoutData);
-            
-            showSuccess('Workout completed and saved!');
-            setTimeout(() => window.location.href = 'index.html', 1500);
-        } catch (error) {
-            console.error('Error completing workout:', error);
-            showError('Failed to save workout. Please try again.');
-        } finally {
-            showLoading(false);
-        }
-    }
-
-    function validateWorkoutData() {
-        const rowing = getRowingData();
-        if (rowing.minutes > 0 || rowing.meters > 0) {
-            if (rowing.minutes <= 0 || rowing.meters <= 0) return false;
-        }
-
-        return Array.from(state.exerciseData.values()).every(exercise => 
-            exercise.sets.every(set => {
-                if ('weight' in set) return set.weight > 0 && set.reps > 0;
-                return set.reps > 0;
-            })
-        );
-    }
-
-    function showLoading(show) {
-        state.isLoading = show;
-        elements.loadingIndicator?.classList.toggle('hidden', !show);
-        elements.completeWorkoutBtn.disabled = show;
-    }
-
-    function showError(message) {
-        // Implement error toast/notification
-        alert(message);
-    }
-
-    function showSuccess(message) {
-        // Implement success toast/notification
-        alert(message);
-    }
-
-    // Initialize the tracker
-    init().catch(error => {
-        console.error('Failed to initialize workout tracker:', error);
-        showError('Failed to initialize workout tracker');
-    });
-});
+</body>
+</html>
