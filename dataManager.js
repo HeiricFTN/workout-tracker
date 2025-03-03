@@ -10,7 +10,7 @@ class DataManager {
             workouts: userId => `workouts_${userId}`,
             progress: userId => `progress_${userId}`
         };
-        this.programStartDate = new Date('2025-02-18');
+        this.programStartDate = new Date('2025-03-03');
         this.initializeSync();
     }
 
