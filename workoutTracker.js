@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         const exerciseElement = elements.exerciseTemplate.content.cloneNode(true);
-        constnst exerciseContainer = exerciseElement.querySelector('.exercise');
+        const exerciseContainer = exerciseElement.querySelector('.exercise');
 
         if (!exerciseContainer) {
             console.error('Exercise container not found in template');
