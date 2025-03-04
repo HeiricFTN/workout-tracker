@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }, 30000);
     }
 
-    async functiotion renderWorkout() {
+    async function renderWorkout() {
         elements.workoutContainer.innerHTML = '';
         const savedData = await FirebaseHelper.getWorkoutProgress(state.currentUser, state.currentWorkout.name);
         
