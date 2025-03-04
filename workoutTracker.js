@@ -81,25 +81,25 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Verification: URL parameters are correctly handled
 
     function setupEventListeners() {
-        elemeements.completeWorkoutBtn.addEventListener('click', completeWorkout);
+        elements.completeWorkoutBtn.addEventListener('click', completeWorkout);
         setupInputListeners();
         setupBeforeUnloadWarning();
     }
 
     // Verification: Event listeners are correctly set up
 
-    function setupInpunputListeners() {
-        elements.workoutContainer.addEventListener('input', (event) => {
-            if (event.target.matches('input')) {
-                state.hasUnsavedChanges = true;
-                validateInput(event.target);
-                updateExerciseData(event.target);
-            }
-        });
+function setupInputListeners() {
+    elements.workoutContainer.addEventListener('input', (event) => {
+        if (event.target.matches('input')) {
+            state.hasUnsavedChanges = true;
+            validateInput(event.target);
+            updateExerciseData(event.target);
+        }
+    });
 
-        elements.rowingMeters.addEventListener('input', validateRowingInput);
-        elements.ts.rowingMinutes.addEventListener('input', validateRowingInput);
-    }
+    elements.rowingMeters.addEventListener('input', validateRowingInput);
+    elements.rowingMinutes.addEventListener('input', validateRowingInput);
+}
 
     // Verification: Input listeners are correctly set up
 
@@ -176,7 +176,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
 
-        return supersetContainer;
     }
 
     // Verification: Superset rendering logic is correct
