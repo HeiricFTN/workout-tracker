@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    functionion renderSuperset(superset, index, savedData) {
+    function renderSuperset(superset, index, savedData) {
         const template = elements.supersetTemplate.content.cloneNode(true);
         const supersetElement = template.querySelector('.superset');
         
