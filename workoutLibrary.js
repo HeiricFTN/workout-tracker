@@ -1,6 +1,7 @@
 // workoutLibrary.js
+
 import { db } from './firebase-config.js';
-import { doc, getDoc, setDoc, collection, query, where } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 
 const workoutLibrary = {
     // Chest & Triceps Workout
@@ -184,38 +185,37 @@ const workoutLibrary = {
     }
 };
 
-// Utility functions
-const WorkoutLibrary = {
-    getWorkout(type) {
+class WorkoutLibrary {
+    static getWorkout(type) {
         return workoutLibrary[type] || null;
-    },
+    }
 
-    getExerciseType(exercise) {
+    static getExerciseType(exercise) {
         return exercise.type || 'dumbbell';
-    },
+    }
 
-    needsWeight(exercise) {
+    static needsWeight(exercise) {
         return exercise.type === 'dumbbell';
-    },
+    }
 
-    getRowingTypes() {
+    static getRowingTypes() {
         return ["Breathe", "Sweat", "Drive"];
-    },
+    }
 
-    calculateRowingPace(meters, minutes) {
+    static calculateRowingPace(meters, minutes) {
         if (!minutes || minutes === 0) return 0;
         return Math.round(meters / minutes);
-    },
+    }
 
-    formatWorkoutForSave(workout) {
+    static formatWorkoutForSave(workout) {
         return {
             ...workout,
             lastUpdated: new Date().toISOString(),
             version: '1.0'
         };
-    },
+    }
 
-    validateWorkout(workout) {
+    static validateWorkout(workout) {
         if (!workout || !workout.name || !workout.supersets) {
             return false;
         }
@@ -229,9 +229,9 @@ const WorkoutLibrary = {
                 exercise.sets
             )
         );
-    },
+    }
 
-    getExercisesByType(type) {
+    static getExercisesByType(type) {
         const exercises = new Set();
         Object.values(workoutLibrary).forEach(workout => {
             workout.supersets.forEach(superset => {
@@ -243,16 +243,16 @@ const WorkoutLibrary = {
             });
         });
         return Array.from(exercises);
-    },
+    }
 
-    getAllExercises() {
+    static getAllExercises() {
         return {
             dumbbell: this.getExercisesByType('dumbbell'),
             trx: this.getExercisesByType('trx')
         };
-    },
+    }
 
-    async getWorkoutFromFirebase(userId, workoutType) {
+    static async getWorkoutFromFirebase(userId, workoutType) {
         try {
             const workoutRef = doc(db, 'workouts', `${userId}_${workoutType}`);
             const workoutDoc = await getDoc(workoutRef);
@@ -265,9 +265,9 @@ const WorkoutLibrary = {
             console.error('Error getting workout from Firebase:', error);
             return this.getWorkout(workoutType);
         }
-    },
+    }
 
-    async saveWorkoutToFirebase(userId, workoutType, workoutData) {
+    static async saveWorkoutToFirebase(userId, workoutType, workoutData) {
         try {
             const workoutRef = doc(db, 'workouts', `${userId}_${workoutType}`);
             await setDoc(workoutRef, {
@@ -280,9 +280,9 @@ const WorkoutLibrary = {
             console.error('Error saving workout to Firebase:', error);
             return false;
         }
-    },
+    }
 
-    async getUserWorkoutHistory(userId, workoutType) {
+    static async getUserWorkoutHistory(userId, workoutType) {
         try {
             const q = query(
                 collection(db, 'workoutHistory'),
@@ -299,11 +299,6 @@ const WorkoutLibrary = {
             return [];
         }
     }
-};
+}
 
-// Freeze objects to prevent modifications
-Object.freeze(workoutLibrary);
-Object.freeze(WorkoutLibrary);
-
-// Export both the library and utility functions
 export { workoutLibrary as default, WorkoutLibrary };
