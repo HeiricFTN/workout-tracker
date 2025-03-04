@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }, 30000);
     }
 
-    async function renderWorkout() {
+    async functiotion renderWorkout() {
         elements.workoutContainer.innerHTML = '';
         const savedData = await FirebaseHelper.getWorkoutProgress(state.currentUser, state.currentWorkout.name);
         
@@ -106,11 +106,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    function renderSuperset(superset, index, savedData) {
+    functionion renderSuperset(superset, index, savedData) {
         const template = elements.supersetTemplate.content.cloneNode(true);
         const supersetElement = template.querySelector('.superset');
         
-        supersetElement.querySelector('h3').textContent = `Superset ${index + 1}`;
+        supersetElement.qt.querySelector('h3').textContent = `Superset ${index + 1}`;
         const exerciseContainer = supersetElement.querySelector('.exercise-container');
 
         superset.exercises.forEach(exercise => {
@@ -175,12 +175,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             state.exerciseData.set(exerciseName, { sets: [] });
         }
         
-        const setIndex = Array.from(exerciseElement.querySelectorAll('input')).indexOf(input) % 2;
+        const inputs = exerciseElement.querySelectorAll('input');
+        const inputIndex = Array.from(inputs).indexOf(input);
+        const setIndex = Math.floor(inputIndex / 2);
         const isWeight = input.classList.contains('weight-input');
         
         const exerciseData = state.exerciseData.get(exerciseName);
-        if (!exerciseData.sets[setIndex]) {
-            exerciseData.sets[setIndex] = {};
+        while (exerciseData.sets.length <= setIndex) {
+            exerciseData.sets.push({});
         }
         
         if (isWeight) {
@@ -188,6 +190,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
             exerciseData.sets[setIndex].reps = parseInt(input.value) || 0;
         }
+
+        console.log('Updated exercise data:', {
+            exerciseName,
+            setIndex,
+            data: exerciseData.sets[setIndex]
+        });
     }
 
     async function saveProgress() {
@@ -222,14 +230,18 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     async function completeWorkout() {
         try {
-            if (!validateWorkoutData()) {
+            const isValid = validateWorkoutData();
+            console.log('Workout validation result:', isValid);
+
+            if (!isValid) {
                 showError('Please fill in all required fields before completing the workout.');
                 return;
             }
 
             showLoading(true);
             const workoutData = collectWorkoutData();
-            
+            console.log('Collected workout data:', workoutData);
+
             await FirebaseHelper.saveWorkout(state.currentUser, workoutData);
             await dataManager.saveWorkout(state.currentUser, workoutData);
             
@@ -244,17 +256,67 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function validateWorkoutData() {
+        console.log('Validating workout data...');
+        
         const rowing = getRowingData();
-        if (rowing.minutes > 0 || rowing.meters > 0) {
-            if (rowing.minutes <= 0 || rowing.meters <= 0) return false;
+        console.log('Rowing data:', rowing);
+
+        console.log('Exercise data:', state.exerciseData);
+
+        if (state.exerciseData.size === 0) {
+            console.log('No exercise data found');
+            return false;
         }
 
-        return Array.from(state.exerciseData.values()).every(exercise => 
-            exercise.sets.every(set => {
-                if ('weight' in set) return set.weight > 0 && set.reps > 0;
-                return set.reps > 0;
-            })
-        );
+        const rowingValid = validateRowingData(rowing);
+        if (!rowingValid) {
+            console.log('Rowing validation failed');
+            return false;
+        }
+
+        const exercisesValid = validateExercises();
+        console.log('Exercises validation result:', exercisesValid);
+
+        return exercisesValid;
+    }
+
+    function validateRowingData(rowing) {
+        if (rowing.meters > 0 || rowing.minutes > 0) {
+            return rowing.meters > 0 && rowing.minutes > 0;
+        }
+        return true;
+    }
+
+    function validateExercises() {
+        const exerciseElements = document.querySelectorAll('.exercise');
+        
+        for (const exerciseElement of exerciseElements) {
+            const exerciseName = exerciseElement.querySelector('h4').textContent;
+            const exerciseData = state.exerciseData.get(exerciseName);
+            
+            if (!exerciseData || !exerciseData.sets || exerciseData.sets.length === 0) {
+                console.log(`Missing data for exercise: ${exerciseName}`);
+                return false;
+            }
+
+            const isTRX = exerciseElement.querySelectorAll('.weight-input-container.hidden').length > 0;
+
+            for (const set of exerciseData.sets) {
+                if (isTRX) {
+                    if (!set.reps || set.reps <= 0) {
+                        console.log(`Invalid TRX reps for ${exerciseName}:`, set);
+                        return false;
+                    }
+                } else {
+                    if (!set.weight || !set.reps || set.weight <= 0 || set.reps <= 0) {
+                        console.log(`Invalid dumbbell set for ${exerciseName}:`, set);
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     function showLoading(show) {
@@ -264,12 +326,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function showError(message) {
-        // Implement error toast/notification
         alert(message);
     }
 
     function showSuccess(message) {
-        // Implement success toast/notification
         alert(message);
     }
 
