@@ -176,6 +176,7 @@ function setupInputListeners() {
             });
         }
 
+    return supersetContainer;
     }
 
     // Verification: Superset rendering logic is correct
