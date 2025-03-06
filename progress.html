@@ -1,80 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
+<!--
+    progress.html
+    Progress tracking and analysis interface
+    Version: 1.0.1
+    Last Verified: 2024-03-06
+-->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="Progress tracking and analysis for Dad & Alex Workout Tracker">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <title>Progress Tracking - Dad & Alex Workout</title>
+
+    <!-- Stylesheets -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
+
+    <!-- Error Handler -->
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Error: ', msg, '\nURL: ', url, '\nLine: ', lineNo, '\nColumn: ', columnNo, '\nError: ', error);
+            return false;
+        };
+    </script>
 </head>
+
 <body class="bg-gray-100">
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+    </div>
+
     <div class="app-container">
-        <!-- Header -->
-        <header class="mb-4">
+        <!-- Navigation Header -->
+        <header class="mb-4" role="banner">
             <div class="flex items-center justify-between">
-                <a href="index.html" class="py-2 px-4 bg-gray-200 rounded-lg shadow">
+                <a href="index.html" 
+                   class="py-2 px-4 bg-gray-200 rounded-lg shadow"
+                   aria-label="Return to dashboard">
                     Back
                 </a>
-                <button id="userToggle" class="py-2 px-4 bg-blue-500 text-white rounded-lg shadow">
+                <button id="userToggle" 
+                        class="py-2 px-4 bg-blue-500 text-white rounded-lg shadow"
+                        aria-label="Toggle user selection">
                     Dad
                 </button>
             </div>
         </header>
 
         <!-- Week Selection -->
-        <div class="mb-6">
+        <div class="mb-6" role="region" aria-label="Week selection">
             <label for="weekSelector" class="block text-sm font-medium text-gray-700 mb-1">
                 Select Week
             </label>
             <select id="weekSelector" 
-                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                <!-- Week options will be populated by JavaScript -->
+                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    aria-label="Select week for progress view">
+                <!-- Week options populated by JavaScript -->
             </select>
         </div>
 
         <!-- Program Overview -->
-        <div class="workout-card mb-6">
-            <h2 class="text-lg font-bold mb-2">Program Overview</h2>
+        <section class="workout-card mb-6" aria-labelledby="programOverviewTitle">
+            <h2 id="programOverviewTitle" class="text-lg font-bold mb-2">Program Overview</h2>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <p class="text-sm text-gray-600">Current Week</p>
-                    <p id="currentWeek" class="text-xl font-bold"></p>
+                    <p id="currentWeek" class="text-xl font-bold" aria-live="polite"></p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-600">Program Phase</p>
-                    <p id="programPhase" class="text-xl font-bold"></p>
+                    <p id="programPhase" class="text-xl font-bold" aria-live="polite"></p>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- Rowing Progress -->
-        <div class="workout-card mb-6">
-            <h2 class="text-lg font-bold mb-2">Rowing Progress</h2>
-            <div id="rowingProgress" class="space-y-4">
-                <!-- Rowing progress will be inserted here by JavaScript -->
+        <section class="workout-card mb-6" aria-labelledby="rowingProgressTitle">
+            <h2 id="rowingProgressTitle" class="text-lg font-bold mb-2">Rowing Progress</h2>
+            <div id="rowingProgress" class="space-y-4" aria-live="polite">
+                <!-- Rowing progress inserted by JavaScript -->
             </div>
-        </div>
+        </section>
 
-        <!-- Progress Container -->
-        <div id="progressContainer" class="space-y-6">
-            <!-- Progress cards will be inserted here by JavaScript -->
-        </div>
+        <!-- Exercise Progress -->
+        <section id="progressContainer" class="space-y-6" aria-label="Exercise progress">
+            <!-- Progress cards inserted by JavaScript -->
+        </section>
 
-        <!-- Personal Bests Section -->
-        <div class="workout-card mt-6">
-            <h2 class="text-lg font-bold mb-2">Personal Bests</h2>
-            <div id="personalBests" class="space-y-2">
-                <!-- Personal bests will be inserted here by JavaScript -->
+        <!-- Personal Bests -->
+        <section class="workout-card mt-6" aria-labelledby="personalBestsTitle">
+            <h2 id="personalBestsTitle" class="text-lg font-bold mb-2">Personal Bests</h2>
+            <div id="personalBests" class="space-y-2" aria-live="polite">
+                <!-- Personal bests inserted by JavaScript -->
             </div>
-        </div>
+        </section>
 
         <!-- Next Week Targets -->
-        <div class="workout-card mt-6 mb-20">
-            <h2 class="text-lg font-bold mb-2">Next Week Targets</h2>
-            <div id="nextTargets" class="space-y-2">
-                <!-- Targets will be inserted here by JavaScript -->
+        <section class="workout-card mt-6 mb-20" aria-labelledby="nextTargetsTitle">
+            <h2 id="nextTargetsTitle" class="text-lg font-bold mb-2">Next Week Targets</h2>
+            <div id="nextTargets" class="space-y-2" aria-live="polite">
+                <!-- Targets inserted by JavaScript -->
             </div>
+        </section>
+    </div>
+
+    <!-- Error Display -->
+    <div id="errorDisplay" class="fixed top-4 right-4 hidden">
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline" id="errorMessage"></span>
         </div>
     </div>
 
@@ -94,7 +133,7 @@
                     <span class="text-sm text-gray-600">Previous Best</span>
                     <span class="font-medium">{best}</span>
                 </div>
-                <div class="progress-bar">
+                <div class="progress-bar" role="progressbar" aria-valuenow="{progressPercent}" aria-valuemin="0" aria-valuemax="100">
                     <div class="progress" style="width: {progressPercent}%"></div>
                 </div>
                 {suggestionHtml}
@@ -103,16 +142,26 @@
     </template>
 
     <template id="suggestionTemplate">
-        <div class="mt-2 p-2 bg-green-50 text-green-700 text-sm rounded">
+        <div class="mt-2 p-2 bg-green-50 text-green-700 text-sm rounded" role="note">
             <span class="font-medium">Suggestion:</span> {suggestion}
         </div>
     </template>
 
-    <!-- Firebase SDK -->
+    <!-- Scripts -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js';
-        import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js';
-        import { getAuth } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js';
+        // Firebase SDK Imports
+        try {
+            const modules = await Promise.all([
+                import('https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js'),
+                import('https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js'),
+                import('https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js')
+            ]);
+            console.log('Firebase SDK loaded successfully');
+        } catch (error) {
+            console.error('Error loading Firebase SDK:', error);
+            document.getElementById('errorMessage').textContent = 'Error loading application. Please refresh the page.';
+            document.getElementById('errorDisplay').classList.remove('hidden');
+        }
     </script>
 
     <!-- Application Scripts -->
@@ -131,9 +180,9 @@
             })
             .catch(error => {
                 console.error('Error loading version:', error);
-                document.querySelector('.app-version').textContent = 'v1.0.0';
+                document.querySelector('.app-version').textContent = 'v1.0.1';
             });
     </script>
-    <div class="app-version">v1.0.0</div>
+    <div class="app-version" aria-label="Application version">v1.0.1</div>
 </body>
 </html>
