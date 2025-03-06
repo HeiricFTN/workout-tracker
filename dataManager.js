@@ -439,49 +439,62 @@ class DataManager {
     }
 
     /**
-     * Get recent progress
-     * @param {string} userId - User ID
-     * @returns {Promise<Array>} Array of recent progress items
-     * @verification - Recent progress retrieval and calculation verified
-     */
-    async getRecentProgress(userId) {
-        try {
-            const progress = await this.getProgress(userId);
-            const recentProgress = [];
+ * Get recent progress
+ * @param {string} userId - User ID
+ * @returns {Promise<Array>} Array of recent progress items
+ * @verification - Recent progress retrieval and validation verified
+ */
+async getRecentProgress(userId) {
+    try {
+        console.log('Getting recent progress for user:', userId);
+        const progress = await this.getProgress(userId);
+        const recentProgress = [];
 
-            // Process exercise progress
-            for (const [exerciseName, exerciseData] of Object.entries(progress)) {
-                if (exerciseData.history && exerciseData.history.length >= 2) {
-                    const recent = exerciseData.history.slice(-2);
+        // Process exercise progress
+        for (const [exerciseName, exerciseData] of Object.entries(progress)) {
+            // Verify data structure is valid
+            if (!exerciseData?.history || !Array.isArray(exerciseData.history)) {
+                console.warn(`Invalid history data for ${exerciseName}`);
+                continue;
+            }
+
+            // Only process if we have at least 2 entries
+            if (exerciseData.history.length >= 2) {
+                const recent = exerciseData.history.slice(-2);
+                // Verify recent data has required properties
+                if (recent[0]?.sets?.[0] && recent[1]?.sets?.[0]) {
                     recentProgress.push({
                         type: 'exercise',
                         exercise: exerciseName,
-                        previousWeight: recent[0].sets[0].weight,
-                        currentWeight: recent[1].sets[0].weight
+                        previousWeight: recent[0].sets[0].weight || 0,
+                        currentWeight: recent[1].sets[0].weight || 0
                     });
                 }
             }
-
-            // Process rowing progress
-            for (const rowingType of ['Breathe', 'Sweat', 'Drive']) {
-                const rowingKey = `rowing_${rowingType}`;
-                if (progress[rowingKey] && progress[rowingKey].history && progress[rowingKey].history.length >= 2) {
-                    const recent = progress[rowingKey].history.slice(-2);
-                    recentProgress.push({
-                        type: 'rowing',
-                        exercise: rowingType,
-                        previousPace: recent[0].pace,
-                        currentPace: recent[1].pace
-                    });
-                }
-            }
-
-            console.log('Recent progress retrieved:', recentProgress);
-            return recentProgress.slice(-3); // Return only the 3 most recent items
-        } catch (error) {
-            console.error('Error getting recent progress:', error);
-            return [];
         }
+
+        // Process rowing progress
+        for (const rowingType of ['Breathe', 'Sweat', 'Drive']) {
+            const rowingKey = `rowing_${rowingType}`;
+            const rowingData = progress[rowingKey];
+
+            // Verify rowing data structure is valid
+            if (rowingData?.history && Array.isArray(rowingData.history) && rowingData.history.length >= 2) {
+                const recent = rowingData.history.slice(-2);
+                recentProgress.push({
+                    type: 'rowing',
+                    exercise: rowingType,
+                    previousPace: recent[0]?.pace || 0,
+                    currentPace: recent[1]?.pace || 0
+                });
+            }
+        }
+
+        console.log('Recent progress retrieved:', recentProgress);
+        return recentProgress.slice(-3); // Return only the 3 most recent items
+    } catch (error) {
+        console.error('Error getting recent progress:', error);
+        return [];
     }
 }
 
