@@ -1,19 +1,30 @@
 {
+    "//": "Dad & Alex Workout Tracker - PWA Manifest",
+    "//": "Version: 1.0.6",
+    "//": "Last Verified: 2024-03-06",
+
+    "// Basic Information": "Core application details",
     "name": "Dad & Alex Workout Tracker",
     "short_name": "Workout",
     "description": "Personal workout tracker for Dad and Alex with progress tracking and exercise guides",
     "version": "1.0.6",
+    "categories": ["fitness", "health", "lifestyle"],
+    "dir": "ltr",
+    "lang": "en",
+
+    "// Application Scope": "URL and access configuration",
     "start_url": "/workout-tracker/",
     "id": "/workout-tracker/",
+    "scope": "/workout-tracker/",
+
+    "// Display Settings": "Visual and UI configuration",
     "display": "standalone",
+    "display_override": ["standalone", "minimal-ui"],
     "orientation": "portrait",
     "theme_color": "#3b82f6",
     "background_color": "#f3f4f6",
-    "categories": ["fitness", "health", "lifestyle"],
-    "launch_handler": {
-        "client_mode": ["focus-existing", "auto"]
-    },
-    "display_override": ["standalone", "minimal-ui"],
+
+    "// Icons Configuration": "Application icons for various sizes",
     "icons": [
         {
             "src": "icons/maskable_icon_x48.png",
@@ -58,8 +69,10 @@
             "purpose": "maskable"
         }
     ],
+
+    "// Screenshots": "Application preview images",
     "screenshots": [
-           {
+        {
             "src": "screenshots/workout.png",
             "sizes": "1170x2532",
             "type": "image/png",
@@ -67,12 +80,14 @@
             "label": "Workout tracking screen"
         }
     ],
+
+    "// Quick Actions": "Application shortcuts",
     "shortcuts": [
         {
             "name": "Start Workout",
             "short_name": "Workout",
             "description": "Begin today's workout",
-            "url": "/workout-tracker/er/workout.html",
+            "url": "/workout-tracker/workout.html",
             "icons": [{ "src": "icons/maskable_icon_x96.png", "sizes": "96x96" }]
         },
         {
@@ -83,15 +98,58 @@
             "icons": [{ "src": "icons/maskable_icon_x96.png", "sizes": "96x96" }]
         }
     ],
+
+    "// Platform Integration": "Browser and platform specific settings",
     "edge_side_panel": {
         "preferred_width": 400
     },
-    "dir": "ltr",
-    "lang": "en",
-    "prefer_related_applications": false,
-    "scope": "/workout-tracker/",
+    "launch_handler": {
+        "client_mode": ["focus-existing", "auto"]
+    },
     "handle_links": "preferred",
+
+    "// Security and Permissions": "Application permissions and preferences",
+    "prefer_related_applications": false,
     "permissions": [
         "storage"
+    ],
+
+    "// PWA Features": "Additional PWA capabilities",
+    "share_target": {
+        "action": "/workout-tracker/share-target/",
+        "method": "GET",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url"
+        }
+    },
+    "file_handlers": [
+        {
+            "action": "/workout-tracker/open-workout/",
+            "accept": {
+                "application/json": [".workout"]
+            }
+        }
+    ],
+    "protocol_handlers": [
+        {
+            "protocol": "web+workout",
+            "url": "/workout-tracker/handle-workout?workout=%s"
+        }
+    ],
+    "related_applications": [],
+    "iarc_rating_id": "",
+    "categories": [
+        "fitness",
+        "health",
+        "lifestyle",
+        "sports"
+    ],
+    "features": [
+        "Cross Platform",
+        "Offline Capable",
+        "Progress Tracking",
+        "Real-time Updates"
     ]
 }
