@@ -1,7 +1,7 @@
 /**
  * workoutLibrary.js
  * Manages workout definitions and exercise data with Firebase integration
- * Version: 1.0.1
+ * Version: 1.0.2
  * Last Verified: 2024-03-06
  */
 
@@ -92,7 +92,6 @@ class WorkoutLibrary {
         }
         return Math.round(meters / minutes);
     }
-
     /**
      * Format workout for saving
      * @param {Object} workout - Workout data
@@ -267,7 +266,54 @@ class WorkoutLibrary {
             name: "Chest & Triceps",
             rowing: this.defineRowingSection(),
             supersets: [
-                // ... existing chest & triceps supersets
+                {
+                    exercises: [
+                        {
+                            name: "DB Bench Press",
+                            description: "Lying on bench, press dumbbells up",
+                            type: "dumbbell",
+                            sets: 3
+                        },
+                        {
+                            name: "TRX Tricep Extension",
+                            description: "Face away from anchor, extend arms down",
+                            type: "trx",
+                            sets: 3
+                        }
+                    ]
+                },
+                {
+                    exercises: [
+                        {
+                            name: "DB Incline Press",
+                            description: "Bench at 30°, press dumbbells up",
+                            type: "dumbbell",
+                            sets: 3
+                        },
+                        {
+                            name: "DB Skull Crushers",
+                            description: "Lying on bench, lower dumbbells to forehead",
+                            type: "dumbbell",
+                            sets: 3
+                        }
+                    ]
+                },
+                {
+                    exercises: [
+                        {
+                            name: "DB Chest Fly",
+                            description: "Lying on bench, wide arm circles",
+                            type: "dumbbell",
+                            sets: 3
+                        },
+                        {
+                            name: "TRX Close Grip Press",
+                            description: "Face away from anchor, narrow grip press",
+                            type: "trx",
+                            sets: 3
+                        }
+                    ]
+                }
             ]
         };
     }
@@ -282,7 +328,54 @@ class WorkoutLibrary {
             name: "Back & Biceps",
             rowing: this.defineRowingSection(),
             supersets: [
-                // ... existing back & biceps supersets
+                {
+                    exercises: [
+                        {
+                            name: "DB Bent Over Row",
+                            description: "Bend at hips, pull dumbbells to chest",
+                            type: "dumbbell",
+                            sets: 3
+                        },
+                        {
+                            name: "TRX Bicep Curl",
+                            description: "Face anchor, curl body up",
+                            type: "trx",
+                            sets: 3
+                        }
+                    ]
+                },
+                {
+                    exercises: [
+                        {
+                            name: "DB Single Arm Row",
+                            description: "One knee on bench, pull dumbbell up",
+                            type: "dumbbell",
+                            sets: 3
+                        },
+                        {
+                            name: "DB Hammer Curl",
+                            description: "Stand, curl dumbbells with palms facing in",
+                            type: "dumbbell",
+                            sets: 3
+                        }
+                    ]
+                },
+                {
+                    exercises: [
+                        {
+                            name: "TRX Row",
+                            description: "Lean back, pull body up",
+                            type: "trx",
+                            sets: 3
+                        },
+                        {
+                            name: "DB Concentration Curl",
+                            description: "Seated, curl dumbbell between legs",
+                            type: "dumbbell",
+                            sets: 3
+                        }
+                    ]
+                }
             ]
         };
     }
@@ -297,7 +390,54 @@ class WorkoutLibrary {
             name: "Shoulders",
             rowing: this.defineRowingSection(),
             supersets: [
-                // ... existing shoulders supersets
+                {
+                    exercises: [
+                        {
+                            name: "DB Shoulder Press",
+                            description: "Stand, press dumbbells overhead",
+                            type: "dumbbell",
+                            sets: 3
+                        },
+                        {
+                            name: "TRX Y Raise",
+                            description: "Lean back, raise arms to Y position",
+                            type: "trx",
+                            sets: 3
+                        }
+                    ]
+                },
+                {
+                    exercises: [
+                        {
+                            name: "DB Lateral Raise",
+                            description: "Stand, raise dumbbells to sides",
+                            type: "dumbbell",
+                            sets: 3
+                        },
+                        {
+                            name: "DB Front Raise",
+                            description: "Stand, raise dumbbells to front",
+                            type: "dumbbell",
+                            sets: 3
+                        }
+                    ]
+                },
+                {
+                    exercises: [
+                        {
+                            name: "DB Upright Row",
+                            description: "Stand, pull dumbbells up to chin",
+                            type: "dumbbell",
+                            sets: 3
+                        },
+                        {
+                            name: "TRX Face Pull",
+                            description: "Face anchor, pull handles to face",
+                            type: "trx",
+                            sets: 3
+                        }
+                    ]
+                }
             ]
         };
     }
