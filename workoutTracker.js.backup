@@ -1,6 +1,11 @@
-// workoutTracker.js
+/**
+ * workoutTracker.js
+ * Manages workout tracking and user interaction for the workout page
+ * Version: 1.0.2
+ * Last Verified: 2024-03-07
+ * Changes: Removed auto-save, implemented manual save only
+ */
 
-// Import dependencies
 import dataManager from './dataManager.js';
 import workoutLibrary from './workoutLibrary.js';
 import { FirebaseHelper } from './firebase-config.js';
@@ -8,7 +13,7 @@ import { FirebaseHelper } from './firebase-config.js';
 // Verification: Confirm imports are correct and modules exist
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // Verification: Correct event listener for document load
+    console.log('DOM Content Loaded. Initializing workout tracker...');
 
     // Cache DOM elements
     const elements = {
@@ -41,14 +46,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Verification: State object structure is correct
 
+    /**
+     * Initialize the workout tracker
+     * @returns {Promise<void>}
+     */
     async function init() {
         try {
+            console.log('Initializing workout tracker...');
             showLoading(true);
             await loadWorkoutFromURL();
             setupEventListeners();
-            setupAutoSave();
             await renderWorkout();
             showLoading(false);
+            console.log('Workout tracker initialized successfully');
         } catch (error) {
             console.error('Error initializing workout:', error);
             showError('Error loading workout. Returning to dashboard.');
@@ -56,14 +66,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Verification: init function structure is correct
-
+    /**
+     * Load workout data from URL parameters
+     * @returns {Promise<void>}
+     */
     async function loadWorkoutFromURL() {
         const urlParams = new URLSearchParams(window.location.search);
         state.currentUser = urlParams.get('user') || 'Dad';
         const workoutType = urlParams.get('type');
 
         try {
+            console.log(`Loading workout for user: ${state.currentUser}, type: ${workoutType}`);
             state.currentWorkout = workoutLibrary[workoutType];
 
             if (!state.currentWorkout) {
@@ -72,23 +85,27 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             elements.currentUser.textContent = state.currentUser;
             elements.workoutTitle.textContent = state.currentWorkout.name;
+            console.log('Workout loaded successfully');
         } catch (error) {
             console.error('Error loading workout:', error);
             throw error;
         }
     }
 
-    // Verification: URL parameters are correctly handled
-
+    /**
+     * Set up event listeners for the page
+     */
     function setupEventListeners() {
-        elemeements.completeWorkoutBtn.addEventListener('click', completeWorkout);
+        console.log('Setting up event listeners');
+        elements.completeWorkoutBtn.addEventListener('click', completeWorkout);
         setupInputListeners();
         setupBeforeUnloadWarning();
     }
 
-    // Verification: Event listeners are correctly set up
-
-    function setupInpunputListeners() {
+    /**
+     * Set up input listeners for workout data
+     */
+    function setupInputListeners() {
         elements.workoutContainer.addEventListener('input', (event) => {
             if (event.target.matches('input')) {
                 state.hasUnsavedChanges = true;
@@ -98,11 +115,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
 
         elements.rowingMeters.addEventListener('input', validateRowingInput);
-        elements.ts.rowingMinutes.addEventListener('input', validateRowingInput);
+        elements.rowingMinutes.addEventListener('input', validateRowingInput);
     }
 
-    // Verification: Input listeners are correctly set up
-
+    /**
+     * Set up warning for unsaved changes before unload
+     */
     function setupBeforeUnloadWarning() {
         window.addEventListener('beforeunload', (e) => {
             if (state.hasUnsavedChanges) {
@@ -112,26 +130,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Verification: Unload warning is correctly set up
-
-    function setupAutoSave() {
-        setInterval(async () => {
-            if (state.hasUnsavedChanges) {
-                await saveProgress();
-            }
-        }, 30000); // Auto-save every 30 seconds
-    }
-
-    // Verification: Auto-save is correctly set up
-
+    /**
+     * Render the workout on the page
+     * @returns {Promise<void>}
+     */
     async function renderWorkout() {
+        console.log('Rendering workout');
         elements.workoutContainer.innerHTML = '';
         const savedData = await FirebaseHelper.getWorkoutProgress(state.currentUser, state.currentWorkout.name);
         
-        // Render rowing section
         renderRowingSection();
         
-        // Render supersets
         if (state.currentWorkout.supersets && state.currentWorkout.supersets.length > 0) {
             state.currentWorkout.supersets.forEach((superset, index) => {
                 const supersetElement = renderSuperset(superset, index, savedData);
@@ -142,14 +151,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
             console.warn('No supersets found in the workout');
         }
+        console.log('Workout rendered successfully');
     }
 
-    // Verification: Workout rendering logic is correct
-
+    /**
+     * Render rowing section (placeholder function)
+     */
     function renderRowingSection() {
         // Rowing section is already in HTML, no need to render dynamically
+        console.log('Rowing section rendered');
     }
 
+    /**
+     * Render a superset
+     * @param {Object} superset - Superset data
+     * @param {number} index - Superset index
+     * @param {Object} savedData - Saved workout data
+     * @returns {HTMLElement|null} - Rendered superset element
+     */
     function renderSuperset(superset, index, savedData) {
         if (!elements.supersetTemplate) {
             console.error('Superset template not found');
@@ -176,11 +195,16 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
 
+        console.log(`Superset ${index + 1} rendered`);
         return supersetContainer;
     }
 
-    // Verification: Superset rendering logic is correct
-
+    /**
+     * Render an exercise
+     * @param {Object} exercise - Exercise data
+     * @param {Object} savedData - Saved workout data
+     * @returns {HTMLElement|null} - Rendered exercise element
+     */
     function renderExercise(exercise, savedData) {
         if (!elements.exerciseTemplate) {
             console.error('Exercise template not found');
@@ -188,7 +212,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         const exerciseElement = elements.exerciseTemplate.content.cloneNode(true);
-        constnst exerciseContainer = exerciseElement.querySelector('.exercise');
+        const exerciseContainer = exerciseElement.querySelector('.exercise');
 
         if (!exerciseContainer) {
             console.error('Exercise container not found in template');
@@ -207,11 +231,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         const savedExercise = savedData?.exercises?.find(e => e.name === exercise.name);
         setupExerciseInputs(exerciseContainer, exercise, savedExercise);
 
+        console.log(`Exercise ${exercise.name} rendered`);
         return exerciseContainer;
     }
 
-    // Verification: Exercise rendering logic is correct
-
+    /**
+     * Set up exercise inputs with saved data
+     * @param {HTMLElement} element - Exercise container element
+     * @param {Object} exercise - Exercise data
+     * @param {Object} savedData - Saved exercise data
+     */
     function setupExerciseInputs(element, exercise, savedData) {
         const weightInputs = element.querySelectorAll('.weight-input');
         const repsInputs = element.querySelectorAll('.reps-input');
@@ -222,10 +251,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (repsInputs[index]) repsInputs[index].value = set.reps || '';
             });
         }
+        console.log(`Inputs set up for ${exercise.name}`);
     }
 
-    // Verification: Exercise input setup is correct
-
+    /**
+     * Validate input value
+     * @param {HTMLInputElement} input - Input element to validate
+     */
     function validateInput(input) {
         const value = parseInt(input.value);
         if (isNaN(value) || value < 0) {
@@ -235,18 +267,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Verification: Input validation logic is correct
-
+    /**
+     * Validate rowing input and update UI
+     */
     function validateRowingInput() {
         const minutes = parseInt(elements.rowingMinutes.value) || 0;
         const meters = parseInt(elements.rowingMeters.value) || 0;
         
         const isValid = minutes > 0 && meters > 0;
         elements.completeWorkoutBtn.disabled = !isValid;
+        console.log(`Rowing input validated: ${isValid}`);
     }
 
-    // Verification: Rowing input validation is correct
-
+    /**
+     * Update exercise data in state
+     * @param {HTMLInputElement} input - Input element that changed
+     */
     function updateExerciseData(input) {
         const exerciseElement = input.closest('.exercise');
         const exerciseName = exerciseElement.querySelector('h4').textContent;
@@ -268,22 +304,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
             exerciseData.sets[setIndex].reps = parseInt(input.value) || 0;
         }
+        console.log(`Exercise data updated for ${exerciseName}`);
     }
 
-    // Verification: Exercise data updating logic is correct
-
-    async function saveProgress() {
-        try {
-            const progressData = collectWorkoutData();
-            await FirebaseHelper.saveWorkoutProgress(state.currentUser, progressData);
-            state.hasUnsavedChanges = false;
-        } catch (error) {
-            console.error('Error saving progress:', error);
-        }
-    }
-
-    // Verification: Progress saving logic is correct
-
+    /**
+     * Collect workout data from state and inputs
+     * @returns {Object} Collected workout data
+     */
     function collectWorkoutData() {
         return {
             name: state.currentWorkout.name,
@@ -296,8 +323,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         };
     }
 
-    // Verification: Workout data collection logic is correct
-
+    /**
+     * Get rowing data from inputs
+     * @returns {Object} Rowing data
+     */
     function getRowingData() {
         return {
             type: elements.rowingType.value,
@@ -306,8 +335,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         };
     }
 
-    // Verification: Rowing data collection logic is correct
-
+    /**
+     * Complete the workout
+     * @returns {Promise<void>}
+     */
     async function completeWorkout() {
         try {
             if (!validateWorkoutData()) {
@@ -315,10 +346,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                 return;
             }
 
+            console.log('Completing workout...');
             showLoading(true);
             const workoutData = collectWorkoutData();
             
-            await FirebaseHelper.saveWorkout(state.currentUser, workoutData);
+            // Only save data here, when the workout is completed
             await dataManager.saveWorkout(state.currentUser, workoutData);
             
             showSuccess('Workout completed and saved!');
@@ -331,8 +363,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Verification: Workout completion logic is correct
-
+    /**
+     * Validate workout data before completion
+     * @returns {boolean} True if data is valid, false otherwise
+     */
     function validateWorkoutData() {
         const rowing = getRowingData();
         if (rowing.minutes > 0 || rowing.meters > 0) {
@@ -347,35 +381,40 @@ document.addEventListener('DOMContentLoaded', async function() {
         );
     }
 
-    // Verification: Workout data validation logic is correct
-
+    /**
+     * Show or hide loading indicator
+     * @param {boolean} show - Whether to show or hide the loading indicator
+     */
     function showLoading(show) {
         state.isLoading = show;
         elements.loadingIndicator.classList.toggle('hidden', !show);
         elements.completeWorkoutBtn.disabled = show;
+        console.log(`Loading indicator ${show ? 'shown' : 'hidden'}`);
     }
 
-    // Verification: Loading indicator logic is correct
-
+    /**
+     * Show error message
+     * @param {string} message - Error message to display
+     */
     function showError(message) {
+        console.error('Error:', message);
         alert(message); // Consider replacing with a more user-friendly error display
     }
 
-    // Verification: Error display logic is correct
-
+    /**
+     * Show success message
+     * @param {string} message - Success message to display
+     */
     function showSuccess(message) {
+        console.log('Success:', message);
         alert(message); // Consider replacing with a more user-friendly success display
     }
-
-    // Verification: Success display logic is correct
 
     // Initialize the tracker
     init().catch(error => {
         console.error('Failed to initialize workout tracker:', error);
         showError('Failed to initialize workout tracker');
     });
-
-    // Verification: Initialization process is correct
 });
 
 // Final Verification:
@@ -386,4 +425,5 @@ document.addEventListener('DOMContentLoaded', async function() {
 // - Naming conventions are consistent
 // - Critical functionality (data saving, validation, event handling, state management) is implemented
 // - HTML element references match the provided HTML structure
-// - Template usage has been corrected to fix the previous error
+// - Auto-save functionality removed to prevent multiple saves
+// - Workout data is only saved when the Complete Workout button is clicked
