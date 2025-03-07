@@ -232,23 +232,39 @@ async getWorkouts(userId) {
  */
 export async function deleteAllData() {
     try {
-        console.log('Starting data deletion...');
+        console.log('Starting complete data deletion...');
         
-        // Get all workouts
+        // Delete workouts collection
         const workoutsSnapshot = await getDocs(collection(db, 'workouts'));
-        console.log(`Found ${workoutsSnapshot.docs.length} documents to delete`);
+        console.log(`Found ${workoutsSnapshot.docs.length} workouts to delete`);
         
-        // Delete each workout
-        for (const doc of workoutsSnapshot.docs) {
-            await deleteDoc(doc.ref);
-            console.log(`Deleted document ${doc.id}`);
-        }
+        // Delete progress collection
+        const progressSnapshot = await getDocs(collection(db, 'progress'));
+        console.log(`Found ${progressSnapshot.docs.length} progress documents to delete`);
         
+        // Delete workoutProgress collection
+        const workoutProgressSnapshot = await getDocs(collection(db, 'workoutProgress'));
+        console.log(`Found ${workoutProgressSnapshot.docs.length} workout progress documents to delete`);
+
+        // Delete all documents from all collections
+        const deletePromises = [
+            ...workoutsSnapshot.docs.map(doc => deleteDoc(doc.ref)),
+            ...progressSnapshot.docs.map(doc => deleteDoc(doc.ref)),
+            ...workoutProgressSnapshot.docs.map(doc => deleteDoc(doc.ref))
+        ];
+
+        await Promise.all(deletePromises);
         console.log('All data deleted successfully');
+
+        // Clear local storage as well
+        localStorage.clear();
+        console.log('Local storage cleared');
+
     } catch (error) {
         console.error('Error deleting data:', error);
     }
 }
+
 // Export initialized instances and helper
 export { db, auth, FirebaseHelper };
 
