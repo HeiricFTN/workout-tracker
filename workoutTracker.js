@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         try {
             console.log(`Loading workout for user: ${state.currentUser}, type: ${workoutType}`);
-            state.currentWorkout = workoutLibrary[workoutType];
+            state.currentWorkout = workoutLibrary.getWorkout(workoutType);
 
             if (!state.currentWorkout) {
                 throw new Error(`Invalid workout type: ${workoutType}`);
