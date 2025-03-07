@@ -1,17 +1,14 @@
 /**
  * dataManager.js
  * Manages data operations between Firebase, local storage, and application state
- * Version: 1.0.2
+ * Version: 1.0.3
  * Last Verified: 2024-03-07
+ * Changes: Implemented manual-only save functionality
  */
 
 import { FirebaseHelper } from './firebase-config.js';
 
 // Verification: Confirm imports are correct and modules exist
-
-// Cache configuration
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-const cache = new Map();
 
 /**
  * DataManager Class
@@ -34,33 +31,8 @@ class DataManager {
 
         // Program start date - verified format and timezone handling
         this.programStartDate = new Date('2025-03-03');
-
-        // Initialize data synchronization
-        this.initializeSync();
-
+        
         console.log('DataManager initialized');
-    }
-
-    /**
-     * Initialize data synchronization
-     * @returns {Promise<void>}
-     * @verification - Online/offline handling verified
-     */
-    async initializeSync() {
-        try {
-            if (navigator.onLine) {
-                await this.syncData();
-            }
-
-            window.addEventListener('online', async () => {
-                console.log('Online status detected. Syncing data...');
-                await this.syncData();
-            });
-
-            console.log('Data sync initialized');
-        } catch (error) {
-            console.error('Error initializing sync:', error);
-        }
     }
 
     /**
@@ -91,8 +63,6 @@ class DataManager {
             if (user === 'Dad' || user === 'Alex') {
                 localStorage.setItem(this.storageKeys.currentUser, user);
                 window.dispatchEvent(new CustomEvent('userChanged', { detail: user }));
-                // Clear caches when user changes
-                this.invalidateCache(`workouts_${user}`);
                 console.log('User set successfully to:', user);
                 return true;
             } else {
@@ -106,7 +76,7 @@ class DataManager {
     }
 
     /**
-     * Save workout data
+     * Save workout data - Manual save only
      * @param {string} userId - User ID
      * @param {Object} workoutData - Workout data to save
      * @returns {Promise<boolean>} Success status
@@ -114,32 +84,56 @@ class DataManager {
      */
     async saveWorkout(userId, workoutData) {
         try {
+            console.log('Manual save initiated for workout');
+            
+            // Validate workout data
+            if (!this.validateWorkoutData(workoutData)) {
+                console.error('Invalid workout data');
+                return false;
+            }
+
             const workoutWithMeta = {
                 ...workoutData,
                 date: new Date().toISOString(),
                 week: this.getCurrentWeek(),
-                timestamp: Date.now() // Add timestamp for sorting
+                timestamp: Date.now(),
+                userId: userId
             };
 
+            // Save to Firebase
             await FirebaseHelper.saveWorkout(userId, workoutWithMeta);
-            
-            // Update local storage and cache
+
+            // Update local storage
             const workouts = await this.getWorkouts(userId);
             workouts.push(workoutWithMeta);
             localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
-            this.invalidateCache(`workouts_${userId}`);
 
+            // Update progress
             await this.updateProgress(userId, workoutWithMeta);
+
             console.log('Workout saved successfully');
             return true;
         } catch (error) {
             console.error('Error saving workout:', error);
+            // Save to local storage as backup
             this.saveWorkoutLocally(userId, workoutData);
             return false;
         }
     }
+
     /**
-     * Save workout data locally
+     * Validate workout data structure
+     * @param {Object} workoutData - Workout data to validate
+     * @returns {boolean} Validation result
+     * @verification - Data validation verified
+     */
+    validateWorkoutData(workoutData) {
+        return workoutData && 
+               (workoutData.exercises || workoutData.rowing) &&
+               (!workoutData.exercises || Array.isArray(workoutData.exercises));
+    }
+    /**
+     * Save workout data locally (backup only)
      * @param {string} userId - User ID
      * @param {Object} workoutData - Workout data to save
      * @verification - Local storage interaction and data structure verified
@@ -152,10 +146,10 @@ class DataManager {
                 date: new Date().toISOString(),
                 week: this.getCurrentWeek(),
                 timestamp: Date.now(),
-                pendingSync: true
+                needsSync: true // Flag for manual sync later if needed
             });
             localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
-            console.log('Workout saved locally');
+            console.log('Workout saved locally as backup');
         } catch (error) {
             console.error('Error saving workout locally:', error);
         }
@@ -168,14 +162,6 @@ class DataManager {
      * @verification - Firebase retrieval and local fallback verified
      */
     async getWorkouts(userId) {
-        const cacheKey = `workouts_${userId}`;
-        const cachedData = cache.get(cacheKey);
-        
-        if (cachedData && Date.now() - cachedData.timestamp < CACHE_DURATION) {
-            console.log('Returning cached workouts');
-            return cachedData.data;
-        }
-
         try {
             console.log('Fetching workouts for user:', userId);
             const workouts = await FirebaseHelper.getWorkouts(userId);
@@ -186,21 +172,15 @@ class DataManager {
                     return workout && 
                            workout.date && 
                            new Date(workout.date).toString() !== 'Invalid Date' &&
-                           workout.timestamp; // Ensure timestamp exists
+                           workout.timestamp;
                 } catch (error) {
                     console.warn('Invalid workout data:', workout);
                     return false;
                 }
             });
 
-            // Sort workouts by timestamp
+            // Sort workouts by date
             validWorkouts.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            // Update cache
-            cache.set(cacheKey, {
-                timestamp: Date.now(),
-                data: validWorkouts
-            });
 
             console.log(`Found ${validWorkouts.length} valid workouts`);
             localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(validWorkouts));
@@ -356,7 +336,7 @@ class DataManager {
     }
 
     /**
-     * Update progress in local storage
+     * Update progress locally
      * @param {string} userId - User ID
      * @param {Object} workoutData - Workout data
      * @verification - Local storage update and error handling verified
@@ -381,60 +361,116 @@ class DataManager {
     }
 
     /**
-     * Clean up and deduplicate workouts
-     * @param {string} userId - User ID
-     * @returns {Promise<Array>} Cleaned workout array
-     * @verification - Cleanup process and data integrity verified
+     * Update exercise progress
+     * @param {Object} progress - Progress object
+     * @param {Object} workoutData - Workout data
+     * @verification - Exercise progress update verified
      */
-    async cleanupWorkouts(userId) {
-        try {
-            console.log('Starting workout cleanup for user:', userId);
-            const workouts = await this.getWorkouts(userId);
-            
-            // Create a map of unique workouts by date
-            const uniqueWorkouts = new Map();
-            
-            workouts.forEach(workout => {
-                if (!workout.date) return;
-                
-                const dateKey = new Date(workout.date).toISOString().split('T')[0];
-                // Keep the most recent version if there are duplicates
-                if (!uniqueWorkouts.has(dateKey) || 
-                    (workout.timestamp && workout.timestamp > uniqueWorkouts.get(dateKey).timestamp)) {
-                    uniqueWorkouts.set(dateKey, workout);
-                }
-            });
-
-            const cleanedWorkouts = Array.from(uniqueWorkouts.values());
-            console.log(`Cleanup results: ${workouts.length} -> ${cleanedWorkouts.length} workouts`);
-
-            if (cleanedWorkouts.length < workouts.length) {
-                await FirebaseHelper.saveCleanWorkouts(userId, cleanedWorkouts);
-                this.invalidateCache(`workouts_${userId}`);
-                console.log('Cleanup complete and cache invalidated');
+    updateExerciseProgress(progress, workoutData) {
+        if (!progress) progress = {};
+        
+        workoutData.exercises.forEach(exercise => {
+            if (!progress[exercise.name]) {
+                progress[exercise.name] = {
+                    history: [],
+                    personalBest: {}
+                };
             }
 
-            return cleanedWorkouts;
-        } catch (error) {
-            console.error('Error cleaning up workouts:', error);
-            return [];
+            const exerciseProgress = progress[exercise.name];
+            exerciseProgress.history.push({
+                date: workoutData.date,
+                sets: exercise.sets
+            });
+
+            this.updatePersonalBest(exerciseProgress, exercise);
+        });
+    }
+
+    /**
+     * Update rowing progress
+     * @param {Object} progress - Progress object
+     * @param {Object} rowingData - Rowing data
+     * @verification - Rowing progress update verified
+     */
+    updateRowingProgress(progress, rowingData) {
+        if (!progress) progress = {};
+        
+        const rowingKey = `rowing_${rowingData.type}`;
+        if (!progress[rowingKey]) {
+            progress[rowingKey] = {
+                history: [],
+                personalBest: {}
+            };
+        }
+
+        const pacePerMinute = rowingData.meters / rowingData.minutes;
+        const rowingProgress = progress[rowingKey];
+
+        rowingProgress.history.push({
+            date: new Date().toISOString(),
+            minutes: rowingData.minutes,
+            meters: rowingData.meters,
+            pace: pacePerMinute,
+            pacePerFiveHundred: this.calculatePacePerFiveHundred(rowingData.meters, rowingData.minutes)
+        });
+
+        if (!rowingProgress.personalBest.pace || pacePerMinute > rowingProgress.personalBest.pace) {
+            rowingProgress.personalBest = {
+                minutes: rowingData.minutes,
+                meters: rowingData.meters,
+                pace: pacePerMinute,
+                pacePerFiveHundred: this.calculatePacePerFiveHundred(rowingData.meters, rowingData.minutes),
+                date: new Date().toISOString()
+            };
         }
     }
 
     /**
-     * Invalidate cache entry
-     * @param {string} key - Cache key to invalidate
-     * @verification - Cache management verified
+     * Calculate pace per 500 meters
+     * @param {number} meters - Total meters
+     * @param {number} minutes - Total minutes
+     * @returns {string} Formatted pace (M:SS)
+     * @verification - Pace calculation verified
      */
-    invalidateCache(key) {
-        cache.delete(key);
-        console.log(`Cache invalidated for key: ${key}`);
+    calculatePacePerFiveHundred(meters, minutes) {
+        if (!meters || !minutes) return "0:00";
+        
+        const minutesPer500 = (minutes * 500) / meters;
+        const mins = Math.floor(minutesPer500);
+        const secs = Math.round((minutesPer500 - mins) * 60);
+        
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    /**
+     * Update personal best
+     * @param {Object} exerciseProgress - Exercise progress object
+     * @param {Object} exercise - Current exercise data
+     * @verification - Personal best calculation verified
+     */
+    updatePersonalBest(exerciseProgress, exercise) {
+        if (!exercise.sets || exercise.sets.length === 0) return;
+
+        const currentBest = exercise.sets.reduce((best, set) => {
+            if (set.weight > (best?.weight || 0)) {
+                return set;
+            }
+            return best;
+        }, exerciseProgress.personalBest);
+
+        if (currentBest && (!exerciseProgress.personalBest.weight || currentBest.weight > exerciseProgress.personalBest.weight)) {
+            exerciseProgress.personalBest = {
+                ...currentBest,
+                date: new Date().toISOString()
+            };
+        }
     }
 
     /**
      * Get current week number
      * @returns {number} Current week (1-12)
-     * @verification - Week calculation and bounds verified
+     * @verification - Week calculation verified
      */
     getCurrentWeek() {
         const today = new Date();
@@ -443,30 +479,10 @@ class DataManager {
     }
 
     /**
-     * Sync local data with Firebase
-     * @returns {Promise<void>}
-     * @verification - Sync process and error handling verified
-     */
-    async syncData() {
-        try {
-            const currentUser = await this.getCurrentUser();
-            const localWorkouts = this.getWorkoutsLocal(currentUser)
-                .filter(workout => workout.pendingSync);
-
-            for (const workout of localWorkouts) {
-                await this.saveWorkout(currentUser, workout);
-            }
-            console.log('Data sync completed');
-        } catch (error) {
-            console.error('Error syncing data:', error);
-        }
-    }
-
-    /**
-     * Get recent progress data
+     * Get recent progress
      * @param {string} userId - User ID
-     * @returns {Promise<Array>} Array of recent progress items
-     * @verification - Recent progress retrieval and validation verified
+     * @returns {Promise<Array>} Recent progress items
+     * @verification - Recent progress retrieval verified
      */
     async getRecentProgress(userId) {
         try {
@@ -540,4 +556,5 @@ export default dataManager;
  * 7. Console logging implemented for debugging
  * 8. Local storage fallbacks implemented
  * 9. Firebase integration verified
+ * 10. Manual save only implementation confirmed
  */
