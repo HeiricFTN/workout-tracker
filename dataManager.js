@@ -153,22 +153,36 @@ class DataManager {
         }
     }
 
-    /**
-     * Get all workouts for a user
-     * @param {string} userId - User ID
-     * @returns {Promise<Array>} Array of workouts
-     * @verification - Firebase retrieval and local fallback verified
-     */
-    async getWorkouts(userId) {
-        try {
-            const workouts = await FirebaseHelper.getWorkouts(userId);
-            localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(workouts));
-            return workouts;
-        } catch (error) {
-            console.error('Error getting workouts:', error);
-            return this.getWorkoutsLocal(userId);
+/**
+ * Get all workouts for a user
+ * @param {string} userId - User ID
+ * @returns {Promise<Array>} Array of workouts
+ * @verification - Firebase retrieval and local fallback verified
+ */
+async getWorkouts(userId) {
+    try {
+        console.log('Fetching workouts for user:', userId);
+        const workouts = await FirebaseHelper.getWorkouts(userId);
+        
+        // Validate workout data
+        if (!Array.isArray(workouts)) {
+            console.error('Invalid workout data received');
+            return [];
         }
+
+        // Store valid workouts only
+        const validWorkouts = workouts.filter(workout => {
+            return workout && workout.date && new Date(workout.date).toString() !== 'Invalid Date';
+        });
+
+        console.log(`Found ${validWorkouts.length} valid workouts`);
+        localStorage.setItem(this.storageKeys.workouts(userId), JSON.stringify(validWorkouts));
+        return validWorkouts;
+    } catch (error) {
+        console.error('Error getting workouts:', error);
+        return this.getWorkoutsLocal(userId);
     }
+}
 
     /**
      * Get workouts from local storage
@@ -412,31 +426,62 @@ class DataManager {
             console.error('Error syncing data:', error);
         }
     }
+/**
+ * Get weekly workouts
+ * @param {string} userId - User ID
+ * @returns {Promise<Array>} Array of workout days (0-6)
+ * @verification - Weekly workout retrieval and calculation verified
+ */
+async getWeeklyWorkouts(userId) {
+    try {
+        const allWorkouts = await this.getWorkouts(userId);
+        
+        // Get current week boundaries
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setHours(0, 0, 0, 0);
+        startOfWeek.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+        
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 7); // End of week (next Sunday)
 
-    /**
-     * Get weekly workouts
-     * @param {string} userId - User ID
-     * @returns {Promise<Array>} Array of workout days (0-6)
-     * @verification - Weekly workout retrieval and calculation verified
-     */
-    async getWeeklyWorkouts(userId) {
-        try {
-            const allWorkouts = await this.getWorkouts(userId);
-            const currentWeek = this.getCurrentWeek();
-            const startOfWeek = new Date(this.programStartDate);
-            startOfWeek.setDate(startOfWeek.getDate() + (currentWeek - 1) * 7);
-            
-            const weeklyWorkouts = allWorkouts.filter(workout => {
+        console.log('Filtering workouts between:', startOfWeek.toISOString(), 'and', endOfWeek.toISOString());
+
+        // Filter workouts for current week
+        const weeklyWorkouts = allWorkouts.filter(workout => {
+            try {
                 const workoutDate = new Date(workout.date);
-                return workoutDate >= startOfWeek && workoutDate < new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
-            });
+                return workoutDate >= startOfWeek && workoutDate < endOfWeek;
+            } catch (error) {
+                console.error('Invalid workout date:', workout);
+                return false;
+            }
+        });
 
-            return weeklyWorkouts.map(workout => new Date(workout.date).getDay());
-        } catch (error) {
-            console.error('Error getting weekly workouts:', error);
-            return [];
-        }
+        // Get unique days and ensure they're valid
+        const uniqueDays = [...new Set(weeklyWorkouts
+            .map(workout => {
+                try {
+                    return new Date(workout.date).getDay();
+                } catch (error) {
+                    console.error('Error processing workout date:', workout);
+                    return -1;
+                }
+            })
+            .filter(day => day >= 0 && day <= 6)
+        )];
+
+        console.log('Weekly workouts found:', {
+            total: weeklyWorkouts.length,
+            uniqueDays: uniqueDays
+        });
+
+        return uniqueDays;
+    } catch (error) {
+        console.error('Error getting weekly workouts:', error);
+        return [];
     }
+}
 
     /**
  * Get recent progress
