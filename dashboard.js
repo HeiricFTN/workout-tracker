@@ -407,7 +407,14 @@ class DashboardController {
         alert(message); // Consider replacing with a more user-friendly error display
     }
 }
-window.deleteAllWorkouts = () => deleteAllData();
+window.clearAllData = async () => {
+    try {
+        await deleteAllData();
+        location.reload(); // Refresh the page after deletion
+    } catch (error) {
+        console.error('Error during cleanup:', error);
+    }
+};
 // Main initialization
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('DOM Content Loaded');
