@@ -1,8 +1,9 @@
 /**
  * workoutTracker.js
  * Manages workout tracking and user interaction for the workout page
- * Version: 1.0.1
- * Last Verified: 2024-03-06
+ * Version: 1.0.2
+ * Last Verified: 2024-03-07
+ * Changes: Removed auto-save, implemented manual save only
  */
 
 import dataManager from './dataManager.js';
@@ -55,7 +56,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             showLoading(true);
             await loadWorkoutFromURL();
             setupEventListeners();
-            setupAutoSave();
             await renderWorkout();
             showLoading(false);
             console.log('Workout tracker initialized successfully');
@@ -128,18 +128,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 e.returnValue = '';
             }
         });
-    }
-
-    /**
-     * Set up auto-save functionality
-     */
-    function setupAutoSave() {
-        console.log('Setting up auto-save');
-        setInterval(async () => {
-            if (state.hasUnsavedChanges) {
-                await saveProgress();
-            }
-        }, 30000); // Auto-save every 30 seconds
     }
 
     /**
@@ -320,22 +308,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     /**
-     * Save workout progress
-     * @returns {Promise<void>}
-     */
-    async function saveProgress() {
-        try {
-            console.log('Saving workout progress...');
-            const progressData = collectWorkoutData();
-            await FirebaseHelper.saveWorkoutProgress(state.currentUser, progressData);
-            state.hasUnsavedChanges = false;
-            console.log('Progress saved successfully');
-        } catch (error) {
-            console.error('Error saving progress:', error);
-        }
-    }
-
-    /**
      * Collect workout data from state and inputs
      * @returns {Object} Collected workout data
      */
@@ -378,7 +350,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             showLoading(true);
             const workoutData = collectWorkoutData();
             
-            await FirebaseHelper.saveWorkout(state.currentUser, workoutData);
+            // Only save data here, when the workout is completed
             await dataManager.saveWorkout(state.currentUser, workoutData);
             
             showSuccess('Workout completed and saved!');
@@ -453,4 +425,5 @@ document.addEventListener('DOMContentLoaded', async function() {
 // - Naming conventions are consistent
 // - Critical functionality (data saving, validation, event handling, state management) is implemented
 // - HTML element references match the provided HTML structure
-// - Template usage has been corrected to fix the previous error
+// - Auto-save functionality removed to prevent multiple saves
+// - Workout data is only saved when the Complete Workout button is clicked
