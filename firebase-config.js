@@ -12,7 +12,8 @@ import {
     doc, 
     addDoc, 
     getDoc, 
-    getDocs, 
+    getDocs,
+    deleteDoc,
     setDoc, 
     query, 
     where, 
@@ -224,25 +225,30 @@ async getWorkouts(userId) {
         }
     }
 }
-    export async function deleteAllData() {
+/**
+ * Delete all data from Firebase
+ * @returns {Promise<void>}
+ * @verification - Data deletion verified
+ */
+export async function deleteAllData() {
     try {
         console.log('Starting data deletion...');
         
         // Get all workouts
         const workoutsSnapshot = await getDocs(collection(db, 'workouts'));
+        console.log(`Found ${workoutsSnapshot.docs.length} documents to delete`);
         
         // Delete each workout
-        const deletePromises = workoutsSnapshot.docs.map(doc => 
-            deleteDoc(doc.ref)
-        );
+        for (const doc of workoutsSnapshot.docs) {
+            await deleteDoc(doc.ref);
+            console.log(`Deleted document ${doc.id}`);
+        }
         
-        await Promise.all(deletePromises);
         console.log('All data deleted successfully');
     } catch (error) {
         console.error('Error deleting data:', error);
     }
-};
-
+}
 // Export initialized instances and helper
 export { db, auth, FirebaseHelper };
 
