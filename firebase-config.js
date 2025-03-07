@@ -234,36 +234,43 @@ export async function deleteAllData() {
     try {
         console.log('Starting complete data deletion...');
         
-        // Delete workouts collection
-        const workoutsSnapshot = await getDocs(collection(db, 'workouts'));
-        console.log(`Found ${workoutsSnapshot.docs.length} workouts to delete`);
+        // Collections to clear
+        const collections = ['workouts', 'progress', 'workoutProgress'];
         
-        // Delete progress collection
-        const progressSnapshot = await getDocs(collection(db, 'progress'));
-        console.log(`Found ${progressSnapshot.docs.length} progress documents to delete`);
-        
-        // Delete workoutProgress collection
-        const workoutProgressSnapshot = await getDocs(collection(db, 'workoutProgress'));
-        console.log(`Found ${workoutProgressSnapshot.docs.length} workout progress documents to delete`);
+        for (const collectionName of collections) {
+            try {
+                console.log(`Deleting collection: ${collectionName}`);
+                const snapshot = await getDocs(collection(db, collectionName));
+                
+                // Delete documents one by one instead of in parallel
+                for (const doc of snapshot.docs) {
+                    try {
+                        await deleteDoc(doc.ref);
+                        console.log(`Deleted document ${doc.id} from ${collectionName}`);
+                    } catch (docError) {
+                        console.error(`Error deleting document ${doc.id}:`, docError);
+                    }
+                }
+                
+                console.log(`Finished deleting collection: ${collectionName}`);
+            } catch (collectionError) {
+                console.error(`Error processing collection ${collectionName}:`, collectionError);
+            }
+        }
 
-        // Delete all documents from all collections
-        const deletePromises = [
-            ...workoutsSnapshot.docs.map(doc => deleteDoc(doc.ref)),
-            ...progressSnapshot.docs.map(doc => deleteDoc(doc.ref)),
-            ...workoutProgressSnapshot.docs.map(doc => deleteDoc(doc.ref))
-        ];
-
-        await Promise.all(deletePromises);
-        console.log('All data deleted successfully');
-
-        // Clear local storage as well
+        // Clear local storage
         localStorage.clear();
         console.log('Local storage cleared');
 
+        // Wait a moment before confirming
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('All cleanup operations completed');
+
     } catch (error) {
-        console.error('Error deleting data:', error);
+        console.error('Error in deletion process:', error);
     }
 }
+
 
 // Export initialized instances and helper
 export { db, auth, FirebaseHelper };
