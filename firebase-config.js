@@ -92,24 +92,27 @@ const FirebaseHelper = {
      * @returns {Promise<Array>} Array of workouts
      * @verification - Firebase query and data retrieval verified
      */
-    async getWorkouts(userId) {
-        try {
-            const q = query(
-                collection(db, 'workouts'),
-                where('userId', '==', userId),
-                orderBy('timestamp', 'desc')
-            );
-            const snapshot = await getDocs(q);
-            console.log(`Retrieved ${snapshot.docs.length} workouts for user ${userId}`);
-            return snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-        } catch (error) {
-            console.error('Error getting workouts:', error);
-            return [];
-        }
-    },
+async getWorkouts(userId) {
+    try {
+        console.log('Fetching workouts from Firebase for user:', userId);
+        const q = query(
+            collection(db, 'workouts'),
+            where('userId', '==', userId),
+            orderBy('timestamp', 'desc')
+        );
+        const snapshot = await getDocs(q);
+        const workouts = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        
+        console.log(`Retrieved ${workouts.length} workouts from Firebase`);
+        return workouts;
+    } catch (error) {
+        console.error('Error getting workouts from Firebase:', error);
+        return [];
+    }
+},
 
     /**
      * Save progress data to Firebase
