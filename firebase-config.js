@@ -223,6 +223,24 @@ async getWorkouts(userId) {
             return false;
         }
     }
+}
+    export async function deleteAllData() {
+    try {
+        console.log('Starting data deletion...');
+        
+        // Get all workouts
+        const workoutsSnapshot = await getDocs(collection(db, 'workouts'));
+        
+        // Delete each workout
+        const deletePromises = workoutsSnapshot.docs.map(doc => 
+            deleteDoc(doc.ref)
+        );
+        
+        await Promise.all(deletePromises);
+        console.log('All data deleted successfully');
+    } catch (error) {
+        console.error('Error deleting data:', error);
+    }
 };
 
 // Export initialized instances and helper
