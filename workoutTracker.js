@@ -7,7 +7,7 @@
  */
 
 import dataManager from './dataManager.js';
-import workoutLibrary, { WorkoutLibrary } from './workoutLibrary.js';
+import workoutLibrary from './workoutLibrary.js';
 import { FirebaseHelper } from './firebase-config.js';
 
 // Verification: Confirm imports are correct and modules exist
