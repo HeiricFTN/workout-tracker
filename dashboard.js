@@ -6,6 +6,7 @@
  */
 
 import dataManager from './dataManager.js';
+import { deleteAllData } from './firebase-config.js'; 
 
 // Verification: Confirm imports are correct and modules exist
 
@@ -406,7 +407,7 @@ class DashboardController {
         alert(message); // Consider replacing with a more user-friendly error display
     }
 }
-
+window.deleteAllWorkouts = () => deleteAllData();
 // Main initialization
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('DOM Content Loaded');
