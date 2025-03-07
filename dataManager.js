@@ -541,8 +541,6 @@ class DataManager {
     }
 }
 
-window.deleteData = () => FirebaseHelper.deleteAllData();
-
 // Create and export singleton instance
 const dataManager = new DataManager();
 export default dataManager;
