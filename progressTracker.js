@@ -432,7 +432,7 @@ class ProgressTracker {
      * @private
      */
     getWeekNumber(date) {
-        const startDate = new Date('2025-03-06');
+        const startDate = new Date('2025-03-03');
         const diff = date - startDate;
         return Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
     }
