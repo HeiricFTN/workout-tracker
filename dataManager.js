@@ -289,16 +289,16 @@ class DataManager {
             };
         }
 
-        const pacePerMinute = rowingData.meters / rowingData.minutes;
-        const rowingProgress = progress[rowingKey];
+    const pacePerFiveHundred = (rowingData.minutes / rowingData.meters) * 500;
+    const rowingProgress = progress[rowingKey];
 
-        const entry = {
-            date: new Date().toISOString(),
-            minutes: rowingData.minutes,
-            meters: rowingData.meters,
-            pace: pacePerMinute,
-            pacePerFiveHundred: firebaseService.calculatePacePerFiveHundred(rowingData.meters, rowingData.minutes)
-        };
+    const entry = {
+        date: new Date().toISOString(),
+        minutes: rowingData.minutes,
+        meters: rowingData.meters,
+        pace: pacePerFiveHundred
+    };
+
 
         rowingProgress.history.push(entry);
 
