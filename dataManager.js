@@ -484,20 +484,46 @@ class DataManager {
      * @returns {Promise<Array>} Recent progress items
      * @verification - Recent progress retrieval verified
      */
-    async getRecentProgress(userId) {
-        try {
-            console.log('Getting recent progress for user:', userId);
-            const progress = await this.getProgress(userId);
-            const recentProgress = [];
+async getRecentProgress(userId) {
+    try {
+        console.log('Getting recent progress for user:', userId);
+        const progress = await this.getProgress(userId);
+        const recentProgress = [];
 
-            // Process exercise progress
-            for (const [exerciseName, exerciseData] of Object.entries(progress)) {
-                if (!exerciseData?.history || !Array.isArray(exerciseData.history)) {
-                    console.warn(`Invalid history data for ${exerciseName}`);
-                    continue;
+        // Skip if progress is empty or invalid
+        if (!progress || typeof progress !== 'object') {
+            console.warn('No valid progress data found');
+            return [];
+        }
+
+        // Process exercise progress
+        for (const [exerciseName, exerciseData] of Object.entries(progress)) {
+            // Skip non-exercise entries and internal fields
+            if (!exerciseData || 
+                typeof exerciseData !== 'object' || 
+                exerciseName === 'id' || 
+                exerciseName.startsWith('_')) {
+                continue;
+            }
+
+            // Handle exercise data
+            if (exerciseName.startsWith('rowing_')) {
+                // Process rowing data
+                if (exerciseData.history?.length >= 2) {
+                    const recent = exerciseData.history.slice(-2);
+                    if (recent[0]?.pace !== undefined && recent[1]?.pace !== undefined) {
+                        recentProgress.push({
+                            type: 'rowing',
+                            exercise: exerciseName.replace('rowing_', ''),
+                            previousPace: recent[0].pace,
+                            currentPace: recent[1].pace,
+                            date: recent[1].date || new Date().toISOString()
+                        });
+                    }
                 }
-
-                if (exerciseData.history.length >= 2) {
+            } else {
+                // Process regular exercise data
+                if (exerciseData.history?.length >= 2) {
                     const recent = exerciseData.history.slice(-2);
                     if (recent[0]?.sets?.[0] && recent[1]?.sets?.[0]) {
                         recentProgress.push({
@@ -505,39 +531,27 @@ class DataManager {
                             exercise: exerciseName,
                             previousWeight: recent[0].sets[0].weight || 0,
                             currentWeight: recent[1].sets[0].weight || 0,
-                            date: recent[1].date
+                            date: recent[1].date || new Date().toISOString()
                         });
                     }
                 }
             }
-
-            // Process rowing progress
-            for (const rowingType of ['Breathe', 'Sweat', 'Drive']) {
-                const rowingKey = `rowing_${rowingType}`;
-                const rowingData = progress[rowingKey];
-
-                if (rowingData?.history && Array.isArray(rowingData.history) && rowingData.history.length >= 2) {
-                    const recent = rowingData.history.slice(-2);
-                    recentProgress.push({
-                        type: 'rowing',
-                        exercise: rowingType,
-                        previousPace: recent[0]?.pace || 0,
-                        currentPace: recent[1]?.pace || 0,
-                        date: recent[1].date
-                    });
-                }
-            }
-
-            // Sort by date and take most recent
-            recentProgress.sort((a, b) => new Date(b.date) - new Date(a.date));
-            const latestProgress = recentProgress.slice(0, 3);
-            
-            console.log('Recent progress retrieved:', latestProgress);
-            return latestProgress;
-        } catch (error) {
-            console.error('Error getting recent progress:', error);
-            return [];
         }
+
+        // Sort by date and take most recent
+        recentProgress.sort((a, b) => {
+            const dateA = new Date(a.date || 0);
+            const dateB = new Date(b.date || 0);
+            return dateB - dateA;
+        });
+
+        const latestProgress = recentProgress.slice(0, 3);
+        
+        console.log('Recent progress retrieved:', latestProgress);
+        return latestProgress;
+    } catch (error) {
+        console.error('Error getting recent progress:', error);
+        return [];
     }
 }
 
