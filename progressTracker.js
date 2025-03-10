@@ -1,7 +1,7 @@
 /**
  * progressTracker.js
  * Tracks and analyzes workout progress for both strength and rowing exercises
- * Version: 1.0.1
+ * Version: 1.0.2
  * Last Verified: 2024-03-06
  */
 
@@ -21,7 +21,10 @@ class ProgressTracker {
         console.log('ProgressTracker initialized');
     }
 
-    // Program Tracking
+    /**
+     * Get current program status
+     * @returns {Promise<Object>} Program status data
+     */
     async getCurrentProgram() {
         try {
             const currentWeek = await this.dataManager.getCurrentWeek();
@@ -40,6 +43,10 @@ class ProgressTracker {
         }
     }
 
+    /**
+     * Get completed workout days
+     * @returns {Promise<Array>} Array of completed days
+     */
     async getCompletedDays() {
         try {
             const user = await this.dataManager.getCurrentUser();
@@ -51,8 +58,12 @@ class ProgressTracker {
             return [];
         }
     }
-
-    // Progress Analysis
+    /**
+     * Analyze progress for a user
+     * @param {string} user - User ID
+     * @param {string} exerciseType - Type of exercise to analyze
+     * @returns {Promise<Object>} Progress analysis data
+     */
     async analyzeProgress(user, exerciseType = 'all') {
         try {
             console.log(`Analyzing progress for ${user}, type: ${exerciseType}`);
@@ -60,13 +71,11 @@ class ProgressTracker {
             const analysis = {};
 
             for (const [name, data] of Object.entries(progress)) {
-                // Verification: Data structure validation
                 if (!data || !Array.isArray(data.history)) {
                     console.warn(`Invalid data structure for ${name}`);
                     continue;
                 }
 
-                // Filter by exercise type
                 if (exerciseType !== 'all') {
                     if (exerciseType === 'rowing' && !name.startsWith('rowing_')) continue;
                     if (exerciseType === 'strength' && name.startsWith('rowing_')) continue;
@@ -86,8 +95,14 @@ class ProgressTracker {
         }
     }
 
+    /**
+     * Calculate progress metrics for an exercise
+     * @param {string} name - Exercise name
+     * @param {Array} recent - Recent exercise data
+     * @param {Object} personalBest - Personal best data
+     * @returns {Object|null} Progress metrics
+     */
     calculateProgressMetrics(name, recent, personalBest) {
-        // Verification: Input validation
         if (!Array.isArray(recent) || recent.length < 2 || !personalBest) {
             console.warn(`Invalid input for calculateProgressMetrics: ${name}`);
             return null;
@@ -103,9 +118,15 @@ class ProgressTracker {
         return this.calculateStrengthMetrics(current, previous, personalBest);
     }
 
+    /**
+     * Calculate rowing progress metrics
+     * @param {Object} current - Current rowing data
+     * @param {Object} previous - Previous rowing data
+     * @param {Object} personalBest - Personal best rowing data
+     * @returns {Object|null} Rowing metrics
+     */
     calculateRowingMetrics(current, previous, personalBest) {
-        // Verification: Rowing data structure validation
-        if (!current.pace || !previous.pace || !personalBest.pace) {
+        if (!current?.pace || !previous?.pace || !personalBest?.pace) {
             console.warn('Invalid rowing data structure');
             return null;
         }
@@ -120,9 +141,15 @@ class ProgressTracker {
         };
     }
 
+    /**
+     * Calculate strength progress metrics
+     * @param {Object} current - Current exercise data
+     * @param {Object} previous - Previous exercise data
+     * @param {Object} personalBest - Personal best exercise data
+     * @returns {Object|null} Strength metrics
+     */
     calculateStrengthMetrics(current, previous, personalBest) {
-        // Verification: Strength data structure validation
-        if (!current.weight || !previous.weight || !personalBest.weight) {
+        if (!current || !previous || !personalBest) {
             console.warn('Invalid strength data structure');
             return null;
         }
@@ -149,6 +176,12 @@ class ProgressTracker {
         };
     }
 
+    /**
+     * Get strength trend
+     * @param {Object} current - Current exercise data
+     * @param {Object} previous - Previous exercise data
+     * @returns {string} Trend direction
+     */
     getStrengthTrend(current, previous) {
         if (current.weight > previous.weight) return 'improving';
         if (current.weight < previous.weight) return 'declining';
@@ -156,8 +189,11 @@ class ProgressTracker {
         if (current.reps < previous.reps) return 'declining';
         return 'steady';
     }
-
-    // Target Calculations
+    /**
+     * Get next targets for a user
+     * @param {string} user - User ID
+     * @returns {Promise<Object>} Next target data
+     */
     async getNextTargets(user) {
         try {
             console.log(`Calculating next targets for ${user}`);
@@ -165,7 +201,6 @@ class ProgressTracker {
             const targets = {};
 
             for (const [name, data] of Object.entries(progress)) {
-                // Verification: Data structure validation
                 if (!data || !Array.isArray(data.history) || data.history.length === 0) {
                     console.warn(`Invalid data structure for ${name}`);
                     continue;
@@ -183,8 +218,13 @@ class ProgressTracker {
         }
     }
 
+    /**
+     * Calculate target for an exercise
+     * @param {string} name - Exercise name
+     * @param {Object} current - Current exercise data
+     * @returns {Object|null} Target data
+     */
     calculateTarget(name, current) {
-        // Verification: Input validation
         if (!name || !current) {
             console.warn('Invalid input for calculateTarget');
             return null;
@@ -212,7 +252,11 @@ class ProgressTracker {
         };
     }
 
-    // Rowing Specific Methods
+    /**
+     * Get rowing stats for a user
+     * @param {string} user - User ID
+     * @returns {Promise<Object>} Rowing stats
+     */
     async getRowingStats(user) {
         try {
             console.log(`Getting rowing stats for ${user}`);
@@ -241,8 +285,13 @@ class ProgressTracker {
         }
     }
 
+    /**
+     * Calculate recent average pace
+     * @param {Array} history - Exercise history
+     * @param {number} entries - Number of recent entries to consider
+     * @returns {number} Average pace
+     */
     calculateRecentAverage(history, entries = 5) {
-        // Verification: Input validation
         if (!Array.isArray(history) || history.length === 0) {
             console.warn('Invalid history for calculateRecentAverage');
             return 0;
@@ -252,8 +301,12 @@ class ProgressTracker {
         return Math.round(recent.reduce((sum, entry) => sum + (entry.pace || 0), 0) / recent.length);
     }
 
+    /**
+     * Calculate total meters rowed
+     * @param {Array} history - Exercise history
+     * @returns {number} Total meters
+     */
     calculateTotalMeters(history) {
-        // Verification: Input validation
         if (!Array.isArray(history)) {
             console.warn('Invalid history for calculateTotalMeters');
             return 0;
@@ -262,14 +315,176 @@ class ProgressTracker {
         return history.reduce((sum, entry) => sum + (entry.meters || 0), 0);
     }
 
+    /**
+     * Calculate total minutes rowed
+     * @param {Array} history - Exercise history
+     * @returns {number} Total minutes
+     */
     calculateTotalMinutes(history) {
-        // Verification: Input validation
         if (!Array.isArray(history)) {
             console.warn('Invalid history for calculateTotalMinutes');
             return 0;
         }
 
         return history.reduce((sum, entry) => sum + (entry.minutes || 0), 0);
+    }
+    /**
+     * Get rowing progress for a user
+     * @param {string} userId - User ID
+     * @param {number} week - Week number
+     * @returns {Promise<Object>} Rowing progress data
+     */
+    async getRowingProgress(userId, week) {
+        try {
+            const progress = await this.dataManager.getProgress(userId);
+            const rowingTypes = ['Breathe', 'Sweat', 'Drive'];
+            const rowingProgress = {};
+
+            rowingTypes.forEach(type => {
+                const key = `rowing_${type}`;
+                if (progress[key]?.history) {
+                    const weekData = progress[key].history.filter(entry => {
+                        const entryWeek = this.getWeekNumber(new Date(entry.date));
+                        return entryWeek === week;
+                    });
+
+                    rowingProgress[type] = {
+                        bestPace: this.calculateBestPace(weekData),
+                        averagePace: this.calculateAveragePace(weekData),
+                        totalMeters: this.calculateTotalMeters(weekData)
+                    };
+                }
+            });
+
+            console.log(`Rowing progress for week ${week}:`, rowingProgress);
+            return rowingProgress;
+        } catch (error) {
+            console.error('Error getting rowing progress:', error);
+            return {};
+        }
+    }
+
+    /**
+     * Get strength progress for a user
+     * @param {string} userId - User ID
+     * @param {number} week - Week number
+     * @returns {Promise<Object>} Strength progress data
+     */
+    async getStrengthProgress(userId, week) {
+        try {
+            const progress = await this.dataManager.getProgress(userId);
+            const strengthProgress = {};
+
+            Object.entries(progress).forEach(([exercise, data]) => {
+                if (exercise.startsWith('rowing_') || !data.history) return;
+
+                const weekData = data.history.filter(entry => {
+                    const entryWeek = this.getWeekNumber(new Date(entry.date));
+                    return entryWeek === week;
+                });
+
+                if (weekData.length > 0) {
+                    strengthProgress[exercise] = {
+                        best: this.getBestSet(weekData),
+                        current: this.getCurrentSet(weekData)
+                    };
+                }
+            });
+
+            console.log(`Strength progress for week ${week}:`, strengthProgress);
+            return strengthProgress;
+        } catch (error) {
+            console.error('Error getting strength progress:', error);
+            return {};
+        }
+    }
+
+    /**
+     * Get personal bests for a user
+     * @param {string} userId - User ID
+     * @returns {Promise<Object>} Personal bests data
+     */
+    async getPersonalBests(userId) {
+        try {
+            const progress = await this.dataManager.getProgress(userId);
+            const personalBests = {};
+
+            Object.entries(progress).forEach(([exercise, data]) => {
+                if (data.personalBest && Object.keys(data.personalBest).length > 0) {
+                    personalBests[exercise] = data.personalBest;
+                }
+            });
+
+            console.log('Personal bests:', personalBests);
+            return personalBests;
+        } catch (error) {
+            console.error('Error getting personal bests:', error);
+            return {};
+        }
+    }
+
+    /**
+     * Helper method to get week number from date
+     * @param {Date} date - Date to calculate week number for
+     * @returns {number} Week number
+     * @private
+     */
+    getWeekNumber(date) {
+        const startDate = new Date('2025-02-18');
+        const diff = date - startDate;
+        return Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
+    }
+
+    /**
+     * Calculate best pace from rowing data
+     * @param {Array} data - Rowing data
+     * @returns {number} Best pace
+     * @private
+     */
+    calculateBestPace(data) {
+        if (!data || data.length === 0) return 0;
+        return Math.max(...data.map(entry => entry.pace || 0));
+    }
+
+    /**
+     * Calculate average pace from rowing data
+     * @param {Array} data - Rowing data
+     * @returns {number} Average pace
+     * @private
+     */
+    calculateAveragePace(data) {
+        if (!data || data.length === 0) return 0;
+        const sum = data.reduce((acc, entry) => acc + (entry.pace || 0), 0);
+        return sum / data.length;
+    }
+
+    /**
+     * Get best set from strength data
+     * @param {Array} data - Strength data
+     * @returns {Object|null} Best set
+     * @private
+     */
+    getBestSet(data) {
+        if (!data || data.length === 0) return null;
+        const allSets = data.flatMap(entry => entry.sets || []);
+        return allSets.reduce((best, current) => {
+            if (!best || (current.weight && current.weight > best.weight)) {
+                return current;
+            }
+            return best;
+        }, null);
+    }
+
+    /**
+     * Get current set from strength data
+     * @param {Array} data - Strength data
+     * @returns {Object|null} Current set
+     * @private
+     */
+    getCurrentSet(data) {
+        if (!data || data.length === 0) return null;
+        const lastEntry = data[data.length - 1];
+        return (lastEntry.sets && lastEntry.sets[0]) || null;
     }
 }
 
