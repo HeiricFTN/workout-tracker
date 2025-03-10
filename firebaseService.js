@@ -5,7 +5,7 @@
  * Last Verified: 2024-03-06
  */
 
-import { db, auth, FirebaseHelper } from '../firebase-config.js';
+import { db, auth, FirebaseHelper } from './firebase-config.js';
 
 // Verification: Confirm imports are correct and modules exist
 
