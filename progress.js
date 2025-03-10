@@ -1,15 +1,14 @@
 /**
  * progress.js
  * Manages progress tracking and display for the workout application
- * Version: 1.0.2
- * Last Verified: 2024-03-06
+ * Version: 1.0.3
+ * Last Verified: 2024-03-07
+ * Changes: Updated to use progressTracker and dataManager
  */
 
 import dataManager from './dataManager.js';
 import progressTracker from './progressTracker.js';
 import workoutLibrary from './workoutLibrary.js';
-
-// Verification: Confirm imports are correct and modules exist
 
 /**
  * ProgressManager Class
@@ -38,7 +37,6 @@ class ProgressManager {
     /**
      * Cache DOM elements
      * @returns {Object} Cached DOM elements
-     * @verification - All element IDs match the HTML structure
      */
     cacheElements() {
         const elements = {
@@ -70,17 +68,38 @@ class ProgressManager {
         try {
             console.log('Initializing progress page');
             this.showLoading(true);
+
+            // Get current user from dataManager
             this.state.currentUser = await dataManager.getCurrentUser();
-            this.elements.userToggle.textContent = this.state.currentUser;
-            this.setupEventListeners();
-            await this.populateWeekSelector();
-            await this.updateDisplay();
-            this.showLoading(false);
+            
+            // Setup UI
+            if (this.elements.userToggle) {
+                this.elements.userToggle.textContent = this.state.currentUser;
+            }
+            
+            // Initialize
+            await this.initializeComponents();
             console.log('Progress page initialized successfully');
         } catch (error) {
             console.error('Error initializing progress page:', error);
             this.showError('Failed to load progress data');
+        } finally {
             this.showLoading(false);
+        }
+    }
+
+    /**
+     * Initialize components
+     * @returns {Promise<void>}
+     */
+    async initializeComponents() {
+        try {
+            this.setupEventListeners();
+            await this.populateWeekSelector();
+            await this.updateDisplay();
+        } catch (error) {
+            console.error('Error initializing components:', error);
+            throw error; // Propagate error to init method
         }
     }
 
@@ -106,9 +125,20 @@ class ProgressManager {
         try {
             this.showLoading(true);
             const newUser = this.state.currentUser === 'Dad' ? 'Alex' : 'Dad';
-            await dataManager.setCurrentUser(newUser);
+            
+            // Update user through dataManager
+            const success = await dataManager.setCurrentUser(newUser);
+            if (!success) {
+                throw new Error('Failed to switch user');
+            }
+
+            // Update state and UI
             this.state.currentUser = newUser;
-            this.elements.userToggle.textContent = this.state.currentUser;
+            if (this.elements.userToggle) {
+                this.elements.userToggle.textContent = this.state.currentUser;
+            }
+            
+            // Refresh display
             await this.updateDisplay();
             console.log('User toggled to:', this.state.currentUser);
         } catch (error) {
@@ -124,17 +154,20 @@ class ProgressManager {
      * @returns {Promise<void>}
      */
     async populateWeekSelector() {
-        const currentWeek = this.getCurrentWeek();
         if (!this.elements.weekSelector) return;
-        
+
+        const currentWeek = this.getCurrentWeek();
         this.elements.weekSelector.innerHTML = '';
+        
+        // Create week options
         for (let i = 1; i <= 12; i++) {
             const option = document.createElement('option');
-            option.value = i;
+            option.value = i.toString();
             option.textContent = `Week ${i}`;
             option.selected = i === currentWeek;
             this.elements.weekSelector.appendChild(option);
         }
+        
         console.log('Week selector populated');
     }
 
@@ -158,7 +191,14 @@ class ProgressManager {
     async handleWeekChange(event) {
         try {
             this.showLoading(true);
-            this.state.selectedWeek = parseInt(event.target.value);
+            
+            // Update selected week
+            const newWeek = parseInt(event.target.value);
+            if (isNaN(newWeek) || newWeek < 1 || newWeek > 12) {
+                throw new Error('Invalid week selected');
+            }
+            
+            this.state.selectedWeek = newWeek;
             await this.updateDisplay();
             console.log('Week changed to:', this.state.selectedWeek);
         } catch (error) {
@@ -181,7 +221,7 @@ class ProgressManager {
                 this.updatePersonalBests(),
                 this.updateNextTargets()
             ]);
-            console.log('Display updated');
+            console.log('Display updated successfully');
         } catch (error) {
             console.error('Error updating display:', error);
             this.showError('Failed to update display');
@@ -210,6 +250,7 @@ class ProgressManager {
                 this.state.currentUser, 
                 this.state.selectedWeek
             );
+
             if (!this.elements.rowingProgress) return;
             
             this.elements.rowingProgress.innerHTML = '';
@@ -238,13 +279,27 @@ class ProgressManager {
 
         const element = document.createElement('div');
         element.className = 'rowing-progress-item mb-4';
+        
+        // Format pace values with proper precision
+        const bestPace = this.formatPace(data.bestPace);
+        const avgPace = this.formatPace(data.averagePace);
+        
         element.innerHTML = `
             <h3 class="font-bold mb-2">${type} Rowing</h3>
-            <p>Best Pace: ${(data.bestPace || 0).toFixed(2)} m/min</p>
-            <p>Average Pace: ${(data.averagePace || 0).toFixed(2)} m/min</p>
+            <p>Best Pace: ${bestPace} m/min</p>
+            <p>Average Pace: ${avgPace} m/min</p>
             <p>Total Distance: ${data.totalMeters || 0} meters</p>
         `;
         return element;
+    }
+
+    /**
+     * Format pace value
+     * @param {number} pace - Pace value
+     * @returns {string} Formatted pace
+     */
+    formatPace(pace) {
+        return (pace || 0).toFixed(2);
     }
 
     /**
@@ -257,6 +312,7 @@ class ProgressManager {
                 this.state.currentUser, 
                 this.state.selectedWeek
             );
+
             if (!this.elements.progressContainer) return;
 
             this.elements.progressContainer.innerHTML = '';
@@ -285,12 +341,18 @@ class ProgressManager {
 
         const element = document.createElement('div');
         element.className = 'exercise-progress-item mb-4';
+        
+        const progressPercent = this.calculateProgressPercentage(data);
+        
         element.innerHTML = `
             <h3 class="font-bold mb-2">${exercise}</h3>
             <p>Best: ${this.formatMeasurement(data.best)}</p>
             <p>Current: ${this.formatMeasurement(data.current)}</p>
-            <div class="progress-bar" role="progressbar" aria-valuenow="${this.calculateProgressPercentage(data)}" aria-valuemin="0" aria-valuemax="100">
-                <div class="progress" style="width: ${this.calculateProgressPercentage(data)}%"></div>
+            <div class="progress-bar" role="progressbar" 
+                 aria-valuenow="${progressPercent}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+                <div class="progress" style="width: ${progressPercent}%"></div>
             </div>
         `;
         return element;
@@ -322,6 +384,7 @@ class ProgressManager {
         }
         return Math.min((data.current.reps / data.best.reps) * 100, 100);
     }
+
     /**
      * Update personal bests display
      * @returns {Promise<void>}
@@ -401,9 +464,25 @@ class ProgressManager {
         element.className = 'target-item mb-2';
         element.innerHTML = `
             <span class="font-medium">${exercise}:</span>
-            <span>${this.formatMeasurement(target)}</span>
+            <span>${this.formatTargetMeasurement(target)}</span>
         `;
         return element;
+    }
+
+    /**
+     * Format target measurement data
+     * @param {Object} data - Target measurement data
+     * @returns {string} Formatted target measurement
+     */
+    formatTargetMeasurement(data) {
+        if (!data) return 'N/A';
+        if (data.type === 'rowing') {
+            return `${data.targetPace.toFixed(2)} m/min for ${data.suggestedMinutes} min`;
+        }
+        if (data.type === 'dumbbell') {
+            return `${data.targetWeight} lbs x ${data.targetReps} reps`;
+        }
+        return `${data.targetReps} reps`;
     }
 
     /**
@@ -442,10 +521,12 @@ class ProgressManager {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM Content Loaded. Initializing progress page...');
     const progressManager = new ProgressManager();
-    await progressManager.init().catch(error => {
+    try {
+        await progressManager.init();
+    } catch (error) {
         console.error('Failed to initialize progress page:', error);
         progressManager.showError('Failed to initialize progress page');
-    });
+    }
 });
 
 // Final Verification:
