@@ -1,22 +1,20 @@
 /**
  * dashboard.js
  * Manages the main dashboard interface and user interactions
- * Version: 1.0.1
- * Last Verified: 2024-03-06
+ * Version: 1.0.2
+ * Last Verified: 2024-03-07
+ * Changes: Updated to use progressTracker and dataManager
  */
 
 import dataManager from './dataManager.js';
-import { deleteAllData } from './firebase-config.js'; 
-
-// Verification: Confirm imports are correct and modules exist
-
-console.log('Starting dashboard script...');
+import progressTracker from './progressTracker.js';
+import firebaseService from './firebaseService.js';
 
 /**
- * Dashboard Controller
+ * DashboardController Class
  * Handles dashboard UI and data management
  * @verification - All method signatures and return types verified
- * @crossref - Interfaces with dataManager.js and workout components
+ * @crossref - Interfaces with dataManager.js and progressTracker.js
  */
 class DashboardController {
     /**
@@ -28,7 +26,8 @@ class DashboardController {
         this.state = {
             currentUser: 'Dad', // Set default
             programStart: new Date('2025-03-03'),
-            workouts: ['Chest & Triceps', 'Shoulders', 'Back & Biceps']
+            workouts: ['Chest & Triceps', 'Shoulders', 'Back & Biceps'],
+            isLoading: false
         };
         
         console.log('DashboardController initialized');
@@ -55,15 +54,63 @@ class DashboardController {
             chestTricepsBtn: document.getElementById('chestTricepsBtn'),
             shouldersBtn: document.getElementById('shouldersBtn'),
             backBicepsBtn: document.getElementById('backBicepsBtn'),
-            recentProgress: document.getElementById('recentProgress')
+            recentProgress: document.getElementById('recentProgress'),
+            loadingIndicator: document.getElementById('loadingIndicator')
         };
 
-        console.log('Elements found:', {
-            weeklyDots: !!elements.weeklyDots,
-            workoutsComplete: !!elements.workoutsComplete
+        // Verify all elements are found
+        Object.entries(elements).forEach(([key, element]) => {
+            if (!element) {
+                console.error(`Element not found: ${key}`);
+            }
         });
 
         return elements;
+    }
+    /**
+     * Initialize dashboard
+     * @returns {Promise<void>}
+     */
+    async initializeDashboard() {
+        console.log('Starting initializeDashboard');
+        try {
+            this.showLoading(true);
+            
+            // Get initial user
+            this.state.currentUser = await dataManager.getCurrentUser();
+            console.log('Initialized current user as:', this.state.currentUser);
+            
+            // Setup UI components
+            this.setupEventListeners();
+            await this.updateDashboard();
+            
+            this.showLoading(false);
+            console.log('Dashboard initialization complete');
+        } catch (error) {
+            console.error('Error initializing dashboard:', error);
+            this.showError('There was an error loading the dashboard. Please try refreshing the page.');
+            this.showLoading(false);
+        }
+    }
+
+    /**
+     * Update all dashboard components
+     * @returns {Promise<void>}
+     */
+    async updateDashboard() {
+        try {
+            await Promise.all([
+                this.updateUserButtons(),
+                this.updateProgramStatus(),
+                this.updateTodayWorkout(),
+                this.updateWeeklyProgress(),
+                this.updateRowingProgress(),
+                this.updateRecentProgress()
+            ]);
+        } catch (error) {
+            console.error('Error updating dashboard:', error);
+            throw error;
+        }
     }
 
     /**
@@ -72,12 +119,21 @@ class DashboardController {
     setupEventListeners() {
         console.log('Setting up event listeners');
 
-        this.elements.dadButton?.addEventListener('click', this.handleUserSwitch.bind(this, 'Dad'));
-        this.elements.alexButton?.addEventListener('click', this.handleUserSwitch.bind(this, 'Alex'));
-        this.elements.chestTricepsBtn?.addEventListener('click', this.handleWorkoutButtonClick.bind(this, 'chestTriceps'));
-        this.elements.shouldersBtn?.addEventListener('click', this.handleWorkoutButtonClick.bind(this, 'shoulders'));
-        this.elements.backBicepsBtn?.addEventListener('click', this.handleWorkoutButtonClick.bind(this, 'backBiceps'));
-        this.elements.startWorkoutBtn?.addEventListener('click', this.handleStartWorkout.bind(this));
+        // User switching
+        this.elements.dadButton?.addEventListener('click', () => this.handleUserSwitch('Dad'));
+        this.elements.alexButton?.addEventListener('click', () => this.handleUserSwitch('Alex'));
+
+        // Workout buttons
+        this.elements.chestTricepsBtn?.addEventListener('click', () => 
+            this.handleWorkoutButtonClick('chestTriceps'));
+        this.elements.shouldersBtn?.addEventListener('click', () => 
+            this.handleWorkoutButtonClick('shoulders'));
+        this.elements.backBicepsBtn?.addEventListener('click', () => 
+            this.handleWorkoutButtonClick('backBiceps'));
+        
+        // Start workout button
+        this.elements.startWorkoutBtn?.addEventListener('click', () => 
+            this.handleStartWorkout());
     }
 
     /**
@@ -85,8 +141,16 @@ class DashboardController {
      * @param {string} user - User to switch to
      */
     async handleUserSwitch(user) {
-        console.log(`${user} button clicked`);
-        await this.switchUser(user);
+        try {
+            console.log(`${user} button clicked`);
+            this.showLoading(true);
+            await this.switchUser(user);
+        } catch (error) {
+            console.error('Error in user switch handler:', error);
+            this.showError('Failed to switch user');
+        } finally {
+            this.showLoading(false);
+        }
     }
 
     /**
@@ -106,6 +170,8 @@ class DashboardController {
         const workoutType = this.getCurrentWorkoutType();
         if (workoutType) {
             this.navigateToWorkout(workoutType);
+        } else {
+            this.showError('No workout scheduled for today');
         }
     }
 
@@ -120,6 +186,37 @@ class DashboardController {
     }
 
     /**
+     * Switch user
+     * @param {string} user - User to switch to
+     */
+    async switchUser(user) {
+        if (user !== 'Dad' && user !== 'Alex') {
+            console.error('Invalid user:', user);
+            return;
+        }
+
+        console.log('Switching to user:', user);
+        try {
+            // Update state immediately for responsive UI
+            this.state.currentUser = user;
+            this.updateUserButtons();
+
+            // Update backend
+            await dataManager.setCurrentUser(user);
+            
+            // Update all dashboard components
+            await this.updateDashboard();
+            
+            console.log('User switch completed:', user);
+        } catch (error) {
+            console.error('Error switching user:', error);
+            // Revert state if save failed
+            this.state.currentUser = await dataManager.getCurrentUser();
+            this.updateUserButtons();
+            throw error;
+        }
+    }
+    /**
      * Update user buttons UI
      */
     updateUserButtons() {
@@ -130,29 +227,37 @@ class DashboardController {
         const inactiveClasses = 'bg-gray-200';
 
         if (this.elements.dadButton) {
-            this.elements.dadButton.className = `${baseClasses} ${this.state.currentUser === 'Dad' ? activeClasses : inactiveClasses}`;
+            this.elements.dadButton.className = `${baseClasses} ${
+                this.state.currentUser === 'Dad' ? activeClasses : inactiveClasses
+            }`;
         }
 
         if (this.elements.alexButton) {
-            this.elements.alexButton.className = `${baseClasses} ${this.state.currentUser === 'Alex' ? activeClasses : inactiveClasses}`;
+            this.elements.alexButton.className = `${baseClasses} ${
+                this.state.currentUser === 'Alex' ? activeClasses : inactiveClasses
+            }`;
         }
     }
 
     /**
      * Update program status
      */
-    updateProgramStatus() {
-        const currentWeek = this.getCurrentWeek();
-        const phase = currentWeek <= 6 ? 1 : 2;
-
-        if (this.elements.currentWeek) {
-            this.elements.currentWeek.textContent = `Week ${currentWeek} of 12`;
-        }
-        if (this.elements.programPhase) {
-            this.elements.programPhase.textContent = `Phase ${phase}`;
-        }
-        if (this.elements.nextWorkout) {
-            this.elements.nextWorkout.textContent = this.getNextWorkout();
+    async updateProgramStatus() {
+        try {
+            const programStatus = await progressTracker.getCurrentProgram();
+            
+            if (this.elements.currentWeek) {
+                this.elements.currentWeek.textContent = `Week ${programStatus.week} of 12`;
+            }
+            if (this.elements.programPhase) {
+                this.elements.programPhase.textContent = `Phase ${programStatus.phase}`;
+            }
+            if (this.elements.nextWorkout) {
+                this.elements.nextWorkout.textContent = this.getNextWorkout();
+            }
+        } catch (error) {
+            console.error('Error updating program status:', error);
+            throw error;
         }
     }
 
@@ -161,12 +266,14 @@ class DashboardController {
      */
     async updateRowingProgress() {
         try {
-            const progress = await dataManager.getProgress(this.state.currentUser);
-            this.updateRowingType('Breathe', this.elements.breatheProgress, progress);
-            this.updateRowingType('Sweat', this.elements.sweatProgress, progress);
-            this.updateRowingType('Drive', this.elements.driveProgress, progress);
+            const rowingStats = await progressTracker.getRowingStats(this.state.currentUser);
+            
+            this.updateRowingType('Breathe', this.elements.breatheProgress, rowingStats);
+            this.updateRowingType('Sweat', this.elements.sweatProgress, rowingStats);
+            this.updateRowingType('Drive', this.elements.driveProgress, rowingStats);
         } catch (error) {
             console.error('Error updating rowing progress:', error);
+            throw error;
         }
     }
 
@@ -174,31 +281,135 @@ class DashboardController {
      * Update rowing type progress
      * @param {string} type - Rowing type
      * @param {HTMLElement} element - DOM element to update
-     * @param {Object} progress - Progress data
+     * @param {Object} stats - Rowing statistics
      */
-    updateRowingType(type, element, progress) {
+    updateRowingType(type, element, stats) {
         if (!element) return;
 
-        const rowingKey = `rowing_${type}`;
-        const rowingData = progress?.[rowingKey];
-
-        if (rowingData?.history?.length > 0) {
-            const recent = rowingData.history[rowingData.history.length - 1];
-            const bestPace = rowingData.personalBest?.pace || 0;
-            element.textContent = `${Math.round(recent.pace)} m/min (Best: ${Math.round(bestPace)})`;
+        const typeStats = stats[type];
+        if (typeStats) {
+            const bestPace = this.formatPace(typeStats.bestPace);
+            const recentAvg = this.formatPace(typeStats.recentAverage);
+            element.textContent = `${bestPace} m/min (Avg: ${recentAvg})`;
         } else {
             element.textContent = 'No data';
         }
     }
 
     /**
-     * Get current week number
-     * @returns {number} Current week number
+     * Format pace value
+     * @param {number} pace - Pace value to format
+     * @returns {string} Formatted pace
      */
-    getCurrentWeek() {
-        const today = new Date();
-        const weeksPassed = Math.floor((today - this.state.programStart) / (7 * 24 * 60 * 60 * 1000));
-        return Math.min(Math.max(weeksPassed + 1, 1), 12);
+    formatPace(pace) {
+        return (pace || 0).toFixed(1);
+    }
+
+    /**
+     * Update weekly progress
+     */
+    async updateWeeklyProgress() {
+        console.log('Starting updateWeeklyProgress');
+        try {
+            const completedDays = await progressTracker.getCompletedDays();
+            
+            if (!this.elements.weeklyDots) {
+                console.error('weeklyDots element not found');
+                return;
+            }
+
+            const today = new Date().getDay();
+            const dayLabels = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
+            
+            // Generate dots HTML
+            const dotsHtml = Array(7).fill('').map((_, index) => {
+                let dotClass = 'progress-dot';
+                if (completedDays.includes(index)) {
+                    dotClass += ' dot-complete';
+                } else if (index === today) {
+                    dotClass += ' dot-today';
+                } else {
+                    dotClass += ' dot-upcoming';
+                }
+                
+                return `
+                    <div class="flex flex-col items-center">
+                        <span class="text-xs text-gray-600 mb-1">${dayLabels[index]}</span>
+                        <div class="${dotClass}" style="width: 12px; height: 12px;"></div>
+                    </div>
+                `;
+            }).join('');
+
+            this.elements.weeklyDots.innerHTML = dotsHtml;
+            
+            // Update workouts complete text
+            if (this.elements.workoutsComplete) {
+                this.elements.workoutsComplete.textContent = 
+                    `${completedDays.length} of 3 workouts complete this week`;
+            }
+            
+            console.log('Weekly progress updated successfully');
+        } catch (error) {
+            console.error('Error updating weekly progress:', error);
+            throw error;
+        }
+    }
+    /**
+     * Update recent progress
+     */
+    async updateRecentProgress() {
+        if (!this.elements.recentProgress) return;
+
+        try {
+            const recentProgress = await progressTracker.analyzeProgress(this.state.currentUser);
+            
+            if (!recentProgress || Object.keys(recentProgress).length === 0) {
+                this.elements.recentProgress.innerHTML = 
+                    '<li class="text-gray-600">No recent progress recorded</li>';
+                return;
+            }
+
+            const progressHtml = Object.entries(recentProgress)
+                .slice(0, 3)
+                .map(([exercise, data]) => {
+                    if (!data) return '';
+                    
+                    let progressText = '';
+                    if (data.type === 'rowing') {
+                        progressText = `${this.formatPace(data.previousPace)}→${this.formatPace(data.currentPace)} m/min`;
+                    } else {
+                        progressText = `${data.previous || 0}→${data.current || 0} ${data.unit || 'lbs'}`;
+                    }
+
+                    return `<li class="mb-1">${exercise}: ${progressText}</li>`;
+                })
+                .join('');
+
+            this.elements.recentProgress.innerHTML = progressHtml;
+        } catch (error) {
+            console.error('Error updating recent progress:', error);
+            this.elements.recentProgress.innerHTML = 
+                '<li class="text-red-600">Error loading recent progress</li>';
+        }
+    }
+
+    /**
+     * Update today's workout
+     */
+    updateTodayWorkout() {
+        if (!this.elements.todayWorkout || !this.elements.startWorkoutBtn) return;
+
+        const workout = this.getNextWorkout();
+        this.elements.todayWorkout.textContent = workout;
+        
+        const workoutType = this.getCurrentWorkoutType();
+        this.elements.startWorkoutBtn.disabled = !workoutType;
+        
+        if (!workoutType) {
+            this.elements.startWorkoutBtn.classList.add('opacity-50');
+        } else {
+            this.elements.startWorkoutBtn.classList.remove('opacity-50');
+        }
     }
 
     /**
@@ -230,172 +441,30 @@ class DashboardController {
     }
 
     /**
-     * Update weekly progress
+     * Show loading state
+     * @param {boolean} show - Whether to show loading state
      */
-    async updateWeeklyProgress() {
-        console.log('Starting updateWeeklyProgress');
-        try {
-            const workouts = await dataManager.getWeeklyWorkouts(this.state.currentUser);
-            console.log('Workouts received:', workouts);
-            
-            if (!this.elements.weeklyDots) {
-                console.error('weeklyDots element not found');
-                return;
-            }
-
-            const today = new Date().getDay();
-            console.log('Today is day:', today);
-               
-            const dayLabels = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
-            
-            const dotsAndLabels = Array(7).fill('').map((_, index) => {
-                let dotClass = 'progress-dot';
-                if (workouts.includes(index)) {
-                    dotClass += ' dot-complete';
-                } else if (index === today) {
-                    dotClass += ' dot-today';
-                } else {
-                    dotClass += ' dot-upcoming';
-                }
-                return `
-                    <div class="flex flex-col items-center">
-                        <span class="text-xs text-gray-600 mb-1">${dayLabels[index]}</span>
-                        <div class="${dotClass}" style="width: 12px; height: 12px; display: inline-block;"></div>
-                    </div>
-                `;
-            });
-
-            const htmlContent = dotsAndLabels.join('');
-            console.log('Generated HTML:', htmlContent);
-            this.elements.weeklyDots.innerHTML = htmlContent;
-            
-            // Update workouts complete text
-            if (this.elements.workoutsComplete) {
-                this.elements.workoutsComplete.textContent = 
-                    `${workouts.length} of 3 workouts complete this week`;
-            }
-            
-            console.log('Weekly progress updated successfully');
-        } catch (error) {
-            console.error('Error updating weekly progress:', error);
-        }
-    }
-
-    /**
-     * Update today's workout
-     */
-    updateTodayWorkout() {
-        if (!this.elements.todayWorkout || !this.elements.startWorkoutBtn) return;
-
-        const workout = this.getNextWorkout();
-        this.elements.todayWorkout.textContent = workout;
+    showLoading(show) {
+        this.state.isLoading = show;
         
-        const workoutType = this.getCurrentWorkoutType();
-        this.elements.startWorkoutBtn.disabled = !workoutType;
-        
-        if (!workoutType) {
-            this.elements.startWorkoutBtn.classList.add('opacity-50');
-        } else {
-            this.elements.startWorkoutBtn.classList.remove('opacity-50');
-        }
-    }
-
-    /**
-     * Update recent progress
-     */
-    async updateRecentProgress() {
-        if (!this.elements.recentProgress) return;
-
-        try {
-            const progress = await dataManager.getRecentProgress(this.state.currentUser);
-            
-            if (!progress || progress.length === 0) {
-                this.elements.recentProgress.innerHTML = '<li class="text-gray-600">No recent progress recorded</li>';
-                return;
-            }
-
-            this.elements.recentProgress.innerHTML = progress
-                .slice(0, 3)
-                .map(p => {
-                    if (p.type === 'exercise') {
-                        return `<li class="mb-1">${p.exercise}: ${p.previousWeight}→${p.currentWeight} lbs</li>`;
-                    } else if (p.type === 'rowing') {
-                        return `<li class="mb-1">${p.exercise}: ${p.previousPace}→${p.currentPace} m/min</li>`;
-                    }
-                    return '';
-                })
-                .join('');
-        } catch (error) {
-            console.error('Error updating recent progress:', error);
-            this.elements.recentProgress.innerHTML = '<li class="text-red-600">Error loading recent progress</li>';
-        }
-    }
-
-    /**
-     * Switch user
-     * @param {string} user - User to switch to
-     */
-    async switchUser(user) {
-        // Validate user value
-        if (user !== 'Dad' && user !== 'Alex') {
-            console.error('Invalid user:', user);
-            return;
+        // Update loading indicator
+        if (this.elements.loadingIndicator) {
+            this.elements.loadingIndicator.classList.toggle('hidden', !show);
         }
 
-        console.log('Switching to user:', user);
-        try {
-            this.state.currentUser = user;
-            this.updateUserButtons(); // Update UI immediately
-            await dataManager.setCurrentUser(user);
-            
-            // Update all dependent data
-            await Promise.all([
-                this.updateWeeklyProgress(),
-                this.updateRowingProgress(),
-                this.updateRecentProgress()
-            ]);
-            
-            console.log('User switch completed:', user);
-        } catch (error) {
-            console.error('Error switching user:', error);
-            // Revert state if save failed
-            this.state.currentUser = await dataManager.getCurrentUser();
-            this.updateUserButtons();
-        }
-    }
+        // Disable buttons during loading
+        const buttons = [
+            this.elements.dadButton,
+            this.elements.alexButton,
+            this.elements.startWorkoutBtn,
+            this.elements.chestTricepsBtn,
+            this.elements.shouldersBtn,
+            this.elements.backBicepsBtn
+        ];
 
-    /**
-     * Initialize dashboard
-     */
-    async initializeDashboard() {
-        console.log('Starting initializeDashboard');
-        try {
-            // Get initial user with default
-            this.state.currentUser = await dataManager.getCurrentUser();
-            console.log('Initialized current user as:', this.state.currentUser);
-            
-            // Setup UI
-            this.setupEventListeners();
-            console.log('Event listeners set up');
-            
-            // Update UI components
-            this.updateUserButtons();
-            this.updateProgramStatus();
-            this.updateTodayWorkout();
-            
-            // Load data
-            console.log('Starting data updates...');
-            await Promise.all([
-                this.updateWeeklyProgress().catch(error => console.error('Error updating weekly progress:', error)),
-                this.updateRowingProgress().catch(error => console.error('Error updating rowing progress:', error)),
-                this.updateRecentProgress().catch(error => console.error('Error updating recent progress:', error))
-            ]);
-            
-            console.log('Dashboard initialization complete');
-        } catch (error) {
-            console.error('Error initializing dashboard:', error);
-            this.showError('There was an error loading the dashboard. Please try refreshing the page.');
-        }
+        buttons.forEach(button => {
+            if (button) button.disabled = show;
+        });
     }
 
     /**
@@ -404,17 +473,17 @@ class DashboardController {
      */
     showError(message) {
         console.error(message);
-        alert(message); // Consider replacing with a more user-friendly error display
+        const errorElement = document.createElement('div');
+        errorElement.className = 
+            'error-message bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative';
+        errorElement.setAttribute('role', 'alert');
+        errorElement.textContent = message;
+        
+        document.body.insertBefore(errorElement, document.body.firstChild);
+        setTimeout(() => errorElement.remove(), 5000);
     }
 }
-window.clearAllData = async () => {
-    try {
-        await deleteAllData();
-        location.reload(); // Refresh the page after deletion
-    } catch (error) {
-        console.error('Error during cleanup:', error);
-    }
-};
+
 // Main initialization
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('DOM Content Loaded');
@@ -441,6 +510,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.error('Critical initialization error:', error);
     }
 });
+
+// For cleanup functionality
+window.clearAllData = async () => {
+    try {
+        await firebaseService.deleteAllData();
+        location.reload();
+    } catch (error) {
+        console.error('Error during cleanup:', error);
+    }
+};
 
 // Final Verification:
 // - All method signatures verified
