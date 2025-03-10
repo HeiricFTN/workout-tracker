@@ -1,23 +1,22 @@
 /**
  * progressTracker.js
  * Tracks and analyzes workout progress for both strength and rowing exercises
- * Version: 1.0.2
- * Last Verified: 2024-03-06
+ * Version: 1.0.3
+ * Last Verified: 2024-03-07
+ * Changes: Updated to use dataManager and firebaseService
  */
 
 import dataManager from './dataManager.js';
-
-// Verification: Confirm imports are correct and modules exist
+import firebaseService from './firebaseService.js';
 
 /**
  * ProgressTracker Class
  * Handles progress tracking, analysis, and target calculations
  * @verification - All method signatures and return types verified
- * @crossref - Interfaces with dataManager.js and workout components
+ * @crossref - Interfaces with dataManager.js and firebaseService.js
  */
 class ProgressTracker {
     constructor() {
-        this.dataManager = dataManager;
         console.log('ProgressTracker initialized');
     }
 
@@ -27,7 +26,7 @@ class ProgressTracker {
      */
     async getCurrentProgram() {
         try {
-            const currentWeek = await this.dataManager.getCurrentWeek();
+            const currentWeek = await dataManager.getCurrentWeek();
             const daysCompleted = await this.getCompletedDays();
             
             console.log('Getting current program status:', { currentWeek, daysCompleted });
@@ -49,8 +48,8 @@ class ProgressTracker {
      */
     async getCompletedDays() {
         try {
-            const user = await this.dataManager.getCurrentUser();
-            const workouts = await this.dataManager.getWeeklyWorkouts(user);
+            const user = await dataManager.getCurrentUser();
+            const workouts = await dataManager.getWeeklyWorkouts(user);
             console.log('Retrieved completed days:', workouts);
             return workouts;
         } catch (error) {
@@ -58,6 +57,7 @@ class ProgressTracker {
             return [];
         }
     }
+
     /**
      * Analyze progress for a user
      * @param {string} user - User ID
@@ -67,7 +67,7 @@ class ProgressTracker {
     async analyzeProgress(user, exerciseType = 'all') {
         try {
             console.log(`Analyzing progress for ${user}, type: ${exerciseType}`);
-            const progress = await this.dataManager.getProgress(user);
+            const progress = await dataManager.getProgress(user);
             const analysis = {};
 
             for (const [name, data] of Object.entries(progress)) {
@@ -189,6 +189,7 @@ class ProgressTracker {
         if (current.reps < previous.reps) return 'declining';
         return 'steady';
     }
+
     /**
      * Get next targets for a user
      * @param {string} user - User ID
@@ -197,7 +198,7 @@ class ProgressTracker {
     async getNextTargets(user) {
         try {
             console.log(`Calculating next targets for ${user}`);
-            const progress = await this.dataManager.getProgress(user);
+            const progress = await dataManager.getProgress(user);
             const targets = {};
 
             for (const [name, data] of Object.entries(progress)) {
@@ -260,7 +261,7 @@ class ProgressTracker {
     async getRowingStats(user) {
         try {
             console.log(`Getting rowing stats for ${user}`);
-            const progress = await this.dataManager.getProgress(user);
+            const progress = await dataManager.getProgress(user);
             const stats = {};
 
             for (const type of ['Breathe', 'Sweat', 'Drive']) {
@@ -328,6 +329,7 @@ class ProgressTracker {
 
         return history.reduce((sum, entry) => sum + (entry.minutes || 0), 0);
     }
+
     /**
      * Get rowing progress for a user
      * @param {string} userId - User ID
@@ -336,7 +338,7 @@ class ProgressTracker {
      */
     async getRowingProgress(userId, week) {
         try {
-            const progress = await this.dataManager.getProgress(userId);
+            const progress = await dataManager.getProgress(userId);
             const rowingTypes = ['Breathe', 'Sweat', 'Drive'];
             const rowingProgress = {};
 
@@ -372,7 +374,7 @@ class ProgressTracker {
      */
     async getStrengthProgress(userId, week) {
         try {
-            const progress = await this.dataManager.getProgress(userId);
+            const progress = await dataManager.getProgress(userId);
             const strengthProgress = {};
 
             Object.entries(progress).forEach(([exercise, data]) => {
@@ -406,7 +408,7 @@ class ProgressTracker {
      */
     async getPersonalBests(userId) {
         try {
-            const progress = await this.dataManager.getProgress(userId);
+            const progress = await dataManager.getProgress(userId);
             const personalBests = {};
 
             Object.entries(progress).forEach(([exercise, data]) => {
