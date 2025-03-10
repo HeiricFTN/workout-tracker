@@ -307,18 +307,27 @@ class DataManager {
      * @returns {Promise<Object>} User progress data
      * @verification - Firebase retrieval and local fallback verified
      */
-    async getProgress(userId) {
-        try {
-            const progress = await FirebaseHelper.getProgress(userId);
-            if (progress) {
-                localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
-            }
-            return progress || {};
-        } catch (error) {
-            console.error('Error getting progress:', error);
-            return this.getProgressLocal(userId);
+async getProgress(userId) {
+    try {
+        console.log('Fetching progress for user:', userId);
+        const progress = await FirebaseHelper.getProgress(userId);
+        
+        if (progress) {
+            console.log('Progress data structure:', {
+                keys: Object.keys(progress),
+                sampleData: Object.entries(progress).slice(0, 1)
+            });
+            localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
+        } else {
+            console.log('No progress data found');
         }
+        
+        return progress || {};
+    } catch (error) {
+        console.error('Error getting progress:', error);
+        return this.getProgressLocal(userId);
     }
+}
 
     /**
      * Get progress from local storage
