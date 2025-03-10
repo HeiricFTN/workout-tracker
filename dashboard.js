@@ -288,23 +288,27 @@ class DashboardController {
 
         const typeStats = stats[type];
         if (typeStats) {
-            const bestPace = this.formatPace(typeStats.bestPace);
-            const recentAvg = this.formatPace(typeStats.recentAverage);
-            element.textContent = `${bestPace} m/min (Avg: ${recentAvg})`;
+            const bestPace = Number(typeStats.bestPace) || 0;
+            const recentAvg = Number(typeStats.recentAverage) || 0;
+            element.textContent = `${bestPace.toFixed(1)} m/min (Avg: ${recentAvg.toFixed(1)})`;
         } else {
             element.textContent = 'No data';
         }
     }
 
+    
     /**
      * Format pace value
-     * @param {number} pace - Pace value to format
+     * @param {number|string} pace - Pace value to format
      * @returns {string} Formatted pace
      */
     formatPace(pace) {
-        return (pace || 0).toFixed(1);
+        // Convert to number and handle invalid values
+        const numPace = Number(pace);
+        if (isNaN(numPace)) return '0.0';
+        return numPace.toFixed(1);
     }
-
+    
     /**
      * Update weekly progress
      */
@@ -354,7 +358,8 @@ class DashboardController {
             throw error;
         }
     }
-    /**
+    
+     /**
      * Update recent progress
      */
     async updateRecentProgress() {
@@ -376,9 +381,13 @@ class DashboardController {
                     
                     let progressText = '';
                     if (data.type === 'rowing') {
-                        progressText = `${this.formatPace(data.previousPace)}→${this.formatPace(data.currentPace)} m/min`;
+                        const prevPace = Number(data.previousPace) || 0;
+                        const currPace = Number(data.currentPace) || 0;
+                        progressText = `${prevPace.toFixed(1)}→${currPace.toFixed(1)} m/min`;
                     } else {
-                        progressText = `${data.previous || 0}→${data.current || 0} ${data.unit || 'lbs'}`;
+                        const prev = Number(data.previous) || 0;
+                        const curr = Number(data.current) || 0;
+                        progressText = `${prev}→${curr} ${data.unit || 'lbs'}`;
                     }
 
                     return `<li class="mb-1">${exercise}: ${progressText}</li>`;
@@ -393,6 +402,7 @@ class DashboardController {
         }
     }
 
+    
     /**
      * Update today's workout
      */
