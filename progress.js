@@ -1,12 +1,12 @@
 /**
  * progress.js
  * Manages progress tracking and display for the workout application
- * Version: 1.0.1
+ * Version: 1.0.2
  * Last Verified: 2024-03-06
  */
 
 import dataManager from './dataManager.js';
-import firebaseService from './firebaseService.js';
+import progressTracker from './progressTracker.js';
 import workoutLibrary from './workoutLibrary.js';
 
 // Verification: Confirm imports are correct and modules exist
@@ -15,7 +15,7 @@ import workoutLibrary from './workoutLibrary.js';
  * ProgressManager Class
  * Handles progress tracking, display, and user interactions
  * @verification - All method signatures and return types verified
- * @crossref - Interfaces with dataManager.js, firebaseService.js, and workoutLibrary.js
+ * @crossref - Interfaces with dataManager.js, progressTracker.js, and workoutLibrary.js
  */
 class ProgressManager {
     /**
@@ -34,6 +34,7 @@ class ProgressManager {
         this.state.selectedWeek = this.getCurrentWeek();
         console.log('ProgressManager initialized');
     }
+
     /**
      * Cache DOM elements
      * @returns {Object} Cached DOM elements
@@ -61,7 +62,6 @@ class ProgressManager {
 
         return elements;
     }
-
     /**
      * Initialize the progress page
      * @returns {Promise<void>}
@@ -118,6 +118,7 @@ class ProgressManager {
             this.showLoading(false);
         }
     }
+
     /**
      * Populate week selector dropdown
      * @returns {Promise<void>}
@@ -167,7 +168,6 @@ class ProgressManager {
             this.showLoading(false);
         }
     }
-
     /**
      * Update display with current data
      * @returns {Promise<void>}
@@ -206,7 +206,7 @@ class ProgressManager {
      */
     async updateRowingProgress() {
         try {
-            const rowingProgress = await firebaseService.getRowingProgress(
+            const rowingProgress = await progressTracker.getRowingProgress(
                 this.state.currentUser, 
                 this.state.selectedWeek
             );
@@ -226,6 +226,7 @@ class ProgressManager {
             this.showError('Failed to load rowing progress');
         }
     }
+
     /**
      * Create rowing progress element
      * @param {string} type - Rowing type
@@ -252,7 +253,7 @@ class ProgressManager {
      */
     async updateStrengthProgress() {
         try {
-            const strengthProgress = await firebaseService.getStrengthProgress(
+            const strengthProgress = await progressTracker.getStrengthProgress(
                 this.state.currentUser, 
                 this.state.selectedWeek
             );
@@ -321,14 +322,13 @@ class ProgressManager {
         }
         return Math.min((data.current.reps / data.best.reps) * 100, 100);
     }
-
     /**
      * Update personal bests display
      * @returns {Promise<void>}
      */
     async updatePersonalBests() {
         try {
-            const personalBests = await firebaseService.getPersonalBests(this.state.currentUser);
+            const personalBests = await progressTracker.getPersonalBests(this.state.currentUser);
             if (!this.elements.personalBests) return;
 
             this.elements.personalBests.innerHTML = '';
@@ -370,7 +370,7 @@ class ProgressManager {
      */
     async updateNextTargets() {
         try {
-            const nextTargets = await firebaseService.getNextTargets(this.state.currentUser);
+            const nextTargets = await progressTracker.getNextTargets(this.state.currentUser);
             if (!this.elements.nextTargets) return;
 
             this.elements.nextTargets.innerHTML = '';
