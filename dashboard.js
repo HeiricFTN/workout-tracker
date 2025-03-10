@@ -290,7 +290,7 @@ class DashboardController {
         if (typeStats) {
             const bestPace = Number(typeStats.bestPace) || 0;
             const recentAvg = Number(typeStats.recentAverage) || 0;
-            element.textContent = `${bestPace.toFixed(1)} m/min (Avg: ${recentAvg.toFixed(1)})`;
+        element.textContent = `${bestPace.toFixed(2)} min/500m (Avg: ${recentAvg.toFixed(2)})`;
         } else {
             element.textContent = 'No data';
         }
