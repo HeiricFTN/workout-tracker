@@ -563,11 +563,9 @@ async getRecentProgress(userId) {
         return [];
     }
 }
-
-    // Create and export singleton instance
-const dataManager = new DataManager();
-export default dataManager;
-    
+// Create and export singleton instance
+    const dataManager = new DataManager();
+    export default dataManager;
 /**
  * @verification - Final verification notes:
  * 1. All method signatures verified
