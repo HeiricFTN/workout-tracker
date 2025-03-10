@@ -70,20 +70,43 @@ class ProgressTracker {
             const progress = await dataManager.getProgress(user);
             const analysis = {};
 
-            for (const [name, data] of Object.entries(progress)) {
-                if (!data || !Array.isArray(data.history)) {
-                    console.warn(`Invalid data structure for ${name}`);
+            if (!progress || typeof progress !== 'object') {
+                console.warn('No valid progress data found');
+                return {};
+            }
+
+            for (const [exerciseName, exerciseData] of Object.entries(progress)) {
+                // Skip internal fields and invalid data
+                if (exerciseName === 'id' || 
+                    !exerciseData || 
+                    typeof exerciseData !== 'object' || 
+                    exerciseName.startsWith('_')) {
                     continue;
                 }
 
-                if (exerciseType !== 'all') {
-                    if (exerciseType === 'rowing' && !name.startsWith('rowing_')) continue;
-                    if (exerciseType === 'strength' && name.startsWith('rowing_')) continue;
+                // Skip if no history or invalid history
+                if (!Array.isArray(exerciseData.history)) {
+                    console.warn(`Invalid or missing history for ${exerciseName}`);
+                    continue;
                 }
 
-                if (data.history.length >= 2) {
-                    const recent = data.history.slice(-2);
-                    analysis[name] = this.calculateProgressMetrics(name, recent, data.personalBest);
+                // Filter by exercise type if specified
+                if (exerciseType !== 'all') {
+                    if (exerciseType === 'rowing' && !exerciseName.startsWith('rowing_')) continue;
+                    if (exerciseType === 'strength' && exerciseName.startsWith('rowing_')) continue;
+                }
+
+                // Only analyze if we have enough history
+                if (exerciseData.history.length >= 2) {
+                    const recent = exerciseData.history.slice(-2);
+                    const analysisResult = this.calculateProgressMetrics(
+                        exerciseName, 
+                        recent, 
+                        exerciseData.personalBest
+                    );
+                    if (analysisResult) {
+                        analysis[exerciseName] = analysisResult;
+                    }
                 }
             }
 
@@ -103,7 +126,10 @@ class ProgressTracker {
      * @returns {Object|null} Progress metrics
      */
     calculateProgressMetrics(name, recent, personalBest) {
-        if (!Array.isArray(recent) || recent.length < 2 || !personalBest) {
+        if (!Array.isArray(recent) || 
+            recent.length < 2 || 
+            !personalBest ||
+            typeof personalBest !== 'object') {
             console.warn(`Invalid input for calculateProgressMetrics: ${name}`);
             return null;
         }
@@ -111,12 +137,17 @@ class ProgressTracker {
         const [previous, current] = recent;
         const isRowing = name.startsWith('rowing_');
 
-        if (isRowing) {
-            return this.calculateRowingMetrics(current, previous, personalBest);
+        try {
+            if (isRowing) {
+                return this.calculateRowingMetrics(current, previous, personalBest);
+            }
+            return this.calculateStrengthMetrics(current, previous, personalBest);
+        } catch (error) {
+            console.error(`Error calculating metrics for ${name}:`, error);
+            return null;
         }
-
-        return this.calculateStrengthMetrics(current, previous, personalBest);
     }
+
 
     /**
      * Calculate rowing progress metrics
@@ -253,7 +284,7 @@ class ProgressTracker {
         };
     }
 
-    /**
+ /**
      * Get rowing stats for a user
      * @param {string} user - User ID
      * @returns {Promise<Object>} Rowing stats
@@ -264,27 +295,46 @@ class ProgressTracker {
             const progress = await dataManager.getProgress(user);
             const stats = {};
 
-            for (const type of ['Breathe', 'Sweat', 'Drive']) {
+            const rowingTypes = ['Breathe', 'Sweat', 'Drive'];
+            
+            rowingTypes.forEach(type => {
+                // Initialize default stats for each type
+                stats[type] = {
+                    bestPace: "0:00",
+                    recentAverage: 0,
+                    totalMeters: 0,
+                    totalMinutes: 0
+                };
+
                 const key = `rowing_${type}`;
-                if (progress[key] && Array.isArray(progress[key].history)) {
+                if (progress && progress[key] && Array.isArray(progress[key].history)) {
+                    const history = progress[key].history;
                     stats[type] = {
                         bestPace: progress[key].personalBest?.pacePerFiveHundred || "0:00",
-                        recentAverage: this.calculateRecentAverage(progress[key].history),
-                        totalMeters: this.calculateTotalMeters(progress[key].history),
-                        totalMinutes: this.calculateTotalMinutes(progress[key].history)
+                        recentAverage: this.calculateRecentAverage(history),
+                        totalMeters: this.calculateTotalMeters(history),
+                        totalMinutes: this.calculateTotalMinutes(history)
                     };
+                    console.log(`Stats calculated for ${type}:`, stats[type]);
                 } else {
-                    console.warn(`Invalid or missing data for ${key}`);
+                    console.log(`No data available for ${key}, using defaults`);
                 }
-            }
+            });
 
             console.log('Rowing stats calculated:', stats);
             return stats;
+
         } catch (error) {
             console.error('Error getting rowing stats:', error);
-            return {};
+            // Return default stats for all types if error occurs
+            return {
+                Breathe: { bestPace: "0:00", recentAverage: 0, totalMeters: 0, totalMinutes: 0 },
+                Sweat: { bestPace: "0:00", recentAverage: 0, totalMeters: 0, totalMinutes: 0 },
+                Drive: { bestPace: "0:00", recentAverage: 0, totalMeters: 0, totalMinutes: 0 }
+            };
         }
     }
+
 
     /**
      * Calculate recent average pace
