@@ -307,27 +307,18 @@ class DataManager {
      * @returns {Promise<Object>} User progress data
      * @verification - Firebase retrieval and local fallback verified
      */
-async getProgress(userId) {
-    try {
-        console.log('Fetching progress for user:', userId);
-        const progress = await FirebaseHelper.getProgress(userId);
-        
-        if (progress) {
-            console.log('Progress data structure:', {
-                keys: Object.keys(progress),
-                sampleData: Object.entries(progress).slice(0, 1)
-            });
-            localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
-        } else {
-            console.log('No progress data found');
+    async getProgress(userId) {
+        try {
+            const progress = await FirebaseHelper.getProgress(userId);
+            if (progress) {
+                localStorage.setItem(this.storageKeys.progress(userId), JSON.stringify(progress));
+            }
+            return progress || {};
+        } catch (error) {
+            console.error('Error getting progress:', error);
+            return this.getProgressLocal(userId);
         }
-        
-        return progress || {};
-    } catch (error) {
-        console.error('Error getting progress:', error);
-        return this.getProgressLocal(userId);
     }
-}
 
     /**
      * Get progress from local storage
@@ -493,46 +484,20 @@ async getProgress(userId) {
      * @returns {Promise<Array>} Recent progress items
      * @verification - Recent progress retrieval verified
      */
-async getRecentProgress(userId) {
-    try {
-        console.log('Getting recent progress for user:', userId);
-        const progress = await this.getProgress(userId);
-        const recentProgress = [];
+    async getRecentProgress(userId) {
+        try {
+            console.log('Getting recent progress for user:', userId);
+            const progress = await this.getProgress(userId);
+            const recentProgress = [];
 
-        // Skip if progress is empty or invalid
-        if (!progress || typeof progress !== 'object') {
-            console.warn('No valid progress data found');
-            return [];
-        }
-
-        // Process exercise progress
-        for (const [exerciseName, exerciseData] of Object.entries(progress)) {
-            // Skip non-exercise entries and internal fields
-            if (!exerciseData || 
-                typeof exerciseData !== 'object' || 
-                exerciseName === 'id' || 
-                exerciseName.startsWith('_')) {
-                continue;
-            }
-
-            // Handle exercise data
-            if (exerciseName.startsWith('rowing_')) {
-                // Process rowing data
-                if (exerciseData.history?.length >= 2) {
-                    const recent = exerciseData.history.slice(-2);
-                    if (recent[0]?.pace !== undefined && recent[1]?.pace !== undefined) {
-                        recentProgress.push({
-                            type: 'rowing',
-                            exercise: exerciseName.replace('rowing_', ''),
-                            previousPace: recent[0].pace,
-                            currentPace: recent[1].pace,
-                            date: recent[1].date || new Date().toISOString()
-                        });
-                    }
+            // Process exercise progress
+            for (const [exerciseName, exerciseData] of Object.entries(progress)) {
+                if (!exerciseData?.history || !Array.isArray(exerciseData.history)) {
+                    console.warn(`Invalid history data for ${exerciseName}`);
+                    continue;
                 }
-            } else {
-                // Process regular exercise data
-                if (exerciseData.history?.length >= 2) {
+
+                if (exerciseData.history.length >= 2) {
                     const recent = exerciseData.history.slice(-2);
                     if (recent[0]?.sets?.[0] && recent[1]?.sets?.[0]) {
                         recentProgress.push({
@@ -540,32 +505,46 @@ async getRecentProgress(userId) {
                             exercise: exerciseName,
                             previousWeight: recent[0].sets[0].weight || 0,
                             currentWeight: recent[1].sets[0].weight || 0,
-                            date: recent[1].date || new Date().toISOString()
+                            date: recent[1].date
                         });
                     }
                 }
             }
+
+            // Process rowing progress
+            for (const rowingType of ['Breathe', 'Sweat', 'Drive']) {
+                const rowingKey = `rowing_${rowingType}`;
+                const rowingData = progress[rowingKey];
+
+                if (rowingData?.history && Array.isArray(rowingData.history) && rowingData.history.length >= 2) {
+                    const recent = rowingData.history.slice(-2);
+                    recentProgress.push({
+                        type: 'rowing',
+                        exercise: rowingType,
+                        previousPace: recent[0]?.pace || 0,
+                        currentPace: recent[1]?.pace || 0,
+                        date: recent[1].date
+                    });
+                }
+            }
+
+            // Sort by date and take most recent
+            recentProgress.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const latestProgress = recentProgress.slice(0, 3);
+            
+            console.log('Recent progress retrieved:', latestProgress);
+            return latestProgress;
+        } catch (error) {
+            console.error('Error getting recent progress:', error);
+            return [];
         }
-
-        // Sort by date and take most recent
-        recentProgress.sort((a, b) => {
-            const dateA = new Date(a.date || 0);
-            const dateB = new Date(b.date || 0);
-            return dateB - dateA;
-        });
-
-        const latestProgress = recentProgress.slice(0, 3);
-        
-        console.log('Recent progress retrieved:', latestProgress);
-        return latestProgress;
-    } catch (error) {
-        console.error('Error getting recent progress:', error);
-        return [];
     }
 }
+
 // Create and export singleton instance
-    const dataManager = new DataManager();
-    export default dataManager;
+const dataManager = new DataManager();
+export default dataManager;
+
 /**
  * @verification - Final verification notes:
  * 1. All method signatures verified
@@ -579,6 +558,3 @@ async getRecentProgress(userId) {
  * 9. Firebase integration verified
  * 10. Manual save only implementation confirmed
  */
-
-
-
