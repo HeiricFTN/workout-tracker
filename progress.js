@@ -7,7 +7,7 @@
 
 import dataManager from './dataManager.js';
 import firebaseService from './firebaseService.js';
-import { WorkoutLibrary } from './workoutLibrary.js';
+import workoutLibrary from './workoutLibrary.js';
 
 // Verification: Confirm imports are correct and modules exist
 
@@ -61,7 +61,6 @@ class ProgressManager {
 
         return elements;
     }
-
     /**
      * Initialize the progress page
      * @returns {Promise<void>}
@@ -71,6 +70,7 @@ class ProgressManager {
             console.log('Initializing progress page');
             this.showLoading(true);
             this.state.currentUser = await dataManager.getCurrentUser();
+            this.elements.userToggle.textContent = this.state.currentUser;
             this.setupEventListeners();
             await this.populateWeekSelector();
             await this.updateDisplay();
@@ -79,6 +79,7 @@ class ProgressManager {
         } catch (error) {
             console.error('Error initializing progress page:', error);
             this.showError('Failed to load progress data');
+            this.showLoading(false);
         }
     }
 
@@ -87,8 +88,12 @@ class ProgressManager {
      * @verification - Event listeners correctly attached
      */
     setupEventListeners() {
-        this.elements.userToggle.addEventListener('click', () => this.toggleUser());
-        this.elements.weekSelector.addEventListener('change', (event) => this.handleWeekChange(event));
+        if (this.elements.userToggle) {
+            this.elements.userToggle.addEventListener('click', () => this.toggleUser());
+        }
+        if (this.elements.weekSelector) {
+            this.elements.weekSelector.addEventListener('change', (event) => this.handleWeekChange(event));
+        }
         console.log('Event listeners set up');
     }
 
@@ -99,11 +104,10 @@ class ProgressManager {
     async toggleUser() {
         try {
             this.showLoading(true);
-            this.state.currentUser = this.state.currentUser === 'Dad' ? 'Alex' : 'Dad';
-            await dataManager.setCurrentUser(this.state.currentUser);
+            const newUser = this.state.currentUser === 'Dad' ? 'Alex' : 'Dad';
+            await dataManager.setCurrentUser(newUser);
+            this.state.currentUser = newUser;
             this.elements.userToggle.textContent = this.state.currentUser;
-            this.elements.userToggle.classList.toggle('bg-blue-500');
-            this.elements.userToggle.classList.toggle('bg-green-500');
             await this.updateDisplay();
             console.log('User toggled to:', this.state.currentUser);
         } catch (error) {
@@ -159,7 +163,6 @@ class ProgressManager {
             this.showLoading(false);
         }
     }
-
     /**
      * Update display with current data
      * @returns {Promise<void>}
@@ -179,8 +182,12 @@ class ProgressManager {
      * Update program status display
      */
     updateProgramStatus() {
-        this.elements.currentWeek.textContent = `Week ${this.state.selectedWeek} of 12`;
-        this.elements.programPhase.textContent = `Phase ${this.state.selectedWeek <= 6 ? '1' : '2'}`;
+        if (this.elements.currentWeek) {
+            this.elements.currentWeek.textContent = `Week ${this.state.selectedWeek} of 12`;
+        }
+        if (this.elements.programPhase) {
+            this.elements.programPhase.textContent = `Phase ${this.state.selectedWeek <= 6 ? '1' : '2'}`;
+        }
     }
 
     /**
@@ -190,6 +197,8 @@ class ProgressManager {
     async updateRowingProgress() {
         try {
             const rowingProgress = await firebaseService.getRowingProgress(this.state.currentUser, this.state.selectedWeek);
+            if (!this.elements.rowingProgress) return;
+            
             this.elements.rowingProgress.innerHTML = '';
 
             for (const [type, data] of Object.entries(rowingProgress)) {
@@ -228,6 +237,8 @@ class ProgressManager {
     async updateStrengthProgress() {
         try {
             const strengthProgress = await firebaseService.getStrengthProgress(this.state.currentUser, this.state.selectedWeek);
+            if (!this.elements.progressContainer) return;
+
             this.elements.progressContainer.innerHTML = '';
 
             for (const [exercise, data] of Object.entries(strengthProgress)) {
@@ -267,6 +278,7 @@ class ProgressManager {
      * @returns {string} Formatted measurement
      */
     formatMeasurement(data) {
+        if (!data) return 'N/A';
         if (data.weight) {
             return `${data.weight} lbs x ${data.reps} reps`;
         }
@@ -279,12 +291,13 @@ class ProgressManager {
      * @returns {number} Progress percentage
      */
     calculateProgressPercentage(data) {
+        if (!data || !data.best || !data.current) return 0;
+        
         if (data.best.weight) {
-            return (data.current.weight / data.best.weight) * 100;
+            return Math.min((data.current.weight / data.best.weight) * 100, 100);
         }
-        return (data.current.reps / data.best.reps) * 100;
+        return Math.min((data.current.reps / data.best.reps) * 100, 100);
     }
-
     /**
      * Update personal bests display
      * @returns {Promise<void>}
@@ -292,6 +305,8 @@ class ProgressManager {
     async updatePersonalBests() {
         try {
             const personalBests = await firebaseService.getPersonalBests(this.state.currentUser);
+            if (!this.elements.personalBests) return;
+
             this.elements.personalBests.innerHTML = '';
 
             for (const [exercise, data] of Object.entries(personalBests)) {
@@ -328,6 +343,8 @@ class ProgressManager {
     async updateNextTargets() {
         try {
             const nextTargets = await firebaseService.getNextTargets(this.state.currentUser);
+            if (!this.elements.nextTargets) return;
+
             this.elements.nextTargets.innerHTML = '';
 
             for (const [exercise, target] of Object.entries(nextTargets)) {
@@ -363,9 +380,15 @@ class ProgressManager {
      */
     showLoading(show) {
         this.state.isLoading = show;
-        this.elements.loadingIndicator.classList.toggle('hidden', !show);
-        this.elements.userToggle.disabled = show;
-        this.elements.weekSelector.disabled = show;
+        if (this.elements.loadingIndicator) {
+            this.elements.loadingIndicator.classList.toggle('hidden', !show);
+        }
+        if (this.elements.userToggle) {
+            this.elements.userToggle.disabled = show;
+        }
+        if (this.elements.weekSelector) {
+            this.elements.weekSelector.disabled = show;
+        }
     }
 
     /**
@@ -384,7 +407,7 @@ class ProgressManager {
 }
 
 // Initialize the progress page
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM Content Loaded. Initializing progress page...');
     const progressManager = new ProgressManager();
     await progressManager.init().catch(error => {
