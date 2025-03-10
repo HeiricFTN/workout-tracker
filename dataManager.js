@@ -563,11 +563,6 @@ async getRecentProgress(userId) {
         return [];
     }
 }
-
-// Create and export singleton instance
-const dataManager = new DataManager();
-export default dataManager;
-
 /**
  * @verification - Final verification notes:
  * 1. All method signatures verified
@@ -581,3 +576,8 @@ export default dataManager;
  * 9. Firebase integration verified
  * 10. Manual save only implementation confirmed
  */
+
+// Create and export singleton instance
+const dataManager = new DataManager();
+export default dataManager;
+
