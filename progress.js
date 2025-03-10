@@ -26,14 +26,14 @@ class ProgressManager {
         this.elements = this.cacheElements();
         this.state = {
             currentUser: 'Dad', // Default value, will be updated in init
-            selectedWeek: this.getCurrentWeek(),
+            selectedWeek: null, // Will be set after initialization
             programStart: new Date('2025-02-18'),
             isLoading: false
         };
         
+        this.state.selectedWeek = this.getCurrentWeek();
         console.log('ProgressManager initialized');
     }
-
     /**
      * Cache DOM elements
      * @returns {Object} Cached DOM elements
@@ -61,6 +61,7 @@ class ProgressManager {
 
         return elements;
     }
+
     /**
      * Initialize the progress page
      * @returns {Promise<void>}
@@ -117,13 +118,14 @@ class ProgressManager {
             this.showLoading(false);
         }
     }
-
     /**
      * Populate week selector dropdown
      * @returns {Promise<void>}
      */
     async populateWeekSelector() {
         const currentWeek = this.getCurrentWeek();
+        if (!this.elements.weekSelector) return;
+        
         this.elements.weekSelector.innerHTML = '';
         for (let i = 1; i <= 12; i++) {
             const option = document.createElement('option');
@@ -141,7 +143,9 @@ class ProgressManager {
      */
     getCurrentWeek() {
         const today = new Date();
-        const weeksPassed = Math.floor((today - this.state.programStart) / (7 * 24 * 60 * 60 * 1000));
+        const weeksPassed = Math.floor(
+            (today - this.state.programStart) / (7 * 24 * 60 * 60 * 1000)
+        );
         return Math.min(Math.max(weeksPassed + 1, 1), 12);
     }
 
@@ -163,19 +167,25 @@ class ProgressManager {
             this.showLoading(false);
         }
     }
+
     /**
      * Update display with current data
      * @returns {Promise<void>}
      */
     async updateDisplay() {
-        this.updateProgramStatus();
-        await Promise.all([
-            this.updateRowingProgress(),
-            this.updateStrengthProgress(),
-            this.updatePersonalBests(),
-            this.updateNextTargets()
-        ]);
-        console.log('Display updated');
+        try {
+            this.updateProgramStatus();
+            await Promise.all([
+                this.updateRowingProgress(),
+                this.updateStrengthProgress(),
+                this.updatePersonalBests(),
+                this.updateNextTargets()
+            ]);
+            console.log('Display updated');
+        } catch (error) {
+            console.error('Error updating display:', error);
+            this.showError('Failed to update display');
+        }
     }
 
     /**
@@ -196,14 +206,19 @@ class ProgressManager {
      */
     async updateRowingProgress() {
         try {
-            const rowingProgress = await firebaseService.getRowingProgress(this.state.currentUser, this.state.selectedWeek);
+            const rowingProgress = await firebaseService.getRowingProgress(
+                this.state.currentUser, 
+                this.state.selectedWeek
+            );
             if (!this.elements.rowingProgress) return;
             
             this.elements.rowingProgress.innerHTML = '';
 
             for (const [type, data] of Object.entries(rowingProgress)) {
                 const rowingElement = this.createRowingProgressElement(type, data);
-                this.elements.rowingProgress.appendChild(rowingElement);
+                if (rowingElement) {
+                    this.elements.rowingProgress.appendChild(rowingElement);
+                }
             }
             console.log('Rowing progress updated');
         } catch (error) {
@@ -211,21 +226,22 @@ class ProgressManager {
             this.showError('Failed to load rowing progress');
         }
     }
-
     /**
      * Create rowing progress element
      * @param {string} type - Rowing type
      * @param {Object} data - Rowing data
-     * @returns {HTMLElement} Rowing progress element
+     * @returns {HTMLElement|null} Rowing progress element
      */
     createRowingProgressElement(type, data) {
+        if (!data || typeof data !== 'object') return null;
+
         const element = document.createElement('div');
         element.className = 'rowing-progress-item mb-4';
         element.innerHTML = `
             <h3 class="font-bold mb-2">${type} Rowing</h3>
-            <p>Best Pace: ${data.bestPace.toFixed(2)} m/min</p>
-            <p>Average Pace: ${data.averagePace.toFixed(2)} m/min</p>
-            <p>Total Distance: ${data.totalMeters} meters</p>
+            <p>Best Pace: ${(data.bestPace || 0).toFixed(2)} m/min</p>
+            <p>Average Pace: ${(data.averagePace || 0).toFixed(2)} m/min</p>
+            <p>Total Distance: ${data.totalMeters || 0} meters</p>
         `;
         return element;
     }
@@ -236,14 +252,19 @@ class ProgressManager {
      */
     async updateStrengthProgress() {
         try {
-            const strengthProgress = await firebaseService.getStrengthProgress(this.state.currentUser, this.state.selectedWeek);
+            const strengthProgress = await firebaseService.getStrengthProgress(
+                this.state.currentUser, 
+                this.state.selectedWeek
+            );
             if (!this.elements.progressContainer) return;
 
             this.elements.progressContainer.innerHTML = '';
 
             for (const [exercise, data] of Object.entries(strengthProgress)) {
                 const progressElement = this.createProgressElement(exercise, data);
-                this.elements.progressContainer.appendChild(progressElement);
+                if (progressElement) {
+                    this.elements.progressContainer.appendChild(progressElement);
+                }
             }
             console.log('Strength progress updated');
         } catch (error) {
@@ -256,9 +277,11 @@ class ProgressManager {
      * Create progress element
      * @param {string} exercise - Exercise name
      * @param {Object} data - Exercise data
-     * @returns {HTMLElement} Progress element
+     * @returns {HTMLElement|null} Progress element
      */
     createProgressElement(exercise, data) {
+        if (!data || typeof data !== 'object') return null;
+
         const element = document.createElement('div');
         element.className = 'exercise-progress-item mb-4';
         element.innerHTML = `
@@ -298,6 +321,7 @@ class ProgressManager {
         }
         return Math.min((data.current.reps / data.best.reps) * 100, 100);
     }
+
     /**
      * Update personal bests display
      * @returns {Promise<void>}
@@ -311,7 +335,9 @@ class ProgressManager {
 
             for (const [exercise, data] of Object.entries(personalBests)) {
                 const bestElement = this.createPersonalBestElement(exercise, data);
-                this.elements.personalBests.appendChild(bestElement);
+                if (bestElement) {
+                    this.elements.personalBests.appendChild(bestElement);
+                }
             }
             console.log('Personal bests updated');
         } catch (error) {
@@ -324,9 +350,11 @@ class ProgressManager {
      * Create personal best element
      * @param {string} exercise - Exercise name
      * @param {Object} data - Personal best data
-     * @returns {HTMLElement} Personal best element
+     * @returns {HTMLElement|null} Personal best element
      */
     createPersonalBestElement(exercise, data) {
+        if (!data) return null;
+
         const element = document.createElement('div');
         element.className = 'personal-best-item mb-2';
         element.innerHTML = `
@@ -349,7 +377,9 @@ class ProgressManager {
 
             for (const [exercise, target] of Object.entries(nextTargets)) {
                 const targetElement = this.createTargetElement(exercise, target);
-                this.elements.nextTargets.appendChild(targetElement);
+                if (targetElement) {
+                    this.elements.nextTargets.appendChild(targetElement);
+                }
             }
             console.log('Next targets updated');
         } catch (error) {
@@ -362,9 +392,11 @@ class ProgressManager {
      * Create target element
      * @param {string} exercise - Exercise name
      * @param {Object} target - Target data
-     * @returns {HTMLElement} Target element
+     * @returns {HTMLElement|null} Target element
      */
     createTargetElement(exercise, target) {
+        if (!target) return null;
+
         const element = document.createElement('div');
         element.className = 'target-item mb-2';
         element.innerHTML = `
