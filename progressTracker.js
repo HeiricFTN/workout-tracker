@@ -333,11 +333,9 @@ calculateRecentAverage(history, entries = 5) {
     }
 
     const recent = history.slice(-Math.min(entries, history.length));
-    // Calculate meters per minute for each entry, then convert to min/500m
     const paces = recent.map(entry => {
         if (!entry.meters || !entry.minutes) return 0;
-        const metersPerMinute = entry.meters / entry.minutes;
-        return 500 / metersPerMinute; // minutes per 500m
+        return (entry.minutes * 500) / entry.meters; // minutes per 500m
     });
     
     return paces.reduce((sum, pace) => sum + pace, 0) / paces.length;
@@ -393,9 +391,8 @@ async getRowingStats(user) {
 calculateBestPaceMinPer500m(history) {
     if (!Array.isArray(history) || history.length === 0) return 0;
     const paces = history.map(entry => {
-        if (!entry.meters || !entry.minutes) return 0;
-        const metersPerMinute = entry.meters / entry.minutes;
-        return 500 / metersPerMinute; // minutes per 500m
+        if (!entry.meters || !entry.minutes) return Infinity;
+        return (entry.minutes * 500) / entry.meters; // minutes per 500m
     });
     return Math.min(...paces.filter(pace => pace > 0));
 }
