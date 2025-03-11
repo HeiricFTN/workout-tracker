@@ -8,7 +8,7 @@
 
 import dataManager from './dataManager.js';
 import workoutLibrary from './workoutLibrary.js';
-import { FirebaseHelper } from './firebase-config.js';
+import firebaseService from './firebaseService.js';
 
 // Verification: Confirm imports are correct and modules exist
 
@@ -137,22 +137,22 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function renderWorkout() {
         console.log('Rendering workout');
         elements.workoutContainer.innerHTML = '';
-        const savedData = await FirebaseHelper.getWorkoutProgress(state.currentUser, state.currentWorkout.name);
-        
-        renderRowingSection();
-        
-        if (state.currentWorkout.supersets && state.currentWorkout.supersets.length > 0) {
-            state.currentWorkout.supersets.forEach((superset, index) => {
-                const supersetElement = renderSuperset(superset, index, savedData);
-                if (supersetElement) {
-                    elements.workoutContainer.appendChild(supersetElement);
-                }
-            });
-        } else {
-            console.warn('No supersets found in the workout');
-        }
-        console.log('Workout rendered successfully');
+    const savedData = await firebaseService.getWorkoutProgress(state.currentUser, state.currentWorkout.name);
+    
+    renderRowingSection();
+    
+    if (state.currentWorkout.supersets && state.currentWorkout.supersets.length > 0) {
+        state.currentWorkout.supersets.forEach((superset, index) => {
+            const supersetElement = renderSuperset(superset, index, savedData);
+            if (supersetElement) {
+                elements.workoutContainer.appendChild(supersetElement);
+            }
+        });
+    } else {
+        console.warn('No supersets found in the workout');
     }
+    console.log('Workout rendered successfully');
+}
 
     /**
      * Render rowing section (placeholder function)
@@ -339,29 +339,32 @@ document.addEventListener('DOMContentLoaded', async function() {
      * Complete the workout
      * @returns {Promise<void>}
      */
-    async function completeWorkout() {
-        try {
-            if (!validateWorkoutData()) {
-                showError('Please fill in all required fields before completing the workout.');
-                return;
-            }
-
-            console.log('Completing workout...');
-            showLoading(true);
-            const workoutData = collectWorkoutData();
-            
-            // Only save data here, when the workout is completed
-            await dataManager.saveWorkout(state.currentUser, workoutData);
-            
-            showSuccess('Workout completed and saved!');
-            setTimeout(() => window.location.href = 'index.html', 1500);
-        } catch (error) {
-            console.error('Error completing workout:', error);
-            showError('Failed to save workout. Please try again.');
-        } finally {
-            showLoading(false);
+async function completeWorkout() {
+    try {
+        if (!validateWorkoutData()) {
+            showError('Please fill in all required fields before completing the workout.');
+            return;
         }
+
+        console.log('Completing workout...');
+        showLoading(true);
+        const workoutData = collectWorkoutData();
+        
+        // Save to both systems
+        await Promise.all([
+            dataManager.saveWorkout(state.currentUser, workoutData),
+            firebaseService.saveWorkoutProgress(state.currentUser, workoutData)
+        ]);
+        
+        showSuccess('Workout completed and saved!');
+        setTimeout(() => window.location.href = 'index.html', 1500);
+    } catch (error) {
+        console.error('Error completing workout:', error);
+        showError('Failed to save workout. Please try again.');
+    } finally {
+        showLoading(false);
     }
+}
 
     /**
      * Validate workout data before completion
