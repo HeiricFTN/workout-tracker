@@ -486,23 +486,37 @@ convertToMinPer500m(metersPerMin) {
         `;
         return element;
     }
-
+/**
+ * Format minutes per 500m to MM:SS format
+ * @param {number} paceMin500 - Pace in minutes per 500m
+ * @returns {string} Formatted pace string
+ */
+formatPaceMinutes(paceMin500) {
+    if (!paceMin500 || paceMin500 === 0) return '0:00';
+    
+    const minutes = Math.floor(paceMin500);
+    const seconds = Math.round((paceMin500 - minutes) * 60);
+    
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
     /**
      * Format target measurement data
      * @param {Object} data - Target measurement data
      * @returns {string} Formatted target measurement
      */
+    
 formatTargetMeasurement(data) {
     if (!data) return 'N/A';
     if (data.type === 'rowing') {
-        const targetPace = this.convertToMinPer500m(data.targetPace);
-        return `${targetPace} min/500m for ${data.suggestedMinutes} min`;
+        const targetPace = this.formatPaceMinutes(data.targetPace);
+        return `${targetPace} /500m for ${data.suggestedMinutes} min`;
     }
     if (data.type === 'dumbbell') {
         return `${data.targetWeight} lbs x ${data.targetReps} reps`;
     }
     return `${data.targetReps} reps`;
 }
+    
 
     /**
      * Show or hide loading indicator
