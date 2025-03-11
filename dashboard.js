@@ -287,44 +287,30 @@ updateRowingType(type, element, stats) {
     if (!element) return;
     const typeStats = stats[type];
     if (typeStats) {
-        const bestPace = this.convertToMinPer500m(Number(typeStats.bestPace) || 0);
-        const recentAvg = this.convertToMinPer500m(Number(typeStats.recentAverage) || 0);
-        element.textContent = `${bestPace} min/500m (Avg: ${recentAvg})`;
+        // Format both paces as MM:SS
+        const bestPace = this.formatPaceMinutes(typeStats.bestPace);
+        const recentAvg = this.formatPaceMinutes(typeStats.recentAverage);
+        element.textContent = `${bestPace} /500m (Avg: ${recentAvg})`;
     } else {
         element.textContent = 'No data';
     }
 }
+
 /**
- * Convert pace from meters per minute to minutes per 500m
- * @param {number} metersPerMin - Pace in meters per minute
- * @returns {string} Formatted pace in minutes per 500m
+ * Format minutes per 500m to MM:SS format
+ * @param {number} paceMin500 - Pace in minutes per 500m
+ * @returns {string} Formatted pace string
  */
-convertToMinPer500m(metersPerMin) {
-    if (!metersPerMin || metersPerMin === 0) return '0:00';
+formatPaceMinutes(paceMin500) {
+    if (!paceMin500 || paceMin500 === 0) return '0:00';
     
-    // Calculate minutes per 500m
-    const minutesPer500 = 500 / metersPerMin;
-    
-    // Format to MM:SS
-    const minutes = Math.floor(minutesPer500);
-    const seconds = Math.round((minutesPer500 - minutes) * 60);
+    const minutes = Math.floor(paceMin500);
+    const seconds = Math.round((paceMin500 - minutes) * 60);
     
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-    
-    /**
-     * Format pace value
-     * @param {number|string} pace - Pace value to format
-     * @returns {string} Formatted pace
-     */
-    formatPace(pace) {
-        // Convert to number and handle invalid values
-        const numPace = Number(pace);
-        if (isNaN(numPace)) return '0.0';
-        return numPace.toFixed(1);
-    }
-    
+   
     /**
      * Update weekly progress
      */
@@ -378,45 +364,46 @@ convertToMinPer500m(metersPerMin) {
      /**
      * Update recent progress
      */
-    async updateRecentProgress() {
-        if (!this.elements.recentProgress) return;
+async updateRecentProgress() {
+    if (!this.elements.recentProgress) return;
 
-        try {
-            const recentProgress = await progressTracker.analyzeProgress(this.state.currentUser);
-            
-            if (!recentProgress || Object.keys(recentProgress).length === 0) {
-                this.elements.recentProgress.innerHTML = 
-                    '<li class="text-gray-600">No recent progress recorded</li>';
-                return;
-            }
-
-            const progressHtml = Object.entries(recentProgress)
-                .slice(0, 3)
-                .map(([exercise, data]) => {
-                    if (!data) return '';
-                    
-                    let progressText = '';
-                    if (data.type === 'rowing') {
-                        const prevPace = Number(data.previousPace) || 0;
-                        const currPace = Number(data.currentPace) || 0;
-                        progressText = `${prevPace.toFixed(1)}→${currPace.toFixed(1)} m/min`;
-                    } else {
-                        const prev = Number(data.previous) || 0;
-                        const curr = Number(data.current) || 0;
-                        progressText = `${prev}→${curr} ${data.unit || 'lbs'}`;
-                    }
-
-                    return `<li class="mb-1">${exercise}: ${progressText}</li>`;
-                })
-                .join('');
-
-            this.elements.recentProgress.innerHTML = progressHtml;
-        } catch (error) {
-            console.error('Error updating recent progress:', error);
+    try {
+        const recentProgress = await progressTracker.analyzeProgress(this.state.currentUser);
+        
+        if (!recentProgress || Object.keys(recentProgress).length === 0) {
             this.elements.recentProgress.innerHTML = 
-                '<li class="text-red-600">Error loading recent progress</li>';
+                '<li class="text-gray-600">No recent progress recorded</li>';
+            return;
         }
+
+        const progressHtml = Object.entries(recentProgress)
+            .slice(0, 3)
+            .map(([exercise, data]) => {
+                if (!data) return '';
+                
+                let progressText = '';
+                if (data.type === 'rowing') {
+                    const prevPace = this.formatPaceMinutes(data.previousPace);
+                    const currPace = this.formatPaceMinutes(data.currentPace);
+                    progressText = `${prevPace}→${currPace} /500m`;
+                } else {
+                    const prev = Number(data.previous) || 0;
+                    const curr = Number(data.current) || 0;
+                    progressText = `${prev}→${curr} ${data.unit || 'lbs'}`;
+                }
+
+                return `<li class="mb-1">${exercise}: ${progressText}</li>`;
+            })
+            .join('');
+
+        this.elements.recentProgress.innerHTML = progressHtml;
+    } catch (error) {
+        console.error('Error updating recent progress:', error);
+        this.elements.recentProgress.innerHTML = 
+            '<li class="text-red-600">Error loading recent progress</li>';
     }
+}
+
 
     
     /**
