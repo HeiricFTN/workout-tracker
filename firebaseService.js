@@ -470,6 +470,7 @@ calculatePacePerFiveHundred(meters, minutes) {
     };
 }
 
+    
 // Create and export singleton instance
 const firebaseService = new FirebaseService();
 export default firebaseService;
