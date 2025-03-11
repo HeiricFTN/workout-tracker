@@ -283,18 +283,34 @@ class DashboardController {
      * @param {HTMLElement} element - DOM element to update
      * @param {Object} stats - Rowing statistics
      */
-    updateRowingType(type, element, stats) {
-        if (!element) return;
-
-        const typeStats = stats[type];
-        if (typeStats) {
-            const bestPace = Number(typeStats.bestPace) || 0;
-            const recentAvg = Number(typeStats.recentAverage) || 0;
-        element.textContent = `${bestPace.toFixed(2)} min/500m (Avg: ${recentAvg.toFixed(2)})`;
-        } else {
-            element.textContent = 'No data';
-        }
+updateRowingType(type, element, stats) {
+    if (!element) return;
+    const typeStats = stats[type];
+    if (typeStats) {
+        const bestPace = this.convertToMinPer500m(Number(typeStats.bestPace) || 0);
+        const recentAvg = this.convertToMinPer500m(Number(typeStats.recentAverage) || 0);
+        element.textContent = `${bestPace} min/500m (Avg: ${recentAvg})`;
+    } else {
+        element.textContent = 'No data';
     }
+}
+/**
+ * Convert pace from meters per minute to minutes per 500m
+ * @param {number} metersPerMin - Pace in meters per minute
+ * @returns {string} Formatted pace in minutes per 500m
+ */
+convertToMinPer500m(metersPerMin) {
+    if (!metersPerMin || metersPerMin === 0) return '0:00';
+    
+    // Calculate minutes per 500m
+    const minutesPer500 = 500 / metersPerMin;
+    
+    // Format to MM:SS
+    const minutes = Math.floor(minutesPer500);
+    const seconds = Math.round((minutesPer500 - minutes) * 60);
+    
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
 
     
     /**
