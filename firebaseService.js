@@ -469,7 +469,7 @@ calculatePacePerFiveHundred(meters, minutes) {
         formatted: `${mins}:${secs.toString().padStart(2, '0')}`
     };
 }
-
+}
     
 // Create and export singleton instance
 const firebaseService = new FirebaseService();
