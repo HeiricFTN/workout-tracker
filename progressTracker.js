@@ -276,12 +276,21 @@ calculateTarget(name, current) {
             console.warn('Invalid rowing data');
             return null;
         }
+        // Calculate current pace in min/500m
         const currentMetersPerMin = current.meters / current.minutes;
         const currentPaceMin500 = 500 / currentMetersPerMin;
+        
+        // Target is 5% faster (so 0.95 of current time)
+        const targetPaceMin500 = currentPaceMin500 * 0.95;
+
         return {
             type: 'rowing',
-            targetPace: currentPaceMin500 * 0.95, // 5% faster (lower time)
-            suggestedMinutes: current.minutes
+            targetPace: targetPaceMin500,
+            suggestedMinutes: current.minutes,
+            // Optional: Add these for more detailed feedback
+            currentPace: currentPaceMin500,
+            improvement: (currentPaceMin500 - targetPaceMin500).toFixed(2),
+            meters: current.meters
         };
     }
 
