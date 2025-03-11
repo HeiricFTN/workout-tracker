@@ -156,21 +156,27 @@ class ProgressTracker {
      * @param {Object} personalBest - Personal best rowing data
      * @returns {Object|null} Rowing metrics
      */
-    calculateRowingMetrics(current, previous, personalBest) {
-        if (!current?.pace || !previous?.pace || !personalBest?.pace) {
-            console.warn('Invalid rowing data structure');
-            return null;
-        }
-
-        return {
-            type: 'rowing',
-            trend: current.pace > previous.pace ? 'improving' : 'declining',
-            changePercent: ((current.pace - previous.pace) / previous.pace) * 100,
-            currentPace: Math.round(current.pace),
-            bestPace: Math.round(personalBest.pace),
-            isPersonalBest: current.pace >= personalBest.pace
-        };
+  calculateRowingMetrics(current, previous, personalBest) {
+    if (!current?.pace || !previous?.pace || !personalBest?.pace) {
+        console.warn('Invalid rowing data structure');
+        return null;
     }
+
+    // Convert paces to minutes per 500m
+    const currentPace = 500 / current.pace;
+    const previousPace = 500 / previous.pace;
+    const bestPace = 500 / personalBest.pace;
+
+    return {
+        type: 'rowing',
+        trend: currentPace < previousPace ? 'improving' : 'declining', // Note: Lower is better for min/500m
+        changePercent: ((previousPace - currentPace) / previousPace) * 100,
+        currentPace: currentPace,
+        previousPace: previousPace,
+        bestPace: bestPace,
+        isPersonalBest: currentPace <= bestPace // Note: Lower is better for min/500m
+    };
+}
 
     /**
      * Calculate strength progress metrics
@@ -256,19 +262,20 @@ class ProgressTracker {
      * @param {Object} current - Current exercise data
      * @returns {Object|null} Target data
      */
-    calculateTarget(name, current) {
-        if (!name || !current) {
-            console.warn('Invalid input for calculateTarget');
-            return null;
-        }
+calculateTarget(name, current) {
+    if (!name || !current) {
+        console.warn('Invalid input for calculateTarget');
+        return null;
+    }
 
-        if (name.startsWith('rowing_')) {
-            return {
-                type: 'rowing',
-                targetPace: Math.round(current.pace * 1.05), // 5% increase
-                suggestedMinutes: current.minutes
-            };
-        }
+    if (name.startsWith('rowing_')) {
+        const currentPaceMin500 = 500 / current.pace;
+        return {
+            type: 'rowing',
+            targetPace: currentPaceMin500 * 0.95, // 5% faster (lower time)
+            suggestedMinutes: current.minutes
+        };
+    }
 
         if (current.weight !== undefined) {
             return {
@@ -284,73 +291,80 @@ class ProgressTracker {
         };
     }
 
- /**
-     * Get rowing stats for a user
-     * @param {string} user - User ID
-     * @returns {Promise<Object>} Rowing stats
-     */
-    async getRowingStats(user) {
-        try {
-            console.log(`Getting rowing stats for ${user}`);
-            const progress = await dataManager.getProgress(user);
-            const stats = {};
-
-            const rowingTypes = ['Breathe', 'Sweat', 'Drive'];
-            
-            rowingTypes.forEach(type => {
-                // Initialize default stats for each type
-                stats[type] = {
-                    bestPace: "0:00",
-                    recentAverage: 0,
-                    totalMeters: 0,
-                    totalMinutes: 0
-                };
-
-                const key = `rowing_${type}`;
-                if (progress && progress[key] && Array.isArray(progress[key].history)) {
-                    const history = progress[key].history;
-                    stats[type] = {
-                        bestPace: progress[key].personalBest?.pacePerFiveHundred || "0:00",
-                        recentAverage: this.calculateRecentAverage(history),
-                        totalMeters: this.calculateTotalMeters(history),
-                        totalMinutes: this.calculateTotalMinutes(history)
-                    };
-                    console.log(`Stats calculated for ${type}:`, stats[type]);
-                } else {
-                    console.log(`No data available for ${key}, using defaults`);
-                }
-            });
-
-            console.log('Rowing stats calculated:', stats);
-            return stats;
-
-        } catch (error) {
-            console.error('Error getting rowing stats:', error);
-            // Return default stats for all types if error occurs
-            return {
-                Breathe: { bestPace: "0:00", recentAverage: 0, totalMeters: 0, totalMinutes: 0 },
-                Sweat: { bestPace: "0:00", recentAverage: 0, totalMeters: 0, totalMinutes: 0 },
-                Drive: { bestPace: "0:00", recentAverage: 0, totalMeters: 0, totalMinutes: 0 }
-            };
-        }
-    }
-
-
     /**
      * Calculate recent average pace
      * @param {Array} history - Exercise history
      * @param {number} entries - Number of recent entries to consider
      * @returns {number} Average pace
      */
-    calculateRecentAverage(history, entries = 5) {
-        if (!Array.isArray(history) || history.length === 0) {
-            console.warn('Invalid history for calculateRecentAverage');
-            return 0;
-        }
-
-        const recent = history.slice(-Math.min(entries, history.length));
-        return Math.round(recent.reduce((sum, entry) => sum + (entry.pace || 0), 0) / recent.length);
+calculateRecentAverage(history, entries = 5) {
+    if (!Array.isArray(history) || history.length === 0) {
+        console.warn('Invalid history for calculateRecentAverage');
+        return 0;
     }
+
+    const recent = history.slice(-Math.min(entries, history.length));
+    // Convert each pace to minutes per 500m before averaging
+    const paces = recent.map(entry => {
+        if (!entry.pace) return 0;
+        return (500 / entry.pace); // Convert to minutes per 500m
+    });
+    
+    return paces.reduce((sum, pace) => sum + pace, 0) / paces.length;
+}
+
+async getRowingStats(user) {
+    try {
+        console.log(`Getting rowing stats for ${user}`);
+        const progress = await dataManager.getProgress(user);
+        const stats = {};
+
+        const rowingTypes = ['Breathe', 'Sweat', 'Drive'];
+        
+        rowingTypes.forEach(type => {
+            const key = `rowing_${type}`;
+            if (progress && progress[key] && Array.isArray(progress[key].history)) {
+                const history = progress[key].history;
+                stats[type] = {
+                    bestPace: this.calculateBestPaceMinPer500m(history),
+                    recentAverage: this.calculateRecentAverage(history),
+                    totalMeters: this.calculateTotalMeters(history),
+                    totalMinutes: this.calculateTotalMinutes(history)
+                };
+            } else {
+                stats[type] = {
+                    bestPace: 0,
+                    recentAverage: 0,
+                    totalMeters: 0,
+                    totalMinutes: 0
+                };
+            }
+        });
+
+        return stats;
+    } catch (error) {
+        console.error('Error getting rowing stats:', error);
+        return {
+            Breathe: { bestPace: 0, recentAverage: 0, totalMeters: 0, totalMinutes: 0 },
+            Sweat: { bestPace: 0, recentAverage: 0, totalMeters: 0, totalMinutes: 0 },
+            Drive: { bestPace: 0, recentAverage: 0, totalMeters: 0, totalMinutes: 0 }
+        };
+    }
+}
+
+
+/**
+ * Calculate best pace in minutes per 500m
+ * @param {Array} history - Exercise history
+ * @returns {number} Best pace in minutes per 500m
+ * @private
+ */
+calculateBestPaceMinPer500m(history) {
+    if (!Array.isArray(history) || history.length === 0) return 0;
+    const paces = history.map(entry => entry.pace ? 500 / entry.pace : 0);
+    return Math.min(...paces.filter(pace => pace > 0));
+}
+
 
     /**
      * Calculate total meters rowed
@@ -386,35 +400,35 @@ class ProgressTracker {
      * @param {number} week - Week number
      * @returns {Promise<Object>} Rowing progress data
      */
-    async getRowingProgress(userId, week) {
-        try {
-            const progress = await dataManager.getProgress(userId);
-            const rowingTypes = ['Breathe', 'Sweat', 'Drive'];
-            const rowingProgress = {};
+async getRowingProgress(userId, week) {
+    try {
+        const progress = await dataManager.getProgress(userId);
+        const rowingTypes = ['Breathe', 'Sweat', 'Drive'];
+        const rowingProgress = {};
 
-            rowingTypes.forEach(type => {
-                const key = `rowing_${type}`;
-                if (progress[key]?.history) {
-                    const weekData = progress[key].history.filter(entry => {
-                        const entryWeek = this.getWeekNumber(new Date(entry.date));
-                        return entryWeek === week;
-                    });
+        rowingTypes.forEach(type => {
+            const key = `rowing_${type}`;
+            if (progress[key]?.history) {
+                const weekData = progress[key].history.filter(entry => {
+                    const entryWeek = this.getWeekNumber(new Date(entry.date));
+                    return entryWeek === week;
+                });
 
-                    rowingProgress[type] = {
-                        bestPace: this.calculateBestPace(weekData),
-                        averagePace: this.calculateAveragePace(weekData),
-                        totalMeters: this.calculateTotalMeters(weekData)
-                    };
-                }
-            });
+                rowingProgress[type] = {
+                    bestPace: this.calculateBestPaceMinPer500m(weekData),
+                    averagePace: this.calculateRecentAverage(weekData),
+                    totalMeters: this.calculateTotalMeters(weekData)
+                };
+            }
+        });
 
-            console.log(`Rowing progress for week ${week}:`, rowingProgress);
-            return rowingProgress;
-        } catch (error) {
-            console.error('Error getting rowing progress:', error);
-            return {};
-        }
+        return rowingProgress;
+    } catch (error) {
+        console.error('Error getting rowing progress:', error);
+        return {};
     }
+}
+
 
     /**
      * Get strength progress for a user
@@ -487,30 +501,8 @@ class ProgressTracker {
         return Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
     }
 
-    /**
-     * Calculate best pace from rowing data
-     * @param {Array} data - Rowing data
-     * @returns {number} Best pace
-     * @private
-     */
-    calculateBestPace(data) {
-        if (!data || data.length === 0) return 0;
-        return Math.max(...data.map(entry => entry.pace || 0));
-    }
 
-    /**
-     * Calculate average pace from rowing data
-     * @param {Array} data - Rowing data
-     * @returns {number} Average pace
-     * @private
-     */
-    calculateAveragePace(data) {
-        if (!data || data.length === 0) return 0;
-        const sum = data.reduce((acc, entry) => acc + (entry.pace || 0), 0);
-        return sum / data.length;
-    }
-
-    /**
+     /**
      * Get best set from strength data
      * @param {Array} data - Strength data
      * @returns {Object|null} Best set
