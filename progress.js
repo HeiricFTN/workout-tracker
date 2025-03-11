@@ -274,24 +274,42 @@ class ProgressManager {
      * @param {Object} data - Rowing data
      * @returns {HTMLElement|null} Rowing progress element
      */
-    createRowingProgressElement(type, data) {
-        if (!data || typeof data !== 'object') return null;
+createRowingProgressElement(type, data) {
+    if (!data || typeof data !== 'object') return null;
 
-        const element = document.createElement('div');
-        element.className = 'rowing-progress-item mb-4';
-        
-        // Format pace values with proper precision
-        const bestPace = this.formatPace(data.bestPace);
-        const avgPace = this.formatPace(data.averagePace);
-        
-        element.innerHTML = `
-            <h3 class="font-bold mb-2">${type} Rowing</h3>
-            <p>Best Pace: ${bestPace} m/min</p>
-            <p>Average Pace: ${avgPace} m/min</p>
-            <p>Total Distance: ${data.totalMeters || 0} meters</p>
-        `;
-        return element;
-    }
+    const element = document.createElement('div');
+    element.className = 'rowing-progress-item mb-4';
+    
+    // Convert paces from m/min to min/500m
+    const bestPace = this.convertToMinPer500m(data.bestPace);
+    const avgPace = this.convertToMinPer500m(data.averagePace);
+    
+    element.innerHTML = `
+        <h3 class="font-bold mb-2">${type} Rowing</h3>
+        <p>Best Pace: ${bestPace} min/500m</p>
+        <p>Average Pace: ${avgPace} min/500m</p>
+        <p>Total Distance: ${data.totalMeters || 0} meters</p>
+    `;
+    return element;
+}
+
+    /**
+ * Convert pace from meters per minute to minutes per 500m
+ * @param {number} metersPerMin - Pace in meters per minute
+ * @returns {string} Formatted pace in minutes per 500m
+ */
+convertToMinPer500m(metersPerMin) {
+    if (!metersPerMin || metersPerMin === 0) return '0:00';
+    
+    // Calculate minutes per 500m
+    const minutesPer500 = 500 / metersPerMin;
+    
+    // Format to MM:SS
+    const minutes = Math.floor(minutesPer500);
+    const seconds = Math.round((minutesPer500 - minutes) * 60);
+    
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
 
     /**
      * Format pace value
@@ -474,16 +492,17 @@ class ProgressManager {
      * @param {Object} data - Target measurement data
      * @returns {string} Formatted target measurement
      */
-    formatTargetMeasurement(data) {
-        if (!data) return 'N/A';
-        if (data.type === 'rowing') {
-            return `${data.targetPace.toFixed(2)} m/min for ${data.suggestedMinutes} min`;
-        }
-        if (data.type === 'dumbbell') {
-            return `${data.targetWeight} lbs x ${data.targetReps} reps`;
-        }
-        return `${data.targetReps} reps`;
+formatTargetMeasurement(data) {
+    if (!data) return 'N/A';
+    if (data.type === 'rowing') {
+        const targetPace = this.convertToMinPer500m(data.targetPace);
+        return `${targetPace} min/500m for ${data.suggestedMinutes} min`;
     }
+    if (data.type === 'dumbbell') {
+        return `${data.targetWeight} lbs x ${data.targetReps} reps`;
+    }
+    return `${data.targetReps} reps`;
+}
 
     /**
      * Show or hide loading indicator
