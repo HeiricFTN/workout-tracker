@@ -202,34 +202,46 @@ class FirebaseService {
         }
     }
 
-    /**
-     * Get workout progress from Firebase
-     * @param {string} userId - User ID
-     * @param {string} workoutName - Workout name
-     * @returns {Promise<Object|null>} Workout progress data or null if not found
-     */
-    async getWorkoutProgress(userId, workoutName) {
-        try {
-            if (!this.isOnline) {
-                return this.getOfflineWorkoutProgress(userId, workoutName);
-            }
-
-            const progressRef = doc(this.db, 'workoutProgress', `${userId}_${workoutName}`);
-            const docSnap = await getDoc(progressRef);
-            if (docSnap.exists()) {
-                const progressData = { id: docSnap.id, ...docSnap.data() };
-                localStorage.setItem(`workoutProgress_${userId}_${workoutName}`, JSON.stringify(progressData));
-                console.log('Workout progress retrieved successfully');
-                return progressData;
-            } else {
-                console.log('No workout progress found');
-                return null;
-            }
-        } catch (error) {
-            console.error('Error getting workout progress:', error);
+async getWorkoutProgress(userId, workoutName) {
+    try {
+        if (!this.isOnline) {
             return this.getOfflineWorkoutProgress(userId, workoutName);
         }
+
+        const progressRef = doc(this.db, 'workoutProgress', `${userId}_${workoutName}`);
+        const docSnap = await getDoc(progressRef);
+        if (docSnap.exists()) {
+            const progressData = docSnap.data();
+            
+            // Convert rowing paces to min/500m format if rowing data exists
+            if (progressData.rowing) {
+                const { meters, minutes } = progressData.rowing;
+                progressData.rowing.pace = this.calculatePacePerFiveHundred(meters, minutes);
+            }
+
+            const formattedData = { 
+                id: docSnap.id, 
+                ...progressData 
+            };
+
+            // Cache the formatted data
+            localStorage.setItem(
+                `workoutProgress_${userId}_${workoutName}`, 
+                JSON.stringify(formattedData)
+            );
+            
+            console.log('Workout progress retrieved successfully');
+            return formattedData;
+        } else {
+            console.log('No workout progress found');
+            return null;
+        }
+    } catch (error) {
+        console.error('Error getting workout progress:', error);
+        return this.getOfflineWorkoutProgress(userId, workoutName);
     }
+}
+
 
     /**
      * Save workout progress to Firebase
@@ -434,21 +446,28 @@ class FirebaseService {
         }
     }
 
-    /**
-     * Calculate pace per 500 meters
-     * @param {number} meters - Total meters
-     * @param {number} minutes - Total minutes
-     * @returns {string} Formatted pace (M:SS)
-     */
-    calculatePacePerFiveHundred(meters, minutes) {
-        if (!meters || !minutes) return "0:00";
-        
-        const minutesPer500 = (minutes * 500) / meters;
-        const mins = Math.floor(minutesPer500);
-        const secs = Math.round((minutesPer500 - mins) * 60);
-        
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+/**
+ * Calculate pace per 500 meters
+ * @param {number} meters - Total meters
+ * @param {number} minutes - Total minutes
+ * @returns {Object} Pace data with both raw and formatted values
+ */
+calculatePacePerFiveHundred(meters, minutes) {
+    if (!meters || !minutes || meters === 0) {
+        return {
+            raw: 0,
+            formatted: "0:00"
+        };
     }
+    
+    const minutesPer500 = (minutes * 500) / meters;
+    const mins = Math.floor(minutesPer500);
+    const secs = Math.round((minutesPer500 - mins) * 60);
+    
+    return {
+        raw: minutesPer500,
+        formatted: `${mins}:${secs.toString().padStart(2, '0')}`
+    };
 }
 
 // Create and export singleton instance
