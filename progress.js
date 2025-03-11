@@ -280,9 +280,8 @@ createRowingProgressElement(type, data) {
     const element = document.createElement('div');
     element.className = 'rowing-progress-item mb-4';
     
-    // Convert paces from m/min to min/500m
-    const bestPace = this.convertToMinPer500m(data.bestPace);
-    const avgPace = this.convertToMinPer500m(data.averagePace);
+    const bestPace = this.formatPaceMinutes(data.bestPace);
+    const avgPace = this.formatPaceMinutes(data.recentAverage);
     
     element.innerHTML = `
         <h3 class="font-bold mb-2">${type} Rowing</h3>
