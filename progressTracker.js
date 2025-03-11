@@ -156,27 +156,30 @@ class ProgressTracker {
      * @param {Object} personalBest - Personal best rowing data
      * @returns {Object|null} Rowing metrics
      */
-  calculateRowingMetrics(current, previous, personalBest) {
-    if (!current?.pace || !previous?.pace || !personalBest?.pace) {
+calculateRowingMetrics(current, previous, personalBest) {
+    if (!current?.meters || !current?.minutes || 
+        !previous?.meters || !previous?.minutes || 
+        !personalBest?.meters || !personalBest?.minutes) {
         console.warn('Invalid rowing data structure');
         return null;
     }
 
-    // Convert paces to minutes per 500m
-    const currentPace = 500 / current.pace;
-    const previousPace = 500 / previous.pace;
-    const bestPace = 500 / personalBest.pace;
+    // Calculate paces in minutes per 500m
+    const currentPace = (500 * current.minutes) / current.meters;
+    const previousPace = (500 * previous.minutes) / previous.meters;
+    const bestPace = (500 * personalBest.minutes) / personalBest.meters;
 
     return {
         type: 'rowing',
-        trend: currentPace < previousPace ? 'improving' : 'declining', // Note: Lower is better for min/500m
+        trend: currentPace < previousPace ? 'improving' : 'declining', // Lower is better
         changePercent: ((previousPace - currentPace) / previousPace) * 100,
         currentPace: currentPace,
         previousPace: previousPace,
         bestPace: bestPace,
-        isPersonalBest: currentPace <= bestPace // Note: Lower is better for min/500m
+        isPersonalBest: currentPace <= bestPace
     };
 }
+
 
     /**
      * Calculate strength progress metrics
@@ -269,7 +272,12 @@ calculateTarget(name, current) {
     }
 
     if (name.startsWith('rowing_')) {
-        const currentPaceMin500 = 500 / current.pace;
+        if (!current.meters || !current.minutes) {
+            console.warn('Invalid rowing data');
+            return null;
+        }
+        const currentMetersPerMin = current.meters / current.minutes;
+        const currentPaceMin500 = 500 / currentMetersPerMin;
         return {
             type: 'rowing',
             targetPace: currentPaceMin500 * 0.95, // 5% faster (lower time)
@@ -290,7 +298,19 @@ calculateTarget(name, current) {
             targetReps: current.reps + 2 // 2 more reps
         };
     }
-
+/**
+ * Format minutes per 500m to MM:SS format
+ * @param {number} paceMin500 - Pace in minutes per 500m
+ * @returns {string} Formatted pace string
+ */
+formatPaceMinutes(paceMin500) {
+    if (!paceMin500 || paceMin500 === 0) return '0:00';
+    
+    const minutes = Math.floor(paceMin500);
+    const seconds = Math.round((paceMin500 - minutes) * 60);
+    
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
     /**
      * Calculate recent average pace
      * @param {Array} history - Exercise history
@@ -304,14 +324,16 @@ calculateRecentAverage(history, entries = 5) {
     }
 
     const recent = history.slice(-Math.min(entries, history.length));
-    // Convert each pace to minutes per 500m before averaging
+    // Calculate meters per minute for each entry, then convert to min/500m
     const paces = recent.map(entry => {
-        if (!entry.pace) return 0;
-        return (500 / entry.pace); // Convert to minutes per 500m
+        if (!entry.meters || !entry.minutes) return 0;
+        const metersPerMinute = entry.meters / entry.minutes;
+        return 500 / metersPerMinute; // minutes per 500m
     });
     
     return paces.reduce((sum, pace) => sum + pace, 0) / paces.length;
 }
+
 
 async getRowingStats(user) {
     try {
@@ -361,9 +383,14 @@ async getRowingStats(user) {
  */
 calculateBestPaceMinPer500m(history) {
     if (!Array.isArray(history) || history.length === 0) return 0;
-    const paces = history.map(entry => entry.pace ? 500 / entry.pace : 0);
+    const paces = history.map(entry => {
+        if (!entry.meters || !entry.minutes) return 0;
+        const metersPerMinute = entry.meters / entry.minutes;
+        return 500 / metersPerMinute; // minutes per 500m
+    });
     return Math.min(...paces.filter(pace => pace > 0));
 }
+
 
 
     /**
