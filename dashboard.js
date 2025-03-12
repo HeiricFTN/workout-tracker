@@ -297,17 +297,17 @@ updateRowingType(type, element, stats) {
 }
 
 /**
- * Format minutes per 500m to MM:SS format
- * @param {number} paceMin500 - Pace in minutes per 500m
- * @returns {string} Formatted pace string
+ * Format minutes to MM:SS
+ * @param {number} minutes - Minutes to format
+ * @returns {string} Formatted time string
  */
-formatPaceMinutes(paceMin500) {
-    if (!paceMin500 || paceMin500 === 0) return '0:00';
+formatPaceMinutes(minutes) {
+    if (!minutes || minutes === 0) return '0:00';
     
-    const minutes = Math.floor(paceMin500);
-    const seconds = Math.round((paceMin500 - minutes) * 60);
+    const mins = Math.floor(minutes);
+    const secs = Math.round((minutes - mins) * 60);
     
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
    
@@ -364,6 +364,9 @@ formatPaceMinutes(paceMin500) {
      /**
      * Update recent progress
      */
+/**
+ * Update recent progress
+ */
 async updateRecentProgress() {
     if (!this.elements.recentProgress) return;
 
@@ -387,16 +390,26 @@ async updateRecentProgress() {
                     const currPace = this.formatPaceMinutes(data.currentPace);
                     progressText = `${prevPace}→${currPace} /500m`;
                 } else {
-                    const prev = Number(data.previous) || 0;
-                    const curr = Number(data.current) || 0;
-                    progressText = `${prev}→${curr} ${data.unit || 'lbs'}`;
+                    if (data.type === 'dumbbell') {
+                        progressText = `${data.current}→${data.best} lbs`;
+                    } else {
+                        progressText = `${data.current}→${data.best} reps`;
+                    }
                 }
 
-                return `<li class="mb-1">${exercise}: ${progressText}</li>`;
+                // Clean up exercise name for display
+                const displayName = exercise.startsWith('rowing_') ? 
+                    exercise.replace('rowing_', '') + ' Row' : 
+                    exercise;
+
+                return `<li class="mb-1">${displayName}: ${progressText}</li>`;
             })
+            .filter(item => item !== '') // Remove empty items
             .join('');
 
-        this.elements.recentProgress.innerHTML = progressHtml;
+        this.elements.recentProgress.innerHTML = progressHtml || 
+            '<li class="text-gray-600">No recent progress recorded</li>';
+
     } catch (error) {
         console.error('Error updating recent progress:', error);
         this.elements.recentProgress.innerHTML = 
