@@ -1,8 +1,8 @@
 /**
  * firebaseService.js
  * Manages Firebase operations and offline support
- * Version: 1.0.2
- * Last Verified: 2024-03-06
+ * Version: 1.0.3
+ * Last Verified: 2024-03-07
  */
 
 import { db, auth } from './firebase-config.js';
@@ -53,6 +53,7 @@ class FirebaseService {
             console.error('Error initializing connection listener:', error);
         }
     }
+
     /**
      * Handle connection change
      * @param {boolean} isOnline - New online status
@@ -174,6 +175,7 @@ class FirebaseService {
             return null;
         }
     }
+
     /**
      * Get progress data from Firebase
      * @param {string} userId - User ID
@@ -202,74 +204,6 @@ class FirebaseService {
         }
     }
 
-async getWorkoutProgress(userId, workoutName) {
-    try {
-        if (!this.isOnline) {
-            return this.getOfflineWorkoutProgress(userId, workoutName);
-        }
-
-        const progressRef = doc(this.db, 'workoutProgress', `${userId}_${workoutName}`);
-        const docSnap = await getDoc(progressRef);
-        if (docSnap.exists()) {
-            const progressData = docSnap.data();
-            
-            // Convert rowing paces to min/500m format if rowing data exists
-            if (progressData.rowing) {
-                const { meters, minutes } = progressData.rowing;
-                progressData.rowing.pace = this.calculatePacePerFiveHundred(meters, minutes);
-            }
-
-            const formattedData = { 
-                id: docSnap.id, 
-                ...progressData 
-            };
-
-            // Cache the formatted data
-            localStorage.setItem(
-                `workoutProgress_${userId}_${workoutName}`, 
-                JSON.stringify(formattedData)
-            );
-            
-            console.log('Workout progress retrieved successfully');
-            return formattedData;
-        } else {
-            console.log('No workout progress found');
-            return null;
-        }
-    } catch (error) {
-        console.error('Error getting workout progress:', error);
-        return this.getOfflineWorkoutProgress(userId, workoutName);
-    }
-}
-
-
-    /**
-     * Save workout progress to Firebase
-     * @param {string} userId - User ID
-     * @param {Object} progressData - Workout progress data to save
-     * @returns {Promise<Object|null>} Saved workout progress data or null if error
-     */
-    async saveWorkoutProgress(userId, progressData) {
-        try {
-            if (!this.isOnline) {
-                this.saveToOfflineStorage('pendingWorkoutProgress', { userId, ...progressData });
-                return { id: `${userId}_${progressData.name}`, ...progressData };
-            }
-
-            const progressRef = doc(this.db, 'workoutProgress', `${userId}_${progressData.name}`);
-            await setDoc(progressRef, {
-                ...progressData,
-                lastUpdated: new Date()
-            }, { merge: true });
-            console.log('Workout progress saved successfully');
-            return { id: `${userId}_${progressData.name}`, ...progressData };
-        } catch (error) {
-            console.error('Error saving workout progress:', error);
-            this.saveToOfflineStorage('pendingWorkoutProgress', { userId, ...progressData });
-            return null;
-        }
-    }
-
     /**
      * Save data to offline storage
      * @param {string} key - Storage key
@@ -289,6 +223,7 @@ async getWorkoutProgress(userId, workoutName) {
             console.error('Error saving to offline storage:', error);
         }
     }
+
     /**
      * Get workouts from offline storage
      * @param {string} userId - User ID
@@ -322,23 +257,6 @@ async getWorkoutProgress(userId, workoutName) {
     }
 
     /**
-     * Get workout progress from offline storage
-     * @param {string} userId - User ID
-     * @param {string} workoutName - Workout name
-     * @returns {Object|null} Workout progress data or null if not found
-     */
-    getOfflineWorkoutProgress(userId, workoutName) {
-        try {
-            const progress = JSON.parse(localStorage.getItem(`workoutProgress_${userId}_${workoutName}`));
-            console.log('Retrieved workout progress from offline storage');
-            return progress;
-        } catch (error) {
-            console.error('Error getting offline workout progress:', error);
-            return null;
-        }
-    }
-
-    /**
      * Sync offline data with Firebase
      * @returns {Promise<void>}
      */
@@ -351,7 +269,6 @@ async getWorkoutProgress(userId, workoutName) {
         try {
             await this.syncPendingWorkouts();
             await this.syncPendingProgress();
-            await this.syncPendingWorkoutProgress();
             console.log('Offline data sync completed');
         } catch (error) {
             console.error('Error syncing offline data:', error);
@@ -391,22 +308,6 @@ async getWorkoutProgress(userId, workoutName) {
     }
 
     /**
-     * Sync pending workout progress
-     * @returns {Promise<void>}
-     */
-    async syncPendingWorkoutProgress() {
-        const pendingWorkoutProgress = JSON.parse(localStorage.getItem('pendingWorkoutProgress') || '[]');
-        for (const progress of pendingWorkoutProgress) {
-            try {
-                await this.saveWorkoutProgress(progress.userId, progress);
-            } catch (error) {
-                console.error('Error syncing workout progress:', error);
-            }
-        }
-        localStorage.removeItem('pendingWorkoutProgress');
-    }
-
-    /**
      * Delete all data from Firebase and local storage
      * @returns {Promise<void>}
      */
@@ -414,7 +315,7 @@ async getWorkoutProgress(userId, workoutName) {
         try {
             console.log('Starting complete data deletion...');
             
-            const collections = ['workouts', 'progress', 'workoutProgress'];
+            const collections = ['workouts', 'progress'];
             
             for (const collectionName of collections) {
                 try {
@@ -446,31 +347,74 @@ async getWorkoutProgress(userId, workoutName) {
         }
     }
 
-/**
- * Calculate pace per 500 meters
- * @param {number} meters - Total meters
- * @param {number} minutes - Total minutes
- * @returns {Object} Pace data with both raw and formatted values
- */
-calculatePacePerFiveHundred(meters, minutes) {
-    if (!meters || !minutes || meters === 0) {
+    /**
+     * Calculate pace per 500 meters
+     * @param {number} meters - Total meters
+     * @param {number} minutes - Total minutes
+     * @returns {Object} Pace data with both raw and formatted values
+     * @example
+     * // Returns { raw: 2.28, formatted: "2:17" } for 2196m in 10 minutes
+     * calculatePacePerFiveHundred(2196, 10)
+     */
+    calculatePacePerFiveHundred(meters, minutes) {
+        if (!meters || !minutes || meters === 0) {
+            return {
+                raw: 0,
+                formatted: "0:00"
+            };
+        }
+        
+        const minutesPer500 = (minutes * 500) / meters;
+        const mins = Math.floor(minutesPer500);
+        const secs = Math.round((minutesPer500 - mins) * 60);
+        
         return {
-            raw: 0,
-            formatted: "0:00"
+            raw: minutesPer500,
+            formatted: `${mins}:${secs.toString().padStart(2, '0')}`
         };
     }
-    
-    const minutesPer500 = (minutes * 500) / meters;
-    const mins = Math.floor(minutesPer500);
-    const secs = Math.round((minutesPer500 - mins) * 60);
-    
-    return {
-        raw: minutesPer500,
-        formatted: `${mins}:${secs.toString().padStart(2, '0')}`
-    };
+
+    /**
+     * Update rowing progress
+     * @param {string} userId - User ID
+     * @param {Object} rowingData - Rowing session data
+     * @returns {Promise<Object|null>} Updated progress data or null if error
+     */
+    async updateRowingProgress(userId, rowingData) {
+        try {
+            const { type, meters, minutes } = rowingData;
+            const pace = this.calculatePacePerFiveHundred(meters, minutes);
+            
+            const progress = await this.getProgress(userId) || {};
+            if (!progress.rowing) progress.rowing = {};
+            if (!progress.rowing[type]) progress.rowing[type] = { history: [] };
+
+            // Add personal best tracking
+            if (!progress.rowing[type].personalBest || 
+                pace.raw < progress.rowing[type].personalBest.pace) {
+                progress.rowing[type].personalBest = {
+                    date: new Date().toISOString(),
+                    meters,
+                    minutes,
+                    pace: pace.raw
+                };
+            }
+
+            progress.rowing[type].history.push({
+                date: new Date().toISOString(),
+                meters,
+                minutes,
+                pace: pace.raw
+            });
+
+            return this.saveProgress(userId, progress);
+        } catch (error) {
+            console.error('Error updating rowing progress:', error);
+            return null;
+        }
+    }
 }
-}
-    
+
 // Create and export singleton instance
 const firebaseService = new FirebaseService();
 export default firebaseService;
