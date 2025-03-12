@@ -124,12 +124,12 @@ class DashboardController {
         this.elements.alexButton?.addEventListener('click', () => this.handleUserSwitch('Alex'));
 
         // Workout buttons
-        this.elements.chestTricepsBtn?.addEventListener('click', () => 
-            this.handleWorkoutButtonClick('chestTriceps'));
-        this.elements.shouldersBtn?.addEventListener('click', () => 
-            this.handleWorkoutButtonClick('shoulders'));
-        this.elements.backBicepsBtn?.addEventListener('click', () => 
-            this.handleWorkoutButtonClick('backBiceps'));
+    this.elements.chestBackBtn?.addEventListener('click', () => 
+        this.handleWorkoutButtonClick('chestBack'));
+    this.elements.shoulderArmsBtn?.addEventListener('click', () => 
+        this.handleWorkoutButtonClick('shoulderArms'));
+    this.elements.legsCoreBtn?.addEventListener('click', () => 
+        this.handleWorkoutButtonClick('legsCore'));
         
         // Start workout button
         this.elements.startWorkoutBtn?.addEventListener('click', () => 
@@ -157,10 +157,10 @@ class DashboardController {
      * Handle workout button click
      * @param {string} workoutType - Type of workout
      */
-    handleWorkoutButtonClick(workoutType) {
-        console.log(`${workoutType} clicked`);
-        this.navigateToWorkout(workoutType);
-    }
+handleWorkoutButtonClick(workoutType) {
+    console.log(`${workoutType} clicked`);
+    this.navigateToWorkout(workoutType);
+}
 
     /**
      * Handle start workout button click
@@ -442,29 +442,30 @@ async updateRecentProgress() {
      * Get next workout
      * @returns {string} Next workout description
      */
-    getNextWorkout() {
-        const today = new Date();
-        const day = today.getDay();
-        
-        if (day === 1 || day === 0) return 'Chest & Triceps (Monday)';
-        if (day === 3 || day === 2) return 'Shoulders (Wednesday)';
-        if (day === 5 || day === 4) return 'Back & Biceps (Friday)';
-        return 'Rest Day (Weekend)';
-    }
+getNextWorkout() {
+    const today = new Date();
+    const day = today.getDay();
+    
+    if (day === 1 || day === 0) return 'Chest/Back (Monday)';
+    if (day === 3 || day === 2) return 'Shoulder/Arms (Wednesday)';
+    if (day === 5 || day === 4) return 'Legs/Core (Friday)';
+    return 'Rest Day (Weekend)';
+}
 
     /**
      * Get current workout type
      * @returns {string|null} Current workout type or null
      */
-    getCurrentWorkoutType() {
-        const day = new Date().getDay();
-        switch(day) {
-            case 1: return 'chestTriceps';
-            case 3: return 'shoulders';
-            case 5: return 'backBiceps';
-            default: return null;
-        }
+getCurrentWorkoutType() {
+    const day = new Date().getDay();
+    switch(day) {
+        case 1: return 'chestBack';
+        case 3: return 'shoulderArms';
+        case 5: return 'legsCore';
+        default: return null;
     }
+}
+
 
     /**
      * Show loading state
