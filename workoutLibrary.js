@@ -448,7 +448,7 @@ class WorkoutLibrary {
                     description: "Pike position with feet in straps",
                     setup: "Hands on ground, feet in straps, hips raised",
                     type: "suspension",
-                    sets: 3: 3,
+                    sets: 3,
                     targetReps: "10-15"
                 },
                 {
