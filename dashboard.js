@@ -51,9 +51,9 @@ class DashboardController {
             workoutsComplete: document.getElementById('workoutsComplete'),
             todayWorkout: document.getElementById('todayWorkout'),
             startWorkoutBtn: document.getElementById('startWorkoutBtn'),
-            chestTricepsBtn: document.getElementById('chestTricepsBtn'),
-            shouldersBtn: document.getElementById('shouldersBtn'),
-            backBicepsBtn: document.getElementById('backBicepsBtn'),
+        chestBackBtn: document.getElementById('chestBackBtn'),
+        shoulderArmsBtn: document.getElementById('shoulderArmsBtn'),
+        legsCoreBtn: document.getElementById('legsCoreBtn'),
             recentProgress: document.getElementById('recentProgress'),
             loadingIndicator: document.getElementById('loadingIndicator')
         };
@@ -446,9 +446,9 @@ getNextWorkout() {
     const today = new Date();
     const day = today.getDay();
     
-    if (day === 1 || day === 0) return 'Chest/Back (Monday)';
-    if (day === 3 || day === 2) return 'Shoulder/Arms (Wednesday)';
-    if (day === 5 || day === 4) return 'Legs/Core (Friday)';
+    if (day === 1 || day === 0) return 'Chest & Back (Monday)';
+    if (day === 3 || day === 2) return 'Shoulders & Arms (Wednesday)';
+    if (day === 5 || day === 4) return 'Legs & Core (Friday)';
     return 'Rest Day (Weekend)';
 }
 
@@ -480,14 +480,14 @@ getCurrentWorkoutType() {
         }
 
         // Disable buttons during loading
-        const buttons = [
-            this.elements.dadButton,
-            this.elements.alexButton,
-            this.elements.startWorkoutBtn,
-            this.elements.chestTricepsBtn,
-            this.elements.shouldersBtn,
-            this.elements.backBicepsBtn
-        ];
+    const buttons = [
+        this.elements.dadButton,
+        this.elements.alexButton,
+        this.elements.startWorkoutBtn,
+        this.elements.chestBackBtn,
+        this.elements.shoulderArmsBtn,
+        this.elements.legsCoreBtn
+    ];
 
         buttons.forEach(button => {
             if (button) button.disabled = show;
