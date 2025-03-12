@@ -134,10 +134,13 @@ document.addEventListener('DOMContentLoaded', async function() {
      * Render the workout on the page
      * @returns {Promise<void>}
      */
-    async function renderWorkout() {
-        console.log('Rendering workout');
-        elements.workoutContainer.innerHTML = '';
-    const savedData = await firebaseService.getWorkoutProgress(state.currentUser, state.currentWorkout.name);
+async function renderWorkout() {
+    console.log('Rendering workout');
+    elements.workoutContainer.innerHTML = '';
+    
+    // Change this to get the most recent workout of this type
+    const workouts = await firebaseService.getWorkouts(state.currentUser);
+    const savedData = workouts.find(w => w.name === state.currentWorkout.name);
     
     renderRowingSection();
     
@@ -350,11 +353,8 @@ async function completeWorkout() {
         showLoading(true);
         const workoutData = collectWorkoutData();
         
-        // Save to both systems
-        await Promise.all([
-            dataManager.saveWorkout(state.currentUser, workoutData),
-            firebaseService.saveWorkoutProgress(state.currentUser, workoutData)
-        ]);
+        // Only save to workouts collection and update progress
+        await dataManager.saveWorkout(state.currentUser, workoutData);
         
         showSuccess('Workout completed and saved!');
         setTimeout(() => window.location.href = 'index.html', 1500);
