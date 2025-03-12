@@ -70,27 +70,27 @@ document.addEventListener('DOMContentLoaded', async function() {
      * Load workout data from URL parameters
      * @returns {Promise<void>}
      */
-    async function loadWorkoutFromURL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        state.currentUser = urlParams.get('user') || 'Dad';
-        const workoutType = urlParams.get('type');
+async function loadWorkoutFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    state.currentUser = urlParams.get('user') || 'Dad';
+    const workoutType = urlParams.get('type');
 
-        try {
-            console.log(`Loading workout for user: ${state.currentUser}, type: ${workoutType}`);
-            state.currentWorkout = workoutLibrary.getWorkout(workoutType);
+    try {
+        console.log(`Loading workout for user: ${state.currentUser}, type: ${workoutType}`);
+        state.currentWorkout = workoutLibrary.getWorkout(workoutType);
 
-            if (!state.currentWorkout) {
-                throw new Error(`Invalid workout type: ${workoutType}`);
-            }
-
-            elements.currentUser.textContent = state.currentUser;
-            elements.workoutTitle.textContent = state.currentWorkout.name;
-            console.log('Workout loaded successfully');
-        } catch (error) {
-            console.error('Error loading workout:', error);
-            throw error;
+        if (!state.currentWorkout) {
+            throw new Error(`Invalid workout type: ${workoutType}`);
         }
+
+        elements.currentUser.textContent = state.currentUser;
+        elements.workoutTitle.textContent = state.currentWorkout.name;
+        console.log('Workout loaded successfully');
+    } catch (error) {
+        console.error('Error loading workout:', error);
+        throw error;
     }
+}
 
     /**
      * Set up event listeners for the page
