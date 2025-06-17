@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Exercise Editor</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h1>Exercise Library Manager</h1>
+
+  <form id="addExerciseForm">
+    <input name="name" placeholder="Exercise name" required />
+    <input name="equipment" placeholder="Equipment" />
+    <input name="muscles" placeholder="Muscles (comma-separated)" />
+    <input name="difficulty" placeholder="Difficulty (Beginner/Intermediate)" />
+    <textarea name="notes" placeholder="Coaching notes"></textarea>
+    <button type="submit">Add Exercise</button>
+  </form>
+
+  <div id="exerciseEditorContainer"></div>
+
+  <script type="module" src="ui/exerciseEditor.js"></script>
+</body>
+</html>
