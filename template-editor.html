@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Template Builder</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Create Workout Template</h1>
+  </header>
+
+  <div class="dashboard-nav">
+    <button onclick="location.href='index.html'">🏠 Dashboard</button>
+    <button onclick="location.href='workout.html'">👟 Start Workout</button>
+    <button onclick="location.href='progress.html'">📊 Progress</button>
+    <button onclick="location.href='exercise-editor.html'">🏋️ Exercise Library</button>
+    <button onclick="location.href='template-editor.html'">🧱 Template Builder</button>
+  </div>
+
+  <main>
+    <form id="templateForm">
+      <input name="title" placeholder="Template Title" required />
+      <textarea name="notes" placeholder="Notes about this template"></textarea>
+      <button type="submit">💾 Save Template</button>
+    </form>
+
+    <h3>Select Exercises</h3>
+    <div id="exerciseList"></div>
+
+    <div style="margin: 1rem 0;">
+      <button id="addSingleBtn">Add as Single Block</button>
+      <button id="addSupersetBtn">Add as Superset Block</button>
+    </div>
+
+    <h3>Selected Blocks</h3>
+    <div id="selectedBlocks"></div>
+  </main>
+
+  <script type="module" src="ui/templateEditor.js"></script>
+</body>
+</html>
