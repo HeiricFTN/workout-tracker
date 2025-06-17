@@ -1,193 +1,24 @@
+<!-- =============================
+File: index.html
+============================= -->
 <!DOCTYPE html>
 <html lang="en">
-<!--
-    index.html
-    Main dashboard interface for Dad & Alex Workout Tracker
-    Version: 1.0.1
-    Last Verified: 2024-03-06
--->
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="description" content="Dad & Alex Workout Tracker - Personal workout tracking and progress monitoring">
-<meta name="theme-color" content="#3b82f6">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <title>Dad & Alex Workout Dashboard</title>
-    
-    <!-- Stylesheets -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
-
-    <!-- Error Handler -->
-    <script>
-        window.error = function(msg, url, lineNo, columnNo, error) {
-            console.error('Error: ', msg, '\nURL: ', url, '\nLine: ', lineNo, '\nColumn: ', columnNo, '\nError: ', error);
-            return false;
-        };
-    </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workout Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
+<body>
+  <header>
+    <h1>Welcome to Workout Tracker</h1>
+  </header>
 
-<body class="bg-gray-100">
-    <!-- Loading Indicator -->
-    <div id="loadingIndicator" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-    </div>
+  <main id="dashboardContainer">
+    <!-- Content dynamically injected by dashboard.js -->
+  </main>
 
-    <div class="app-container">
-        <!-- User Selection -->
-        <header class="mb-4" role="banner">
-            <div class="flex gap-2">
-                <button id="dadButton" 
-                        class="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg shadow"
-                        aria-pressed="true"
-                        aria-label="Select Dad's profile">
-                    Dad
-                </button>
-                <button id="alexButton" 
-                        class="flex-1 py-2 px-4 bg-gray-200 rounded-lg shadow"
-                        aria-pressed="false"
-                        aria-label="Select Alex's profile">
-                    Alex
-                </button>
-            </div>
-        </header>
-
-        <!-- Program Status Section -->
-        <section class="workout-card mb-4" aria-labelledby="programStatusTitle">
-            <h2 id="programStatusTitle" class="text-lg font-bold mb-2">Program Status</h2>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <p class="text-sm text-gray-600">Current Week</p>
-                    <p id="currentWeek" class="text-xl font-bold" aria-live="polite"></p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600">Program Phase</p>
-                    <p id="programPhase" class="text-xl font-bold" aria-live="polite"></p>
-                </div>
-            </div>
-            <div class="mt-2">
-                <p class="text-sm text-gray-600">Next Workout</p>
-                <p id="nextWorkout" class="font-medium" aria-live="polite"></p>
-            </div>
-        </section>
-
-        <!-- Rowing Progress Section -->
-        <section class="workout-card mb-4" aria-labelledby="rowingProgressTitle">
-            <h2 id="rowingProgressTitle" class="text-lg font-bold mb-2">Rowing Progress</h2>
-            <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                    <span class="text-sm">Breathe</span>
-                    <span id="breatheProgress" class="font-medium" aria-live="polite"></span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-sm">Sweat</span>
-                    <span id="sweatProgress" class="font-medium" aria-live="polite"></span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-sm">Drive</span>
-                    <span id="driveProgress" class="font-medium" aria-live="polite"></span>
-                </div>
-            </div>
-        </section>
-
-        <!-- Weekly Progress Section -->
-        <section class="workout-card mb-4" aria-labelledby="weeklyProgressTitle">
-            <h2 id="weeklyProgressTitle" class="text-lg font-bold mb-2">This Week's Progress</h2>
-            <div id="weeklyDots" class="flex justify-between mb-2" aria-label="Weekly progress tracker"></div>
-            <p id="workoutsComplete" class="text-center" aria-live="polite"></p>
-        </section>
-
-        <!-- Today's Workout Section -->
-        <section class="workout-card mb-4" aria-labelledby="todayWorkoutTitle">
-            <h2 id="todayWorkoutTitle" class="text-lg font-bold mb-2">Today's Workout</h2>
-            <p id="todayWorkout" class="mb-2" aria-live="polite"></p>
-            <button id="startWorkoutBtn" 
-                    class="w-full py-2 px-4 bg-green-500 text-white rounded-lg shadow"
-                    aria-label="Start today's workout">
-                Start Workout
-            </button>
-        </section>
-
-        <!-- Workout Selection Section -->
-<section class="workout-card mb-4" aria-labelledby="workoutSelectionTitle">
-    <h2 id="workoutSelectionTitle" class="text-lg font-bold mb-2">Select Workout</h2>
-    <div class="space-y-2">
-        <button id="chestBackBtn" 
-                class="w-full py-2 px-4 bg-gray-200 rounded-lg text-left"
-                aria-label="Start Chest and Back workout">
-            Chest & Back
-        </button>
-        <button id="shoulderArmsBtn" 
-                class="w-full py-2 px-4 bg-gray-200 rounded-lg text-left"
-                aria-label="Start Shoulders and Arms workout">
-            Shoulders & Arms
-        </button>
-        <button id="legsCoreBtn" 
-                class="w-full py-2 px-4 bg-gray-200 rounded-lg text-left"
-                aria-label="Start Legs and Core workout">
-            Legs & Core
-        </button>
-    </div>
-</section>
-
-        <!-- Recent Progress Section -->
-        <section class="workout-card mb-4" aria-labelledby="recentProgressTitle">
-            <h2 id="recentProgressTitle" class="text-lg font-bold mb-2">Recent Progress</h2>
-            <ul id="recentProgress" class="list-disc pl-5 mb-2" aria-live="polite"></ul>
-            <a href="progress.html" 
-               class="block w-full py-2 px-4 bg-blue-500 text-white text-center rounded-lg shadow"
-               aria-label="View full progress history">
-                View Full Progress
-            </a>
-        </section>
-    </div>
-
-    <!-- Error Display -->
-    <div id="errorDisplay" class="fixed top-4 right-4 hidden">
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <span class="block sm:inline" id="errorMessage"></span>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script type="module">
-        // Firebase SDK Imports
-        try {
-            const modules = await Promise.all([
-                import('https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js'),
-                import('https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js'),
-                import('https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js')
-            ]);
-            console.log('Firebase SDK loaded successfully');
-        } catch (error) {
-            console.error('Error loading Firebase SDK:', error);
-            document.getElementById('errorMessage').textContent = 'Error loading application. Please refresh the page.';
-            document.getElementById('errorDisplay').classList.remove('hidden');
-        }
-    </script>
-
-    <!-- Application Scripts -->
-    <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="workoutLibrary.js"></script>
-    <script type="module" src="dataManager.js"></script>
-    <script type="module" src="dashboard.js"></script>
-
-    <!-- Version Display -->
-    <script>
-        fetch('manifest.json')
-            .then(response => response.json())
-            .then(manifest => {
-                document.querySelector('.app-version').textContent = `v${manifest.version}`;
-            })
-            .catch(error => {
-                console.error('Error loading version:', error);
-                document.querySelector('.app-version').textContent = 'v1.0.1';
-            });
-    </script>
-    <div class="app-version" aria-label="Application version">v1.0.1</div>
+  <script type="module" src="dashboard.js"></script>
+  <script type="module" src="workoutTracker.js"></script>
 </body>
 </html>
