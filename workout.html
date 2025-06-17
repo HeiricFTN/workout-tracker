@@ -1,183 +1,24 @@
+<!-- =============================
+File: workout.html
+============================= -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="description" content="Dad & Alex Workout Tracker - Daily workout tracking and exercise logging">
-    <meta name="theme-color" content="#3b82f6">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <title>Workout - Dad & Alex Workout Tracker</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start Workout</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="bg-gray-100">
-    <div class="app-container">
-        <!-- Header -->
-        <header class="mb-4">
-            <div class="flex items-center justify-between">
-                <a href="index.html" class="py-2 px-4 bg-gray-200 rounded-lg shadow">
-                    Back
-                </a>
-                <span id="currentUser" class="font-semibold"></span>
-            </div>
-        </header>
+<body>
+  <header>
+    <h1 id="workoutTitle">Workout Session</h1>
+  </header>
 
-        <!-- Workout Title -->
-        <div id="workoutTitle" class="text-xl font-bold mb-4"></div>
+  <main>
+    <div id="workoutContainer"></div>
+    <button id="completeWorkoutBtn">Complete Workout</button>
+  </main>
 
-        <!-- Rowing Section -->
-        <section id="rowingSection" class="workout-card mb-6">
-            <h2 class="text-lg font-bold mb-2">Hydrow Rowing</h2>
-            <p class="text-sm text-gray-600 mb-4">Complete before strength training</p>
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="rowingType" class="block text-sm font-medium text-gray-700">Type</label>
-                        <select id="rowingType" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="Breathe">Breathe</option>
-                            <option value="Sweat">Sweat</option>
-                            <option value="Drive">Drive</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="rowingMinutes" class="block text-sm font-medium text-gray-700">Minutes</label>
-                        <input type="number" id="rowingMinutes" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="0">
-                    </div>
-                </div>
-                <div>
-                    <label for="rowingMeters" class="block text-sm font-medium text-gray-700">Meters</label>
-                    <input type="number" id="rowingMeters" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="0">
-                </div>
-            </div>
-        </section>
-
-        <!-- Workout Container -->
-        <main id="workoutContainer" class="space-y-6">
-            <!-- Supersets will be inserted here by JavaScript -->
-        </main>
-
-        <!-- Fixed Bottom Button -->
-        <div class="fixed-bottom">
-            <button id="completeWorkoutBtn" class="w-full py-3 bg-green-500 text-white rounded-lg shadow">
-                Complete Workout
-            </button>
-        </div>
-    </div>
-
-    <!-- Templates -->
-    <template id="supersetTemplate">
-        <div class="superset workout-card">
-            <h3 class="font-semibold mb-4">Superset {number}</h3>
-            <div class="exercise-container space-y-4">
-                <!-- Exercises will be inserted here -->
-            </div>
-        </div>
-    </template>
-
-    <template id="exerciseTemplate">
-        <div class="exercise">
-            <div class="mb-2">
-                <h4 class="font-medium">{name}</h4>
-                <p class="text-sm text-gray-600">{description}</p>
-            </div>
-            <!-- Set 1 -->
-            <div class="exercise-grid mb-2">
-                <div class="text-sm text-gray-600">Set 1:</div>
-                <div class="weight-input-container {hideForTRX}">
-                    <label class="text-sm text-gray-600">Weight (lbs)</label>
-                    <input type="number" 
-                           class="number-input weight-input" 
-                           data-set="0"
-                           min="0" 
-                           max="999" 
-                           placeholder="0">
-                </div>
-                <div class="reps-input-container">
-                    <label class="text-sm text-gray-600">Reps</label>
-                    <input type="number" 
-                           class="number-input reps-input"
-                           data-set="0" 
-                           min="0" 
-                           max="999" 
-                           placeholder="0">
-                </div>
-            </div>
-            <!-- Set 2 -->
-            <div class="exercise-grid mb-2">
-                <div class="text-sm text-gray-600">Set 2:</div>
-                <div class="weight-input-container {hideForTRX}">
-                    <label class="text-sm text-gray-600">Weight (lbs)</label>
-                    <input type="number" 
-                           class="number-input weight-input"
-                           data-set="1" 
-                           min="0" 
-                           max="999" 
-                           placeholder="0">
-                </div>
-                <div class="reps-input-container">
-                    <label class="text-sm text-gray-600">Reps</label>
-                    <input type="number" 
-                           class="number-input reps-input"
-                           data-set="1" 
-                           min="0" 
-                           max="999" 
-                           placeholder="0">
-                </div>
-            </div>
-            <!-- Set 3 -->
-            <div class="exercise-grid">
-                <div class="text-sm text-gray-600">Set 3:</div>
-                <div class="weight-input-container {hideForTRX}">
-                    <label class="text-sm text-gray-600">Weight (lbs)</label>
-                    <input type="number" 
-                           class="number-input weight-input"
-                           data-set="2" 
-                           min="0" 
-                           max="999" 
-                           placeholder="0">
-                </div>
-                <div class="reps-input-container">
-                    <label class="text-sm text-gray-600">Reps</label>
-                    <input type="number" 
-                           class="number-input reps-input"
-                           data-set="2" 
-                           min="0" 
-                           max="999" 
-                           placeholder="0">
-                </div>
-            </div>
-        </div>
-    </template>
-
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js';
-        import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js';
-        import { getAuth } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js';
-    </script>
-
-    <!-- Application Scripts -->
-    <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="workoutLibrary.js"></script>
-    <script type="module" src="dataManager.js"></script>
-    <script type="module" src="workoutTracker.js"></script>
-
-    <!-- Version Display -->
-    <script>
-        fetch('manifest.json')
-            .then(response => response.json())
-            .then(manifest => {
-                document.querySelector('.app-version').textContent = `v${manifest.version}`;
-            })
-            .catch(error => {
-                console.error('Error loading version:', error);
-                document.querySelector('.app-version').textContent = 'v1.0.1';
-            });
-    </script>
-    <div class="app-version">v1.0.1</div>
+  <script type="module" src="workoutTracker.js"></script>
 </body>
 </html>
