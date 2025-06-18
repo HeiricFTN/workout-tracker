@@ -23,4 +23,16 @@ export async function fetchTemplates() {
     console.error('Error fetching templates:', err);
     return [];
   }
+  
+}
+export async function fetchTemplateById(templateId) {
+  try {
+    const snapshot = await getDocs(templatesRef);
+    const doc = snapshot.docs.find(doc => doc.id === templateId);
+    if (!doc) return null;
+    return { ...doc.data(), templateId: doc.id };
+  } catch (err) {
+    console.error('Error fetching template by ID:', err);
+    return null;
+  }
 }
