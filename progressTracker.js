@@ -7,7 +7,7 @@
  */
 
 import dataManager from './dataManager.js';
-import firebaseService from './firebaseService.js';
+import firebaseService from './services/firebaseService.js';
 
 /**
  * ProgressTracker Class
