@@ -413,8 +413,23 @@ class FirebaseService {
             return null;
         }
     }
+    
 }
-
+// ✅ Export SDK methods for other modules to use
+export {
+  db,
+  auth,
+  collection,
+  doc,
+  addDoc,
+  getDoc,
+  getDocs,
+  deleteDoc,
+  setDoc,
+  query,
+  where,
+  orderBy
+};
 // Create and export singleton instance
 const firebaseService = new FirebaseService();
 export default firebaseService;
