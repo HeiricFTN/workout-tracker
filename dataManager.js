@@ -6,7 +6,7 @@
  * Changes: Updated to use firebaseService
  */
 
-import firebaseService from './firebaseService.js';
+import firebaseService from './services/firebaseService.js';
 
 /**
  * DataManager Class
