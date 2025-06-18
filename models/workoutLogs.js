@@ -1,28 +1,32 @@
 // =============================
 // File: models/workoutLogs.js
 // =============================
-import { db } from '../services/firebaseService.js';
-import { collection, addDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
+
+import { db, collection, addDoc, getDocs, query, where } from '../services/firebaseService.js';
 
 const logsRef = collection(db, 'workoutLogs');
 
 export async function logWorkout(log) {
-  return await addDoc(logsRef, log);
+  try {
+    await addDoc(logsRef, log);
+    console.log('Workout logged:', log);
+  } catch (err) {
+    console.error('Failed to log workout:', err);
+  }
 }
 
 export async function fetchLogsByUser(userId) {
-  const q = query(logsRef, where("userId", "==", userId), orderBy("completedAt", "desc"));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  try {
+    const q = query(logsRef, where('userId', '==', userId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => doc.data());
+  } catch (err) {
+    console.error('Error fetching logs:', err);
+    return [];
+  }
 }
 
-export async function fetchLogsByTemplate(userId, templateId) {
-  const q = query(
-    logsRef,
-    where("userId", "==", userId),
-    where("templateId", "==", templateId),
-    orderBy("completedAt", "desc")
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+export async function fetchLogsByExercise(userId, exerciseName) {
+  const logs = await fetchLogsByUser(userId);
+  return logs.filter(log => log.performance[exerciseName]);
 }
