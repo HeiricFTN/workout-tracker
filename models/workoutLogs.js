@@ -30,3 +30,23 @@ export async function fetchLogsByExercise(userId, exerciseName) {
   const logs = await fetchLogsByUser(userId);
   return logs.filter(log => log.performance[exerciseName]);
 }
+
+export async function fetchLatestTemplateId(userId) {
+  const logs = await fetchLogsByUser(userId);
+  if (logs.length === 0) return null;
+  logs.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+  return logs[0].templateId;
+}
+
+export async function generateSupersetTemplate(userId) {
+  const { generateAdaptiveSuperset } = await import('../analytics/adaptiveWorkoutSelector.js');
+  const supersets = await generateAdaptiveSuperset(userId);
+
+  const template = {
+    title: 'Adaptive Superset Plan',
+    version: 1,
+    exercises: supersets.flatMap(pair => pair.exercises.map(name => ({ name })))
+  };
+
+  return template;
+}
