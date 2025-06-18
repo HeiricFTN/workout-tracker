@@ -1,36 +1,33 @@
 // =============================
 // File: analytics/growthTracker.js
 // =============================
-import { fetchLogsByUser } from '../models/workoutLogs.js';
+
+import { fetchLogsByExercise } from '../models/workoutLogs.js';
 
 export async function calculateGrowth(userId, exerciseName) {
-  const logs = await fetchLogsByUser(userId);
-  const history = logs
-    .filter(log => log.performance[exerciseName])
-    .map(log => log.performance[exerciseName])
-    .flat();
+  const logs = await fetchLogsByExercise(userId, exerciseName);
+  if (logs.length < 2) return { trend: 'No data', change: 0, method: 'N/A' };
 
-  if (history.length < 2) return { trend: 'No Data', change: 0, method: 'none' };
+  // Sort logs chronologically
+  logs.sort((a, b) => new Date(a.completedAt) - new Date(b.completedAt));
 
-  const firstEntry = history[0];
-  const lastEntry = history[history.length - 1];
+  const extractAverage = (log) => {
+    const sets = log.performance[exerciseName];
+    if (!sets || sets.length === 0) return 0;
+    return sets.reduce((sum, set) => sum + (set.reps * set.weight), 0) / sets.length;
+  };
 
-  let change = 0;
-  let trend = 'No Data';
-  let method = '';
+  const firstAvg = extractAverage(logs[0]);
+  const lastAvg = extractAverage(logs[logs.length - 1]);
+  const change = firstAvg === 0 ? 0 : (((lastAvg - firstAvg) / firstAvg) * 100).toFixed(1);
 
-  if ('weight' in firstEntry && 'weight' in lastEntry) {
-    change = ((lastEntry.weight - firstEntry.weight) / firstEntry.weight) * 100;
-    method = 'weight';
-  } else if ('reps' in firstEntry && 'reps' in lastEntry) {
-    change = ((lastEntry.reps - firstEntry.reps) / firstEntry.reps) * 100;
-    method = 'reps';
-  }
+  let trend = 'No Change';
+  if (change > 5) trend = 'Improving';
+  else if (change < -5) trend = 'Declining';
 
-  if (change > 0) trend = 'Improving';
-  else if (change < 0) trend = 'Declining';
-  else trend = 'Stable';
-
-  return { trend, change: parseFloat(change.toFixed(1)), method };
+  return {
+    trend,
+    change,
+    method: 'Avg Volume (reps x weight)'
+  };
 }
-
