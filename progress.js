@@ -3,11 +3,13 @@
 // =============================
 import { fetchLogsByUser } from './models/workoutLogs.js';
 import { calculateGrowth } from './analytics/growthTracker.js';
+import dataManager from './dataManager.js';
 
-const userId = 'Dad';
+let currentUser = 'Dad';
 
 window.addEventListener('DOMContentLoaded', async () => {
-  const logs = await fetchLogsByUser(userId);
+  currentUser = await dataManager.getCurrentUser();
+  const logs = await fetchLogsByUser(currentUser);
   const allExercises = new Set();
   logs.forEach(log => {
     Object.keys(log.performance).forEach(ex => allExercises.add(ex));
@@ -17,7 +19,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   container.innerHTML = '';
 
   for (const exerciseName of allExercises) {
-    const growth = await calculateGrowth(userId, exerciseName);
+    const growth = await calculateGrowth(currentUser, exerciseName);
     const card = document.createElement('div');
     card.className = 'growth-card';
     card.innerHTML = `
