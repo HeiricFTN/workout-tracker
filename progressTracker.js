@@ -1,5 +1,6 @@
 // progressTracker.js
 import dataManager from './dataManager.js';
+import { exerciseLibrary } from './models/exerciseLibrary.js';
 
 class ProgressTracker {
     constructor() {
@@ -113,13 +114,23 @@ class ProgressTracker {
             const progress = await this.dataManager.getProgress(userId);
             const profile = await this.dataManager.getUserProfile(userId);
             const exerciseData = progress[exercise];
+            const exerciseInfo = exerciseLibrary.find(e => e.name === exercise);
+            const equipment = exerciseInfo?.equipment || '';
+            const isBodyweight = ['Bodyweight', 'TRX', 'Dip Bar'].includes(equipment);
 
             if (exerciseData?.history?.length > 0) {
                 const last = exerciseData.history[exerciseData.history.length - 1];
                 const set = last.sets && last.sets[0];
-                const weight = (set?.weight || 0) + 5;
                 const reps = set?.reps || 8;
+                if (isBodyweight) {
+                    return { weight: 0, reps };
+                }
+                const weight = (set?.weight || 0) + 5;
                 return { weight, reps };
+            }
+
+            if (isBodyweight) {
+                return { weight: 0, reps: 8 };
             }
 
             return { weight: profile.age, reps: 8 };
