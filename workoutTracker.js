@@ -37,12 +37,30 @@ async function renderWorkoutUI(exercises) {
     const exercise = exercises[index];
     const rec = await progressTracker.getRecommendedSet(currentUser, exercise.name);
     const div = document.createElement('div');
-    div.innerHTML = `
-      <h4>${exercise.name}</h4>
-      <div class="recommendation">Recommended: ${rec.weight} lbs × ${rec.reps} reps</div>
-      <input type="number" id="weight-${index}" placeholder="Weight" value="${rec.weight}">
-      <input type="number" id="reps-${index}" placeholder="Reps" value="${rec.reps}">
-    `;
+    const isBodyweight = ['Bodyweight', 'TRX', 'Dip Bar'].includes(exercise.equipment);
+
+    if (isBodyweight) {
+      div.innerHTML = `
+        <h4>${exercise.name}</h4>
+        <div>
+          <input type="number" id="reps-${index}" placeholder="Reps">
+          <span class="recommendation">Recommended: ${rec.reps} reps</span>
+        </div>
+      `;
+    } else {
+      div.innerHTML = `
+        <h4>${exercise.name}</h4>
+        <div>
+          <input type="number" id="weight-${index}" placeholder="Weight">
+          <span class="recommendation">Recommended: ${rec.weight} lbs</span>
+        </div>
+        <div>
+          <input type="number" id="reps-${index}" placeholder="Reps">
+          <span class="recommendation">Recommended: ${rec.reps} reps</span>
+        </div>
+      `;
+    }
+
     container.appendChild(div);
   }
 }
@@ -51,7 +69,8 @@ document.getElementById('completeWorkoutBtn')?.addEventListener('click', async (
   const performance = {};
   document.querySelectorAll('#workoutContainer > div').forEach((div, index) => {
     const name = div.querySelector('h4').textContent;
-    const weight = parseFloat(div.querySelector(`#weight-${index}`).value) || 0;
+    const weightInput = div.querySelector(`#weight-${index}`);
+    const weight = weightInput ? parseFloat(weightInput.value) || 0 : 0;
     const reps = parseInt(div.querySelector(`#reps-${index}`).value) || 0;
     performance[name] = [{ weight, reps }];
   });
