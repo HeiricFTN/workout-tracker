@@ -11,10 +11,18 @@ export async function calculateGrowth(userId, exerciseName) {
   // Sort logs chronologically
   logs.sort((a, b) => new Date(a.completedAt) - new Date(b.completedAt));
 
+  const usesWeight = logs.some(log => {
+    const sets = log.performance[exerciseName];
+    return sets && sets.some(set => set.weight !== undefined);
+  });
+
   const extractAverage = (log) => {
     const sets = log.performance[exerciseName];
     if (!sets || sets.length === 0) return 0;
-    return sets.reduce((sum, set) => sum + (set.reps * set.weight), 0) / sets.length;
+    if (usesWeight) {
+      return sets.reduce((sum, set) => sum + (set.reps * set.weight), 0) / sets.length;
+    }
+    return sets.reduce((sum, set) => sum + set.reps, 0) / sets.length;
   };
 
   const firstAvg = extractAverage(logs[0]);
@@ -28,6 +36,6 @@ export async function calculateGrowth(userId, exerciseName) {
   return {
     trend,
     change,
-    method: 'Avg Volume (reps x weight)'
+    method: usesWeight ? 'Avg Volume (reps x weight)' : 'Avg Reps'
   };
 }

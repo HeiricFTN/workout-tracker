@@ -473,13 +473,26 @@ class DataManager {
         if (!exercise.sets || exercise.sets.length === 0) return;
 
         const currentBest = exercise.sets.reduce((best, set) => {
-            if (set.weight > (best?.weight || 0)) {
+            if (set.weight !== undefined) {
+                if (!best || set.weight > (best.weight || 0)) {
+                    return set;
+                }
+                return best;
+            }
+            if (!best || best.weight !== undefined || set.reps > (best.reps || 0)) {
                 return set;
             }
             return best;
         }, exerciseProgress.personalBest);
 
-        if (currentBest && (!exerciseProgress.personalBest.weight || currentBest.weight > exerciseProgress.personalBest.weight)) {
+        const previousBest = exerciseProgress.personalBest;
+        if (!currentBest) return;
+        const isWeighted = currentBest.weight !== undefined;
+        const shouldUpdate = isWeighted
+            ? currentBest.weight > (previousBest?.weight || 0)
+            : (previousBest?.weight !== undefined || currentBest.reps > (previousBest?.reps || 0));
+
+        if (shouldUpdate) {
             exerciseProgress.personalBest = {
                 ...currentBest,
                 date: new Date().toISOString()
