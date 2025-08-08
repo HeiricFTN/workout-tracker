@@ -5,6 +5,7 @@
 import { logWorkout, generateSupersetTemplate } from './models/workoutLogs.js';
 import { fetchTemplateById } from './models/workoutTemplates.js';
 import dataManager from './dataManager.js';
+import progressTracker from './progressTracker.js';
 
 let selectedTemplateId = null;
 let currentUser = 'Dad';
@@ -26,21 +27,24 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   document.getElementById('workoutTitle').textContent = `${template.title} (v${template.version || 1})`;
-  renderWorkoutUI(template.exercises);
+  await renderWorkoutUI(template.exercises);
 });
 
-function renderWorkoutUI(exercises) {
+async function renderWorkoutUI(exercises) {
   const container = document.getElementById('workoutContainer');
   container.innerHTML = '';
-  exercises.forEach((exercise, index) => {
+  for (let index = 0; index < exercises.length; index++) {
+    const exercise = exercises[index];
+    const rec = await progressTracker.getRecommendedSet(currentUser, exercise.name);
     const div = document.createElement('div');
     div.innerHTML = `
       <h4>${exercise.name}</h4>
-      <input type="number" id="weight-${index}" placeholder="Weight">
-      <input type="number" id="reps-${index}" placeholder="Reps">
+      <div class="recommendation">Recommended: ${rec.weight} lbs × ${rec.reps} reps</div>
+      <input type="number" id="weight-${index}" placeholder="Weight" value="${rec.weight}">
+      <input type="number" id="reps-${index}" placeholder="Reps" value="${rec.reps}">
     `;
     container.appendChild(div);
-  });
+  }
 }
 
 document.getElementById('completeWorkoutBtn')?.addEventListener('click', async () => {
