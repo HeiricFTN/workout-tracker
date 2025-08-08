@@ -17,10 +17,10 @@ index 6af43fae9bb628689653f02e177b2e25d7053e64..be0b092ad132433022a50a70d957dc9c
  - Improved data validation and error handling
  - Added comprehensive workout definitions
  - Updated UI components for better user feedback
-+- Introduced age and gender defaults for Dad (47M) and Alex (15M) to drive weight and rep recommendations
-+- Dashboard now shows weekday dots with completion colors and a "Start Today's Workout" button
-+- Workout pages prefill recommended sets based on progress or profile defaults
-+- Added minimal package.json so `npm test` runs without error
+- Introduced age and gender defaults for Dad (47M) and Alex (15M) to drive weight and rep recommendations
+- Dashboard now shows weekday dots with completion colors and a "Start Today's Workout" button
+- Workout pages prefill recommended sets based on progress or profile defaults
+- Added minimal package.json so `npm test` runs without error
  
  ### Major Changes
  1. **Firebase Integration**
