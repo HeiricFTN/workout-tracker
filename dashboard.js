@@ -2,13 +2,13 @@ import { fetchTemplates } from './models/workoutTemplates.js';
 import dataManager from './dataManager.js';
 
 const weeklyPlan = [
-  { name: 'Sunday', template: null },
-  { name: 'Monday', template: 'Full Body Strength' },
-  { name: 'Tuesday', template: null },
-  { name: 'Wednesday', template: 'Push + Conditioning' },
-  { name: 'Thursday', template: null },
-  { name: 'Friday', template: 'Pull + Legs' },
-  { name: 'Saturday', template: null }
+  { template: null },       // Sunday
+  { template: 'Full Body Strength' },
+  { template: null },
+  { template: 'Push + Conditioning' },
+  { template: null },
+  { template: 'Pull + Legs' },
+  { template: null }
 ];
 
 window.startWorkout = (templateId) => {
@@ -24,29 +24,47 @@ window.addEventListener('DOMContentLoaded', async () => {
   const templates = await fetchTemplates();
   const completedDays = await dataManager.getWeeklyWorkouts(currentUser);
 
-  const weekGrid = document.createElement('div');
-  weekGrid.className = 'weekly-schedule';
+  const labels = ['S', 'M', 'T', 'W', 'Th', 'F', 'S'];
+  const weekRow = document.createElement('div');
+  weekRow.className = 'weekly-schedule';
 
-  weeklyPlan.forEach((day, index) => {
-    const card = document.createElement('div');
-    card.className = 'day-card';
-    card.innerHTML = `<h3>${day.name}</h3>`;
+  labels.forEach((label, index) => {
+    const day = document.createElement('div');
+    day.className = 'day';
+    day.textContent = label;
 
-    if (completedDays.includes(index)) {
-      card.innerHTML += '<p class="completed">Completed</p>';
-    } else {
-      const template = templates.find(t => t.title === day.template);
-      if (template) {
-        card.innerHTML += `<button onclick="startWorkout('${template.templateId}')">Start ${day.template}</button>`;
+    const plan = weeklyPlan[index];
+    if (plan.template) {
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      if (completedDays.includes(index)) {
+        dot.classList.add('completed');
       } else {
-        card.innerHTML += `<button onclick="startWorkout()">Start Workout</button>`;
+        dot.classList.add('pending');
       }
+      day.appendChild(dot);
     }
 
-    weekGrid.appendChild(card);
+    weekRow.appendChild(day);
   });
 
-  container.appendChild(weekGrid);
+  container.appendChild(weekRow);
+
+  const todayButton = document.createElement('button');
+  todayButton.textContent = "Start Today's Workout";
+  todayButton.addEventListener('click', () => {
+    const today = new Date().getDay();
+    const plan = weeklyPlan[today];
+    if (plan.template) {
+      const template = templates.find(t => t.title === plan.template);
+      if (template) {
+        startWorkout(template.templateId);
+        return;
+      }
+    }
+    startWorkout();
+  });
+  container.appendChild(todayButton);
 
   const allHeader = document.createElement('h3');
   allHeader.textContent = 'All Workout Templates';
