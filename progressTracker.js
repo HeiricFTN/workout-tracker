@@ -116,27 +116,27 @@ class ProgressTracker {
             const exerciseData = progress[exercise];
             const exerciseInfo = exerciseLibrary.find(e => e.name === exercise);
             const equipment = exerciseInfo?.equipment || '';
-            const isBodyweight = ['Bodyweight', 'TRX', 'Dip Bar'].includes(equipment);
+            const isWeighted = ['Dumbbell', 'Kettlebell'].includes(equipment);
 
             if (exerciseData?.history?.length > 0) {
                 const last = exerciseData.history[exerciseData.history.length - 1];
                 const set = last.sets && last.sets[0];
                 const reps = set?.reps || 8;
-                if (isBodyweight) {
-                    return { weight: 0, reps };
+                if (!isWeighted) {
+                    return { reps };
                 }
                 const weight = (set?.weight || 0) + 5;
                 return { weight, reps };
             }
 
-            if (isBodyweight) {
-                return { weight: 0, reps: 8 };
+            if (!isWeighted) {
+                return { reps: 8 };
             }
 
             return { weight: profile.age, reps: 8 };
         } catch (error) {
             console.error('Error getting recommended set:', error);
-            return { weight: 0, reps: 8 };
+            return { reps: 8 };
         }
     }
 
@@ -150,10 +150,13 @@ class ProgressTracker {
         if (!data || data.length === 0) return null;
         const allSets = data.flatMap(entry => entry.sets || []);
         return allSets.reduce((best, current) => {
-            if (!best || (current.weight && current.weight > best.weight)) {
-                return current;
+            if (!best) return current;
+            if (current.weight !== undefined && best.weight !== undefined) {
+                return current.weight > best.weight ? current : best;
             }
-            return best;
+            if (current.weight !== undefined) return current;
+            if (best.weight !== undefined) return best;
+            return current.reps > best.reps ? current : best;
         }, null);
     }
 
