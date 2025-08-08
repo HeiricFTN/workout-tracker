@@ -1,0 +1,7 @@
+{
+  "name": "workout-tracker",
+  "version": "1.0.3",
+  "scripts": {
+    "test": "echo \"No tests specified\""
+  }
+}
