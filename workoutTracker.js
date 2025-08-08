@@ -4,11 +4,13 @@
 
 import { logWorkout, generateSupersetTemplate } from './models/workoutLogs.js';
 import { fetchTemplateById } from './models/workoutTemplates.js';
+import dataManager from './dataManager.js';
 
 let selectedTemplateId = null;
 let currentUser = 'Dad';
 
 window.addEventListener('DOMContentLoaded', async () => {
+  currentUser = await dataManager.getCurrentUser();
   const urlParams = new URLSearchParams(window.location.search);
   selectedTemplateId = urlParams.get('templateId');
 

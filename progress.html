@@ -12,7 +12,19 @@ File: progress.html
 <body>
   <header>
     <h1>Progress Overview</h1>
+    <select id="userSelect" class="user-select">
+      <option value="Dad">Dad</option>
+      <option value="Alex">Alex</option>
+    </select>
   </header>
+
+  <div class="dashboard-nav">
+    <button onclick="location.href='index.html'">🏠 Dashboard</button>
+    <button onclick="location.href='workout.html'">👟 Start Workout</button>
+    <button onclick="location.href='progress.html'">📊 Progress</button>
+    <button onclick="location.href='exercise-editor.html'">🏋️ Exercise Library</button>
+    <button onclick="location.href='template-editor.html'">🧱 Template Builder</button>
+  </div>
 
   <main>
     <div id="growthContainer">
@@ -20,6 +32,7 @@ File: progress.html
     </div>
   </main>
 
+  <script type="module" src="profileSwitcher.js"></script>
   <script type="module" src="progress.js"></script>
 </body>
 </html>

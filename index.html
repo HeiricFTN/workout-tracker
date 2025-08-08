@@ -12,6 +12,10 @@ File: index.html
 <body>
   <header>
     <h1>Welcome to Workout Tracker</h1>
+    <select id="userSelect" class="user-select">
+      <option value="Dad">Dad</option>
+      <option value="Alex">Alex</option>
+    </select>
   </header>
 <div class="dashboard-nav">
   <button onclick="location.href='index.html'">🏠 Dashboard</button>
@@ -26,7 +30,7 @@ File: index.html
     <!-- Content dynamically injected by dashboard.js -->
   </main>
 
+  <script type="module" src="profileSwitcher.js"></script>
   <script type="module" src="dashboard.js"></script>
-  <script type="module" src="workoutTracker.js"></script>
 </body>
 </html>

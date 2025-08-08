@@ -1,57 +1,52 @@
-// =============================
-// File: dashboard.js
-// =============================
 import { fetchTemplates } from './models/workoutTemplates.js';
+import dataManager from './dataManager.js';
 
-const userId = 'Dad';
-
-// 3-day per week core schedule + optional 4th
-const threeDaySchedule = [
-  'Full Body Strength',    // Day 1
-  'Push + Conditioning',  // Day 2
-  'Pull + Legs'           // Day 3
+const weeklyPlan = [
+  { name: 'Sunday', template: null },
+  { name: 'Monday', template: 'Full Body Strength' },
+  { name: 'Tuesday', template: null },
+  { name: 'Wednesday', template: 'Push + Conditioning' },
+  { name: 'Thursday', template: null },
+  { name: 'Friday', template: 'Pull + Legs' },
+  { name: 'Saturday', template: null }
 ];
 
-const optionalDay = 'Arms & Core';
-
-function getDayIndexThisWeek() {
-  const day = new Date().getDay();
-  // Map Mon/Wed/Fri = 0/1/2, Thu/Sat/Sun = optional
-  const map = { 1: 0, 3: 1, 5: 2 }; // MWF core days
-  return map[day];
-}
-
-function getTodayFocus() {
-  const day = new Date().getDay();
-  const index = getDayIndexThisWeek();
-  if (index !== undefined) return threeDaySchedule[index];
-  if (day === 4 || day === 6) return optionalDay; // Thu/Sat optional
-  return 'Rest';
-}
+window.startWorkout = (templateId) => {
+  const url = templateId ? `workout.html?templateId=${templateId}` : 'workout.html';
+  window.location.href = url;
+};
 
 window.addEventListener('DOMContentLoaded', async () => {
   const container = document.getElementById('dashboardContainer');
   container.innerHTML = '';
 
-  const todayFocus = getTodayFocus();
+  const currentUser = await dataManager.getCurrentUser();
   const templates = await fetchTemplates();
+  const completedDays = await dataManager.getWeeklyWorkouts(currentUser);
 
-  const todayHeader = document.createElement('div');
-  todayHeader.className = 'template-card';
-  todayHeader.innerHTML = `
-    <h2>Today: ${todayFocus}</h2>
-  `;
+  const weekGrid = document.createElement('div');
+  weekGrid.className = 'weekly-schedule';
 
-  const matchedTemplate = templates.find(t => t.title === todayFocus);
-  if (matchedTemplate) {
-    todayHeader.innerHTML += `
-      <button onclick="startWorkout('${matchedTemplate.templateId}')">Start ${matchedTemplate.title}</button>
-    `;
-  } else {
-    todayHeader.innerHTML += `<p>No template assigned for this day.</p>`;
-  }
+  weeklyPlan.forEach((day, index) => {
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    card.innerHTML = `<h3>${day.name}</h3>`;
 
-  container.appendChild(todayHeader);
+    if (completedDays.includes(index)) {
+      card.innerHTML += '<p class="completed">Completed</p>';
+    } else {
+      const template = templates.find(t => t.title === day.template);
+      if (template) {
+        card.innerHTML += `<button onclick="startWorkout('${template.templateId}')">Start ${day.template}</button>`;
+      } else {
+        card.innerHTML += `<button onclick="startWorkout()">Start Workout</button>`;
+      }
+    }
+
+    weekGrid.appendChild(card);
+  });
+
+  container.appendChild(weekGrid);
 
   const allHeader = document.createElement('h3');
   allHeader.textContent = 'All Workout Templates';
