@@ -232,11 +232,105 @@ class WorkoutLibrary {
         return supersets;
     }
 
+ getHydrowActivities() {
+        return {
+            Breathe: [
+                {
+                    id: "breathe_rhythm_recovery_10",
+                    title: "Rhythm Recovery",
+                    duration: 10,
+                    meters: 2000,
+                    strokeRate: "20-22 spm",
+                    focus: "Easy rhythm and breath control",
+                    description: "Low-intensity row to groove technique before lifting."
+                },
+                {
+                    id: "breathe_scenic_cruise_15",
+                    title: "Scenic Cruise",
+                    duration: 15,
+                    meters: 3000,
+                    strokeRate: "22 spm",
+                    focus: "Smooth sustainable pacing",
+                    description: "Steady scenic session to elevate heart rate without fatigue."
+                },
+                {
+                    id: "breathe_form_drills_12",
+                    title: "Form Drills + Strides",
+                    duration: 12,
+                    meters: 2400,
+                    strokeRate: "20-24 spm",
+                    focus: "Technique with light rate builds",
+                    description: "Alternating drill work and light rate lifts to prime power."
+                }
+            ],
+            Sweat: [
+                {
+                    id: "sweat_rate_builders_15",
+                    title: "Rate Builders",
+                    duration: 15,
+                    meters: 3200,
+                    strokeRate: "22-26 spm",
+                    focus: "Progressive intensity",
+                    description: "3 x 4 minute builds with recovery rows between efforts."
+                },
+                {
+                    id: "sweat_ladder_intervals_20",
+                    title: "Ladder Intervals",
+                    duration: 20,
+                    meters: 4200,
+                    strokeRate: "24-28 spm",
+                    focus: "Tempo and threshold work",
+                    description: "Pyramid style intervals to push aerobic capacity."
+                },
+                {
+                    id: "sweat_speed_endurance_18",
+                    title: "Speed Endurance",
+                    duration: 18,
+                    meters: 3800,
+                    strokeRate: "26 spm",
+                    focus: "Repeated hard efforts",
+                    description: "8 x 1:30 on / :45 off targeting aggressive split maintenance."
+                }
+            ],
+            Drive: [
+                {
+                    id: "drive_power_intervals_20",
+                    title: "Power Intervals",
+                    duration: 20,
+                    meters: 4400,
+                    strokeRate: "28-30 spm",
+                    focus: "Max power application",
+                    description: "Short explosive intervals at racing pace with long recoveries."
+                },
+                {
+                    id: "drive_race_sim_25",
+                    title: "Race Simulation",
+                    duration: 25,
+                    meters: 5200,
+                    strokeRate: "28-32 spm",
+                    focus: "Race pace maintenance",
+                    description: "3 x 6 minute race pace pieces with controlled start sequences."
+                },
+                {
+                    id: "drive_time_trial_30",
+                    title: "30-Min Time Trial",
+                    duration: 30,
+                    meters: 6500,
+                    strokeRate: "30-32 spm",
+                    focus: "Sustained maximum effort",
+                    description: "Benchmark piece to test fitness and pacing strategy."
+                }
+            ]
+        };
+    }
+
     defineRowingSection() {
+        const activities = this.getHydrowActivities();
         return {
             name: "Hydrow Rowing",
-            description: "Complete before strength training",
-            types: ["Breathe", "Sweat", "Drive"]
+            description: "Select a Hydrow session to complete before strength training.",
+            types: ["Breathe", "Sweat", "Drive"],
+            activities
         };
     }
 }
