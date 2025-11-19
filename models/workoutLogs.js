@@ -3,6 +3,8 @@
 // =============================
 
 import { db, collection, addDoc, getDocs, query, where } from '../services/firebaseService.js';
+import workoutLibrary from '../workoutLibrary.js';
+import { resolveExerciseInfo } from './exerciseMetadata.js';
 
 const logsRef = collection(db, 'workoutLogs');
 
@@ -41,11 +43,13 @@ export async function fetchLatestTemplateId(userId) {
 export async function generateSupersetTemplate(userId) {
   const { generateAdaptiveSuperset } = await import('../analytics/adaptiveWorkoutSelector.js');
   const supersets = await generateAdaptiveSuperset(userId);
+  const rowing = workoutLibrary.defineRowingSection();
 
   const template = {
     title: 'Adaptive Superset Plan',
     version: 1,
-    exercises: supersets.flatMap(pair => pair.exercises.map(name => ({ name })))
+    rowing,
+    exercises: supersets.flatMap(pair => pair.exercises.map(name => resolveExerciseInfo({ name })))
   };
 
   return template;
