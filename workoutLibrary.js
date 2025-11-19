@@ -232,7 +232,7 @@ class WorkoutLibrary {
         return supersets;
     }
 
- getHydrowActivities() {
+    getHydrowActivities() {
         return {
             Breathe: [
                 {
