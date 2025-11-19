@@ -155,24 +155,59 @@ form {
   color: var(--text);
 }
 
-/* Responsive */
-@media (max-width: 600px) {
-  .dashboard-nav {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  main {
-    padding: 1rem;
-  }
-
-  input[type="number"] {
-    width: 80px;
-  }
-
-  button {
-    width: 100%;
-    margin-top: 0.5rem;
-  }
+.exercise-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
 }
 
+.exercise-input-row input {
+  flex: 0 0 120px;
+}
+
+.cardio-section {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 2px solid rgba(0, 121, 140, 0.15);
+}
+
+.cardio-section h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.cardio-description {
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+}
+
+.cardio-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.cardio-form label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.cardio-form select,
+.cardio-form input {
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  padding: 0.5rem 0.75rem;
+}
+
+.cardio-details {
+  border-radius: 8px;
+  border: 1px dashed rgba(0, 121, 140, 0.4);
+  background: rgba(237, 174, 73, 0.1);
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
