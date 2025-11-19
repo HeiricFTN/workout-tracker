@@ -6,9 +6,11 @@ import { logWorkout, generateSupersetTemplate } from './models/workoutLogs.js';
 import { fetchTemplateById } from './models/workoutTemplates.js';
 import dataManager from './dataManager.js';
 import progressTracker from './progressTracker.js';
+import { getSuggestedRepNumber, resolveExerciseInfo } from './models/exerciseMetadata.js';
 
 let selectedTemplateId = null;
 let currentUser = 'Dad';
+let hydrowActivitiesByType = {};
 
 window.addEventListener('DOMContentLoaded', async () => {
   currentUser = await dataManager.getCurrentUser();
@@ -27,42 +29,229 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   document.getElementById('workoutTitle').textContent = `${template.title} (v${template.version || 1})`;
-  await renderWorkoutUI(template.exercises);
+  await renderWorkoutUI(template);
 });
 
-async function renderWorkoutUI(exercises) {
+async function renderWorkoutUI(template) {
+  const { exercises = [], rowing } = template;
   const container = document.getElementById('workoutContainer');
   container.innerHTML = '';
+  hydrowActivitiesByType = rowing?.activities || {};
+
+  if (rowing) {
+    container.appendChild(buildRowingSection(rowing));
+  }
+
   for (let index = 0; index < exercises.length; index++) {
-    const exercise = exercises[index];
-    const rec = await progressTracker.getRecommendedSet(currentUser, exercise.name);
+    const meta = resolveExerciseInfo(exercises[index]);
+    const rec = await progressTracker.getRecommendedSet(currentUser, meta.name, {
+      equipment: meta.equipment,
+      targetReps: meta.targetReps,
+    });
     const div = document.createElement('div');
-    const isWeighted = ['Dumbbell', 'Kettlebell'].includes(exercise.equipment);
+    const isWeighted = meta.equipment && !['Bodyweight', 'TRX'].includes(meta.equipment);
+    const suggestedReps = rec.reps ?? getSuggestedRepNumber(meta.targetReps);
+    const repCaption = meta.targetReps
+      ? `Recommended: ${suggestedReps} reps (target ${meta.targetReps})`
+      : `Recommended: ${suggestedReps} reps`;
 
     if (isWeighted) {
       div.innerHTML = `
-        <h4>${exercise.name}</h4>
-        <div>
+        <h4>${meta.name}</h4>
+        <div class="exercise-input-row">
           <input type="number" id="weight-${index}" placeholder="Weight">
-          <span class="recommendation">Recommended: ${rec.weight} lbs</span>
+          <span class="recommendation">Suggested weight: ${rec.weight ?? ''} lbs</span>
         </div>
-        <div>
+        <div class="exercise-input-row">
           <input type="number" id="reps-${index}" placeholder="Reps">
-          <span class="recommendation">Recommended: ${rec.reps} reps</span>
+          <span class="recommendation">${repCaption}</span>
         </div>
       `;
     } else {
       div.innerHTML = `
-        <h4>${exercise.name}</h4>
-        <div>
+        <h4>${meta.name}</h4>
+        <div class="exercise-input-row">
           <input type="number" id="reps-${index}" placeholder="Reps">
-          <span class="recommendation">Recommended: ${rec.reps} reps</span>
+          <span class="recommendation">${repCaption}</span>
         </div>
       `;
     }
 
     container.appendChild(div);
   }
+}
+
+function buildRowingSection(rowing) {
+  const section = document.createElement('section');
+  section.className = 'cardio-section workout-card';
+
+  const header = document.createElement('h3');
+  header.textContent = `${rowing.name} Cardio`;
+  section.appendChild(header);
+
+  if (rowing.description) {
+    const description = document.createElement('p');
+    description.className = 'cardio-description';
+    description.textContent = rowing.description;
+    section.appendChild(description);
+  }
+
+  const form = document.createElement('div');
+  form.className = 'cardio-form';
+
+  const typeLabel = document.createElement('label');
+  typeLabel.setAttribute('for', 'rowingType');
+  typeLabel.textContent = 'Intensity';
+  form.appendChild(typeLabel);
+
+  const typeSelect = document.createElement('select');
+  typeSelect.id = 'rowingType';
+  rowing.types.forEach(type => {
+    const option = document.createElement('option');
+    option.value = type;
+    option.textContent = type;
+    typeSelect.appendChild(option);
+  });
+  form.appendChild(typeSelect);
+
+  const activityLabel = document.createElement('label');
+  activityLabel.setAttribute('for', 'rowingActivity');
+  activityLabel.textContent = 'Hydrow Activity';
+  form.appendChild(activityLabel);
+
+  const activitySelect = document.createElement('select');
+  activitySelect.id = 'rowingActivity';
+  form.appendChild(activitySelect);
+
+  const durationLabel = document.createElement('label');
+  durationLabel.setAttribute('for', 'rowingDuration');
+  durationLabel.textContent = 'Planned Minutes';
+  form.appendChild(durationLabel);
+
+  const durationInput = document.createElement('input');
+  durationInput.type = 'number';
+  durationInput.id = 'rowingDuration';
+  durationInput.min = '0';
+  durationInput.placeholder = 'Minutes';
+  form.appendChild(durationInput);
+
+  const metersLabel = document.createElement('label');
+  metersLabel.setAttribute('for', 'rowingMeters');
+  metersLabel.textContent = 'Target Meters';
+  form.appendChild(metersLabel);
+
+  const metersInput = document.createElement('input');
+  metersInput.type = 'number';
+  metersInput.id = 'rowingMeters';
+  metersInput.min = '0';
+  metersInput.placeholder = 'Meters';
+  form.appendChild(metersInput);
+
+  const details = document.createElement('div');
+  details.id = 'rowingActivityDetails';
+  details.className = 'cardio-details';
+  form.appendChild(details);
+
+  const populateActivities = (type) => {
+    activitySelect.innerHTML = '';
+    const activities = hydrowActivitiesByType[type] || [];
+    durationInput.value = '';
+    metersInput.value = '';
+
+    activities.forEach(activity => {
+      const option = document.createElement('option');
+      option.value = activity.id;
+      option.textContent = `${activity.duration} min · ${activity.title}`;
+      activitySelect.appendChild(option);
+    });
+
+    const firstOption = activities[0];
+    if (firstOption) {
+      activitySelect.value = firstOption.id;
+      updateActivityDetails(type, firstOption.id);
+    } else {
+      details.textContent = 'No Hydrow activities available for this type yet.';
+    }
+  };
+
+  const updateActivityDetails = (type, activityId) => {
+    const activity = (hydrowActivitiesByType[type] || []).find(item => item.id === activityId);
+    if (!activity) {
+      details.textContent = 'Select a Hydrow activity to view details.';
+      return;
+    }
+
+    const meta = [];
+    if (activity.duration) meta.push(`${activity.duration} min`);
+    if (activity.meters) meta.push(`${activity.meters.toLocaleString()} m`);
+    if (activity.strokeRate) meta.push(activity.strokeRate);
+
+    const metaLine = meta.length > 0 ? `<small>${meta.join(' · ')}</small>` : '';
+
+    details.innerHTML = `
+      <strong>${activity.title}</strong><br>
+      <span>${activity.description}</span><br>
+      <em>${activity.focus}</em><br>
+      ${metaLine}
+    `;
+
+    if (activity.duration) {
+      durationInput.value = activity.duration;
+    }
+    if (activity.meters) {
+      metersInput.value = activity.meters;
+    }
+  };
+
+  typeSelect.addEventListener('change', () => {
+    populateActivities(typeSelect.value);
+  });
+
+  activitySelect.addEventListener('change', () => {
+    durationInput.value = '';
+    metersInput.value = '';
+    updateActivityDetails(typeSelect.value, activitySelect.value);
+  });
+
+  populateActivities(typeSelect.value || rowing.types[0]);
+
+  section.appendChild(form);
+  return section;
+}
+
+function getSelectedRowing() {
+  const typeSelect = document.getElementById('rowingType');
+  const activitySelect = document.getElementById('rowingActivity');
+  const durationInput = document.getElementById('rowingDuration');
+  const metersInput = document.getElementById('rowingMeters');
+
+  if (!typeSelect || !activitySelect) {
+    return null;
+  }
+
+  const type = typeSelect.value;
+  const activityId = activitySelect.value;
+  if (!type || !activityId) {
+    return null;
+  }
+
+  const activity = (hydrowActivitiesByType[type] || []).find(item => item.id === activityId);
+  const minutes = parseInt(durationInput?.value, 10) || activity?.duration || 0;
+  const meters = parseInt(metersInput?.value, 10) || activity?.meters || 0;
+
+  return {
+    provider: 'Hydrow',
+    type,
+    activityId,
+    activityName: activity?.title || '',
+    focus: activity?.focus || '',
+    strokeRate: activity?.strokeRate || '',
+    description: activity?.description || '',
+    minutes,
+    meters,
+    suggestedMinutes: activity?.duration || null,
+    suggestedMeters: activity?.meters || null
+  };
 }
 
 document.getElementById('completeWorkoutBtn')?.addEventListener('click', async () => {
@@ -79,12 +268,19 @@ document.getElementById('completeWorkoutBtn')?.addEventListener('click', async (
     }
   });
 
-  await logWorkout({
+  const workoutLog = {
     userId: currentUser,
     templateId: selectedTemplateId || 'adaptive-auto',
     completedAt: new Date().toISOString(),
     performance
-  });
+  };
+
+  const rowing = getSelectedRowing();
+  if (rowing) {
+    workoutLog.rowing = rowing;
+  }
+
+  await logWorkout(workoutLog);
 
   alert('Workout logged successfully!');
 });
