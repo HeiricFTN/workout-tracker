@@ -1,6 +1,6 @@
 // progressTracker.js
 import dataManager from './dataManager.js';
-import { getSuggestedRepNumber, normalizeEquipment, resolveExerciseInfo } from './models/exerciseMetadata.js';
+import { getSuggestedRepNumber, isWeightedEquipment, normalizeEquipment, resolveExerciseInfo } from './models/exerciseMetadata.js';
 
 class ProgressTracker {
     constructor() {
@@ -26,7 +26,7 @@ class ProgressTracker {
     async analyzeProgress(user, exerciseType = 'all') {
         const progress = await this.dataManager.getProgress(user);
         const analysis = {};
-@@ -87,81 +87,101 @@ class ProgressTracker {
+@@ -87,81 +87,104 @@ class ProgressTracker {
         if (current.reps > previous.reps) return 'improving';
         if (current.reps < previous.reps) return 'declining';
         return 'steady';
@@ -53,20 +53,28 @@ class ProgressTracker {
     }
 
     async getRecommendedSet(userId, exercise, options = {}) {
+        const exerciseInfo = resolveExerciseInfo({
+            name: exercise,
+            equipment: options.equipment,
+            targetReps: options.targetReps,
+        });
+        const equipment = normalizeEquipment(exerciseInfo.equipment, exerciseInfo.type, exerciseInfo.name);
+        const weighted = isWeightedEquipment(equipment);
+        const baseReps = this.getBaseReps(options.targetReps || exerciseInfo.targetReps);
+        const fallback = weighted
+            ? { weight: this.getDefaultStartingWeight(null, exerciseInfo), reps: baseReps }
+            : { reps: baseReps };
+
         try {
             const progress = await this.dataManager.getProgress(userId);
             const profile = await this.dataManager.getUserProfile(userId);
             const exerciseData = progress[exercise];
-            const exerciseInfo = resolveExerciseInfo({ name: exercise, equipment: options.equipment });
-            const equipment = normalizeEquipment(exerciseInfo.equipment, exerciseInfo.type, exerciseInfo.name);
-            const isWeighted = this.isWeightedEquipment(equipment);
-            const baseReps = this.getBaseReps(options.targetReps || exerciseInfo.targetReps);
 
             if (exerciseData?.history?.length > 0) {
                 const last = exerciseData.history[exerciseData.history.length - 1];
                 const set = last.sets && last.sets[0];
                 const reps = set?.reps || baseReps;
-                if (!isWeighted) {
+                if (!weighted) {
                     return { reps };
                 }
                 const previousWeight = set?.weight || 0;
@@ -76,20 +84,15 @@ class ProgressTracker {
                 return { weight: progressiveWeight, reps };
             }
 
-            if (!isWeighted) {
+            if (!weighted) {
                 return { reps: baseReps };
             }
 
             return { weight: this.getDefaultStartingWeight(profile, exerciseInfo), reps: baseReps };
         } catch (error) {
             console.error('Error getting recommended set:', error);
-            return { reps: this.getBaseReps(options.targetReps) };
+            return fallback;
         }
-    }
-
-    isWeightedEquipment(equipment) {
-        const normalized = (equipment || '').toString().toLowerCase();
-        return normalized !== 'bodyweight' && normalized !== 'trx' && normalized !== '';
     }
 
     getBaseReps(targetReps) {
@@ -102,3 +105,28 @@ class ProgressTracker {
         const hintedWeight = exerciseInfo?.startingWeight || profileAnchor || 10;
         return Math.max(5, hintedWeight);
     }
+
+    getWeekNumber(date) {
+        const startDate = new Date('2025-03-03');
+        const diff = date - startDate;
+        return Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
+    }
+
+    getBestSet(data) {
+        if (!data || data.length === 0) return null;
+        const allSets = data.flatMap(entry => entry.sets || []);
+        return allSets.reduce((best, current) => {
+            if (!best) return current;
+            if (current.weight !== undefined && best.weight !== undefined) {
+                return current.weight > best.weight ? current : best;
+            }
+            if (current.weight !== undefined) return current;
+            if (best.weight !== undefined) return best;
+            return current.reps > best.reps ? current : best;
+        }, null);
+    }
+
+    // Target Calculations
+    async getNextTargets(user) {
+        const progress = await this.dataManager.getProgress(user);
+        const targets = {};
