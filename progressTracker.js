@@ -1,6 +1,6 @@
 // progressTracker.js
 import dataManager from './dataManager.js';
-import { exerciseLibrary } from './models/exerciseLibrary.js';
+import { getSuggestedRepNumber, normalizeEquipment, resolveExerciseInfo } from './models/exerciseMetadata.js';
 
 class ProgressTracker {
     constructor() {
@@ -26,64 +26,7 @@ class ProgressTracker {
     async analyzeProgress(user, exerciseType = 'all') {
         const progress = await this.dataManager.getProgress(user);
         const analysis = {};
-
-        for (const [name, data] of Object.entries(progress)) {
-            // Filter by exercise type if specified
-            if (exerciseType !== 'all') {
-                if (exerciseType === 'rowing' && !name.startsWith('rowing_')) continue;
-                if (exerciseType === 'strength' && name.startsWith('rowing_')) continue;
-            }
-
-            if (data.history.length >= 2) {
-                const recent = data.history.slice(-2);
-                analysis[name] = this.calculateProgressMetrics(name, recent, data.personalBest);
-            }
-        }
-
-        return analysis;
-    }
-
-    calculateProgressMetrics(name, recent, personalBest) {
-        const [previous, current] = recent;
-        const isRowing = name.startsWith('rowing_');
-
-        if (isRowing) {
-            return {
-                type: 'rowing',
-                trend: current.pace > previous.pace ? 'improving' : 'declining',
-                changePercent: ((current.pace - previous.pace) / previous.pace) * 100,
-                currentPace: Math.round(current.pace),
-                bestPace: Math.round(personalBest.pace),
-                isPersonalBest: current.pace >= personalBest.pace
-            };
-        }
-
-        // Strength exercise
-        const isDumbbell = personalBest.weight !== undefined;
-        if (isDumbbell) {
-            return {
-                type: 'dumbbell',
-                trend: this.getStrengthTrend(current, previous),
-                changePercent: ((current.weight - previous.weight) / previous.weight) * 100,
-                current: `${current.weight}lbs × ${current.reps}`,
-                best: `${personalBest.weight}lbs × ${personalBest.reps}`,
-                isPersonalBest: current.weight >= personalBest.weight && current.reps >= personalBest.reps
-            };
-        }
-
-        return {
-            type: 'trx',
-            trend: current.reps > previous.reps ? 'improving' : 'declining',
-            changePercent: ((current.reps - previous.reps) / previous.reps) * 100,
-            current: `${current.reps} reps`,
-            best: `${personalBest.reps} reps`,
-            isPersonalBest: current.reps >= personalBest.reps
-        };
-    }
-
-    getStrengthTrend(current, previous) {
-        if (current.weight > previous.weight) return 'improving';
-        if (current.weight < previous.weight) return 'declining';
+@@ -87,81 +87,101 @@ class ProgressTracker {
         if (current.reps > previous.reps) return 'improving';
         if (current.reps < previous.reps) return 'declining';
         return 'steady';
@@ -109,130 +52,53 @@ class ProgressTracker {
         }
     }
 
-    async getRecommendedSet(userId, exercise) {
+    async getRecommendedSet(userId, exercise, options = {}) {
         try {
             const progress = await this.dataManager.getProgress(userId);
             const profile = await this.dataManager.getUserProfile(userId);
             const exerciseData = progress[exercise];
-            const exerciseInfo = exerciseLibrary.find(e => e.name === exercise);
-            const equipment = exerciseInfo?.equipment || '';
-            const isWeighted = ['Dumbbell', 'Kettlebell'].includes(equipment);
+            const exerciseInfo = resolveExerciseInfo({ name: exercise, equipment: options.equipment });
+            const equipment = normalizeEquipment(exerciseInfo.equipment, exerciseInfo.type, exerciseInfo.name);
+            const isWeighted = this.isWeightedEquipment(equipment);
+            const baseReps = this.getBaseReps(options.targetReps || exerciseInfo.targetReps);
 
             if (exerciseData?.history?.length > 0) {
                 const last = exerciseData.history[exerciseData.history.length - 1];
                 const set = last.sets && last.sets[0];
-                const reps = set?.reps || 8;
+                const reps = set?.reps || baseReps;
                 if (!isWeighted) {
                     return { reps };
                 }
-                const weight = (set?.weight || 0) + 5;
-                return { weight, reps };
+                const previousWeight = set?.weight || 0;
+                const progressiveWeight = previousWeight
+                    ? Math.max(Math.round(previousWeight * 1.05), previousWeight + 5)
+                    : this.getDefaultStartingWeight(profile, exerciseInfo);
+                return { weight: progressiveWeight, reps };
             }
 
             if (!isWeighted) {
-                return { reps: 8 };
+                return { reps: baseReps };
             }
 
-            return { weight: profile.age, reps: 8 };
+            return { weight: this.getDefaultStartingWeight(profile, exerciseInfo), reps: baseReps };
         } catch (error) {
             console.error('Error getting recommended set:', error);
-            return { reps: 8 };
+            return { reps: this.getBaseReps(options.targetReps) };
         }
     }
 
-    getWeekNumber(date) {
-        const startDate = new Date('2025-03-03');
-        const diff = date - startDate;
-        return Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
+    isWeightedEquipment(equipment) {
+        const normalized = (equipment || '').toString().toLowerCase();
+        return normalized !== 'bodyweight' && normalized !== 'trx' && normalized !== '';
     }
 
-    getBestSet(data) {
-        if (!data || data.length === 0) return null;
-        const allSets = data.flatMap(entry => entry.sets || []);
-        return allSets.reduce((best, current) => {
-            if (!best) return current;
-            if (current.weight !== undefined && best.weight !== undefined) {
-                return current.weight > best.weight ? current : best;
-            }
-            if (current.weight !== undefined) return current;
-            if (best.weight !== undefined) return best;
-            return current.reps > best.reps ? current : best;
-        }, null);
+    getBaseReps(targetReps) {
+        if (!targetReps) return 8;
+        return getSuggestedRepNumber(targetReps);
     }
 
-    // Target Calculations
-    async getNextTargets(user) {
-        const progress = await this.dataManager.getProgress(user);
-        const targets = {};
-
-        for (const [name, data] of Object.entries(progress)) {
-            if (data.history.length > 0) {
-                const current = data.history[data.history.length - 1];
-                targets[name] = this.calculateTarget(name, current);
-            }
-        }
-
-        return targets;
+    getDefaultStartingWeight(profile, exerciseInfo) {
+        const profileAnchor = profile?.bodyWeight ? Math.round(profile.bodyWeight * 0.25) : 15;
+        const hintedWeight = exerciseInfo?.startingWeight || profileAnchor || 10;
+        return Math.max(5, hintedWeight);
     }
-
-    calculateTarget(name, current) {
-        if (name.startsWith('rowing_')) {
-            return {
-                type: 'rowing',
-                targetPace: Math.round(current.pace * 1.05), // 5% increase
-                suggestedMinutes: current.minutes
-            };
-        }
-
-        if (current.weight !== undefined) {
-            return {
-                type: 'dumbbell',
-                targetWeight: Math.ceil(current.weight * 1.05), // 5% increase
-                targetReps: current.reps
-            };
-        }
-
-        return {
-            type: 'trx',
-            targetReps: current.reps + 2 // 2 more reps
-        };
-    }
-
-    // Rowing Specific Methods
-    async getRowingStats(user) {
-        const progress = await this.dataManager.getProgress(user);
-        const stats = {};
-
-        for (const type of ['Breathe', 'Sweat', 'Drive']) {
-            const key = `rowing_${type}`;
-            if (progress[key]) {
-                stats[type] = {
-                    bestPace: Math.round(progress[key].personalBest.pace),
-                    recentAverage: this.calculateRecentAverage(progress[key].history),
-                    totalMeters: this.calculateTotalMeters(progress[key].history),
-                    totalMinutes: this.calculateTotalMinutes(progress[key].history)
-                };
-            }
-        }
-
-        return stats;
-    }
-
-    calculateRecentAverage(history, entries = 5) {
-        if (!history.length) return 0;
-        const recent = history.slice(-entries);
-        return Math.round(recent.reduce((sum, entry) => sum + entry.pace, 0) / recent.length);
-    }
-
-    calculateTotalMeters(history) {
-        return history.reduce((sum, entry) => sum + entry.meters, 0);
-    }
-
-    calculateTotalMinutes(history) {
-        return history.reduce((sum, entry) => sum + entry.minutes, 0);
-    }
-}
-
-// Create and export instance
-const progressTracker = new ProgressTracker();
-export default progressTracker;
