@@ -6,7 +6,7 @@ import { logWorkout, generateSupersetTemplate } from './models/workoutLogs.js';
 import { fetchTemplateById } from './models/workoutTemplates.js';
 import dataManager from './dataManager.js';
 import progressTracker from './progressTracker.js';
-import { getSuggestedRepNumber, resolveExerciseInfo } from './models/exerciseMetadata.js';
+import { getSuggestedRepNumber, isWeightedEquipment, resolveExerciseInfo } from './models/exerciseMetadata.js';
 
 let selectedTemplateId = null;
 let currentUser = 'Dad';
@@ -49,7 +49,7 @@ async function renderWorkoutUI(template) {
       targetReps: meta.targetReps,
     });
     const div = document.createElement('div');
-    const isWeighted = meta.equipment && !['Bodyweight', 'TRX'].includes(meta.equipment);
+    const isWeighted = isWeightedEquipment(meta.equipment);
     const suggestedReps = rec.reps ?? getSuggestedRepNumber(meta.targetReps);
     const repCaption = meta.targetReps
       ? `Recommended: ${suggestedReps} reps (target ${meta.targetReps})`
