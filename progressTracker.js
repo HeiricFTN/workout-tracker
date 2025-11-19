@@ -26,7 +26,7 @@ class ProgressTracker {
     async analyzeProgress(user, exerciseType = 'all') {
         const progress = await this.dataManager.getProgress(user);
         const analysis = {};
-@@ -87,81 +87,104 @@ class ProgressTracker {
+class ProgressTracker {
         if (current.reps > previous.reps) return 'improving';
         if (current.reps < previous.reps) return 'declining';
         return 'steady';
