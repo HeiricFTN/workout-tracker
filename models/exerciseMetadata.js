@@ -57,3 +57,8 @@ export function getSuggestedRepNumber(targetReps) {
   const match = (targetReps || '').match(/\d+/);
   return match ? parseInt(match[0], 10) : 8;
 }
+
+export function isWeightedEquipment(equipment) {
+  const normalized = normalizeEquipment(equipment).toString().toLowerCase();
+  return normalized && normalized !== 'bodyweight' && normalized !== 'trx';
+}
