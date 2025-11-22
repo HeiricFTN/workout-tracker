@@ -26,6 +26,44 @@ class ProgressTracker {
     async analyzeProgress(user, exerciseType = 'all') {
         const progress = await this.dataManager.getProgress(user);
         const analysis = {};
+
+        for (const [name, data] of Object.entries(progress)) {
+            // Filter by exercise type if specified
+            if (exerciseType !== 'all') {
+                if (exerciseType === 'rowing' && !name.startsWith('rowing_')) continue;
+                if (exerciseType === 'strength' && name.startsWith('rowing_')) continue;
+            }
+
+            if (data.history.length >= 2) {
+                const recent = data.history.slice(-2);
+                analysis[name] = this.calculateProgressMetrics(name, recent, data.personalBest);
+            }
+        }
+
+        return analysis;
+    }
+
+    calculateProgressMetrics(name, recent, personalBest) {
+        const [previous, current] = recent;
+        const isRowing = name.startsWith('rowing_');
+
+        if (isRowing) {
+            return {
+                type: 'rowing',
+                trend: current.pace > previous.pace ? 'improving' : 'declining',
+                changePercent: ((current.pace - previous.pace) / previous.pace) * 100,
+                currentPace: Math.round(current.pace),
+                bestPace: Math.round(personalBest.pace),
+                isPersonalBest: current.pace >= personalBest.pace,
+            };
+        }
+
+        // Strength exercise
+        const isDumbbell = personalBest.weight !== undefined;
+        if (isDumbbell) {
+            return {
+                type: 'dumbbell',
+                trend: this.getStrengthTrend(current, previous),
                 changePercent: ((current.weight - previous.weight) / previous.weight) * 100,
                 current: `${current.weight}lbs × ${current.reps}`,
                 best: `${personalBest.weight}lbs × ${personalBest.reps}`,
